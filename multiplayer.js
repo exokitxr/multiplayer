@@ -8,12 +8,13 @@ function _randomString() {
 }
 
 class XRChannelConnection extends EventTarget {
-  constructor(url) {
+  constructor(url, options = {}) {
     super();
 
     this.rtcWs = new WebSocket(url);
     this.connectionId = _randomString();
     this.peerConnections = [];
+    this.microphoneMediaStream = options.microphoneMediaStream;
 
     this.rtcWs.onopen = () => {
       // console.log('presence socket open');
@@ -33,9 +34,6 @@ class XRChannelConnection extends EventTarget {
       }
       if (!peerConnection) {
         peerConnection = new XRPeerConnection(peerConnectionId);
-        this.dispatchEvent(new CustomEvent('peerconnection', {
-          detail: peerConnection,
-        }));
         peerConnection.addEventListener('close', () => {
           const index = this.peerConnections.indexOf(peerConnection);
           if (index !== -1) {
@@ -52,21 +50,23 @@ class XRChannelConnection extends EventTarget {
             candidate: e.candidate,
           }));
         };
+
         this.peerConnections.push(peerConnection);
+        this.dispatchEvent(new CustomEvent('peerconnection', {
+          detail: peerConnection,
+        }));
+
+        if (this.microphoneMediaStream) {
+          // peerConnection.peerConnection.addStream(this.microphoneMediaStream);
+          const tracks = this.microphoneMediaStream.getAudioTracks();
+          for (let i = 0; i < tracks.length; i++) {
+            // console.log('add track for remote', tracks[i]);
+            peerConnection.peerConnection.addTrack(tracks[i]);
+          }
+        }
 
         if (this.connectionId < peerConnectionId) {
-          peerConnection.peerConnection
-            .createOffer()
-            .then(offer => {
-              peerConnection.peerConnection.setLocalDescription(offer);
-
-              this.rtcWs.send(JSON.stringify({
-                dst: peerConnectionId,
-                src: this.connectionId,
-                method: 'offer',
-                offer,
-              }));
-            });
+          _startOffer(peerConnection);
         }
       }
     };
@@ -77,6 +77,22 @@ class XRChannelConnection extends EventTarget {
       } else {
         console.warn('no such peer connection', peerConnectionId, this.peerConnections.map(peerConnection => peerConnection.connectionId));
       }
+    };
+    const _startOffer = peerConnection => {
+      peerConnection.peerConnection
+        .createOffer()
+        .then(offer => {
+          // console.log('create offer');
+          return peerConnection.peerConnection.setLocalDescription(offer).then(() => offer);
+        })
+        .then(offer => {
+          this.rtcWs.send(JSON.stringify({
+            dst: peerConnection.connectionId,
+            src: this.connectionId,
+            method: 'offer',
+            offer,
+          }));
+        });
     };
     this.rtcWs.onmessage = e => {
       // console.log('got message', e.data);
@@ -92,16 +108,34 @@ class XRChannelConnection extends EventTarget {
         const peerConnection = this.peerConnections.find(peerConnection => peerConnection.connectionId === peerConnectionId);
         if (peerConnection) {
           peerConnection.peerConnection.setRemoteDescription(offer)
-            .then(() => peerConnection.peerConnection.createAnswer())
+            .then(() => {
+              // console.log('create answer');
+              return peerConnection.peerConnection.createAnswer();
+            })
+            .then(answer => peerConnection.peerConnection.setLocalDescription(answer).then(() => answer))
             .then(answer => {
-              peerConnection.peerConnection.setLocalDescription(answer);
-
               this.rtcWs.send(JSON.stringify({
                 dst: peerConnectionId,
                 src: this.connectionId,
                 method: 'answer',
                 answer,
               }));
+            }).then(() => new Promise((accept, reject) => {
+              const _recurse = () => {
+                if (peerConnection.peerConnection.signalingState === 'stable') {
+                  accept();
+                } else {
+                  peerConnection.peerConnection.addEventListener('signalingstatechange', _recurse, {
+                    once: true,
+                  });
+                }
+              };
+              _recurse();
+            }))
+            .then(() => {
+              if (this.connectionId >= peerConnectionId && this.microphoneMediaStream) {
+                _startOffer(peerConnection);
+              }
             });
         } else {
           console.warn('no such peer connection', peerConnectionId, this.peerConnections.map(peerConnection => peerConnection.connectionId));
@@ -157,7 +191,7 @@ class XRChannelConnection extends EventTarget {
     }, 30*1000);
   }
 
-  disconect() {
+  disconnect() {
     this.rtcWs.close();
     this.rtcWs = null;
 
@@ -179,6 +213,31 @@ class XRChannelConnection extends EventTarget {
       }
     }
   }
+
+  setMicrophoneMediaStream(microphoneMediaStream) {
+    const {microphoneMediaStream: oldMicrophoneMediaStream} = this;
+    if (oldMicrophoneMediaStream) {
+      const oldTracks = oldMicrophoneMediaStream.getAudioTracks();
+      for (let i = 0; i < this.peerConnections.length; i++) {
+        const peerConnection = this.peerConnections[i];
+        for (let j = 0; j < oldTracks.length; j++) {
+          peerConnection.removeTrack(oldTracks[j]);
+        }
+      }
+    }
+
+    this.microphoneMediaStream = microphoneMediaStream;
+
+    if (microphoneMediaStream) {
+      const tracks = microphoneMediaStream.getAudioTracks();
+      for (let i = 0; i < this.peerConnections.length; i++) {
+        const peerConnection = this.peerConnections[i];
+        for (let j = 0; j < tracks.length; j++) {
+          peerConnection.addTrack(tracks[j]);
+        }
+      }
+    }
+  }
 }
 window.XRChannelConnection = XRChannelConnection;
 
@@ -193,8 +252,20 @@ class XRPeerConnection extends EventTarget {
     });
     this.open = false;
 
+    /* this.peerConnection.onnegotiationneeded = e => {
+      console.log('negotiation needed');
+    }; */
+    /* this.peerConnection.onaddstream = e => {
+      this.dispatchEvent(new CustomEvent('mediastream', {
+        detail: e.stream,
+      }));
+    }; */
     this.peerConnection.ontrack = e => {
-      console.log('got track', e);
+      const mediaStream = new MediaStream();
+      mediaStream.addTrack(e.track);
+      this.dispatchEvent(new CustomEvent('mediastream', {
+        detail: mediaStream,
+      }));
     };
 
     const sendChannel = this.peerConnection.createDataChannel('sendChannel');
