@@ -286,7 +286,6 @@ class XRChannelConnection extends EventTarget {
     }
   }
 }
-window.XRChannelConnection = XRChannelConnection;
 
 class XRPeerConnection extends EventTarget {
   constructor(peerConnectionId) {
@@ -410,4 +409,8 @@ class XRPeerConnection extends EventTarget {
     }));
   }
 }
-window.XRPeerConnection = XRPeerConnection;
+
+export {
+  XRChannelConnection,
+  XRPeerConnection,
+};
