@@ -6,7 +6,7 @@
 
     var DOCUMENT_FRAGMENT_NODE = 11;
 
-    function morphAttrs(fromNode, toNode) {
+    function morphAttrs(fromNode, toNode, onBeforeAddAttr, onBeforeRemoveAttr) {
         var toNodeAttrs = toNode.attributes;
         var attr;
         var attrName;
@@ -34,12 +34,14 @@
                     if (attr.prefix === 'xmlns'){
                         attrName = attr.name; // It's not allowed to set an attribute with the XMLNS namespace without specifying the `xmlns` prefix
                     }
+                    onBeforeAddAttr(fromNode, attrName, attrValue);
                     fromNode.setAttributeNS(attrNamespaceURI, attrName, attrValue);
                 }
             } else {
                 fromValue = fromNode.getAttribute(attrName);
 
                 if (fromValue !== attrValue) {
+                    onBeforeAddAttr(fromNode, attrName, attrValue);
                     fromNode.setAttribute(attrName, attrValue);
                 }
             }
@@ -58,10 +60,12 @@
                 attrName = attr.localName || attrName;
 
                 if (!toNode.hasAttributeNS(attrNamespaceURI, attrName)) {
+                    onBeforeRemoveAttr(fromNode, attrName);
                     fromNode.removeAttributeNS(attrNamespaceURI, attrName);
                 }
             } else {
                 if (!toNode.hasAttribute(attrName)) {
+                    onBeforeRemoveAttr(fromNode, attrName);
                     fromNode.removeAttribute(attrName);
                 }
             }
@@ -325,6 +329,9 @@
             var onNodeDiscarded = options.onNodeDiscarded || noop;
             var onBeforeElChildrenUpdated = options.onBeforeElChildrenUpdated || noop;
             var childrenOnly = options.childrenOnly === true;
+            var onBeforeNodeValueChange = options.onBeforeNodeValueChange || noop;
+            var onBeforeAddAttr = options.onBeforeAddAttr || noop;
+            var onBeforeRemoveAttr = options.onBeforeRemoveAttr || noop;
 
             // This object is used as a lookup to quickly find all keyed elements in the original DOM tree.
             var fromNodesLookup = Object.create(null);
@@ -484,7 +491,7 @@
                     }
 
                     // update attributes on original DOM element first
-                    morphAttrs(fromEl, toEl);
+                    morphAttrs(fromEl, toEl, onBeforeAddAttr, onBeforeRemoveAttr);
                     // optional
                     onElUpdated(fromEl);
 
@@ -601,6 +608,7 @@
                                 // Simply update nodeValue on the original node to
                                 // change the text value
                                 if (curFromNodeChild.nodeValue !== curToNodeChild.nodeValue) {
+                                    onBeforeNodeValueChange(curFromNodeChild, curToNodeChild.nodeValue);
                                     curFromNodeChild.nodeValue = curToNodeChild.nodeValue;
                                 }
 
@@ -689,6 +697,7 @@
                 } else if (morphedNodeType === TEXT_NODE || morphedNodeType === COMMENT_NODE) { // Text or comment node
                     if (toNodeType === morphedNodeType) {
                         if (morphedNode.nodeValue !== toNode.nodeValue) {
+                            onBeforeNodeValueChange(morphedNode, toNode.nodeValue);
                             morphedNode.nodeValue = toNode.nodeValue;
                         }
 
