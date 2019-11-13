@@ -205,6 +205,9 @@ a:active {
   font-size: 15px;
   outline: none;
 }
+.user-code {
+  display: none;
+}
 input[type=text] {
   width: 160px;
   margin: 0 20px;
@@ -295,6 +298,7 @@ header > .login-form.phase-3 > .phaseless-content
     </style>
     <script src="three.js"></script>
     <script src="OrbitControls.js"></script>
+    <script src="TransformControls.js"></script>
     <script src="bmfont.js"></script>
     <script src="parse5.js"></script>
     <script src="morphdom.js"></script>
@@ -350,7 +354,8 @@ header > .login-form.phase-3 > .phaseless-content
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
 
-      <textarea id=code class=code spellcheck=false><a class=lol>zol<b></b></a></textarea>
+      <textarea id=code class=code spellcheck=false><a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a></textarea>
+      <div class=user-code id=user-code><div></div></div>
 
       <div class=multibutton>
         <a class="button first" id="firstperson-button">Firstperson</a>
@@ -492,22 +497,157 @@ orbitControls.screenSpacePanning = true;
 orbitControls.enableMiddleZoom = false;
 orbitControls.update();
 
-const aAvatars = Array.from(document.querySelectorAll('.a-avatar'));
-for (let i = 0; i < aAvatars.length; i++) {
-  const aAvatar = aAvatars[i];
-  aAvatar.addEventListener('click', async e => {
-    e.preventDefault();
+class XRIFrame extends HTMLElement {
+  constructor() {
+    super();
 
-    const {href} = aAvatar;
-    const model = await _loadModelUrl(href);
-    _setLocalModel(model);
-    modelUrl = href;
-    _sendAllPeerConnections(JSON.stringify({
-      method: 'model',
-      url: modelUrl,
-    }));
-  });
+    this.object = null;
+    this.control = null;
+  }
+  async attributeChangedCallback(name, oldValue, newValue) {
+    if (this.object) {
+      if (name === 'src') {
+        let url = this.getAttribute('src');
+        console.log('set url', url);
+      } else if (name === 'position') {
+        let position = newValue.split(' ');
+        if (position.length === 3) {
+          position = position.map(s => parseFloat(s));
+          if (position.every(n => isFinite(n))) {
+            this.object.position.fromArray(position);
+          }
+        }
+      } else if (name === 'orientation') {
+        let orientation = newValue.split(' ');
+        if (orientation.length === 4) {
+          orientation = orientation.map(s => parseFloat(s));
+          if (orientation.every(n => isFinite(n))) {
+            this.object.quaternion.fromArray(orientation);
+          }
+        }
+      } else if (name === 'scale') {
+        let scale = newValue.split(' ');
+        if (scale.length === 3) {
+          scale = scale.map(s => parseFloat(s));
+          if (scale.every(n => isFinite(n))) {
+            this.object.scale.fromArray(scale);
+          }
+        }
+      }
+    }
+  }
+  static get observedAttributes() {
+    return [
+      'src',
+      'position',
+      'orientation',
+      'scale',
+    ];
+  }
+  connectedCallback() {
+    console.log('connected', this);
+
+    const object = new THREE.Object3D();
+    object.position.fromArray(this.position);
+    object.quaternion.fromArray(this.orientation);
+    object.scale.fromArray(this.scale);
+    scene.add(object);
+    this.object = object;
+
+    const control = new THREE.TransformControls(camera, renderer.domElement);
+    control.attach(object);
+    control.size = 3;
+    control.addEventListener('change', e => {
+      // console.log('got change'); // XXX
+      this.position = object.position.toArray();
+      this.orientation = object.quaternion.toArray();
+      this.scale = object.scale.toArray();  
+    });
+    control.addEventListener('dragging-changed', e => {
+      orbitControls.enabled = !e.value;
+    });
+    control.addEventListener('mouseEnter', () => {
+      control.draggable = true;
+    });
+    control.addEventListener('mouseLeave', () => {
+      control.draggable = false;
+    });
+    scene.add(control);
+    this.control = control;
+  }
+  disconnectedCallback() {
+    scene.remove(this.object);
+    scene.remove(this.control);
+    this.control.dispose();
+  }
+  get src() {
+    return this.getAttribute('src');
+  }
+  set src(src) {
+    this.setAttribute('src', src);
+  }
+
+  get position() {
+    const s = this.getAttribute('position');
+    return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0];
+  }
+  set position(position) {
+    if (!Array.isArray(position)) {
+      position = Array.from(position);
+    }
+    if (position.length === 3 && position.every(n => isFinite(n))) {
+      const oldPosition = this.position;
+      if (position.some((n, i) => n !== oldPosition[i])) {
+        this.setAttribute('position', position.join(' '));
+      }
+    }
+  }
+
+  get orientation() {
+    const s = this.getAttribute('orientation');
+    return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0, 1];
+  }
+  set orientation(orientation) {
+    if (!Array.isArray(orientation)) {
+      orientation = Array.from(orientation);
+    }
+    if (orientation.length === 4 && orientation.every(n => isFinite(n))) {
+      const oldOrientation = this.orientation;
+      if (orientation.some((n, i) => n !== oldOrientation[i])) {
+        this.setAttribute('orientation', orientation.join(' '));
+      }
+    }
+  }
+
+  get scale() {
+    const s = this.getAttribute('scale');
+    return s ? s.split(' ').map(s => parseFloat(s)) : [1, 1, 1];
+  }
+  set scale(scale) {
+    if (!Array.isArray(scale)) {
+      scale = Array.from(scale);
+    }
+    if (scale.length === 3 && scale.every(n => isFinite(n))) {
+      const oldScale = this.scale;
+      if (scale.some((n, i) => n !== oldScale[i])) {
+        this.setAttribute('scale', scale.join(' '));
+      }
+    }
+  }
+
+  get name() {
+    return this.getAttribute('name');
+  }
+  set name(name) {
+    this.setAttribute('name', name);
+  }
 }
+customElements.define('xr-iframe', XRIFrame);
+
+function animate(timestamp, frame, referenceSpace) {
+  renderer.render(scene, camera);
+}
+renderer.setAnimationLoop(animate);
 
 let fontJson, fontTexture;
 const fontPromise = Promise.all([
@@ -519,11 +659,6 @@ const fontPromise = Promise.all([
   fontJson = results[0];
   fontTexture = results[1];
 });
-
-function animate(timestamp, frame, referenceSpace) {
-  renderer.render(scene, camera);
-}
-renderer.setAnimationLoop(animate);
 
 const mouse = {
   movementX: 0,
@@ -976,10 +1111,10 @@ const _getNodeIndex = n => {
 const _parseHtml = (s, state) => {
   const hadState = !!state;
   if (!state) {
-    const parsedHtmlEl = document.createElement('div');
+    const parsedHtmlEl = document.getElementById('user-code').childNodes[0];
     morphdom(parsedHtmlEl, `<div>${s}</div>`);
     const observer = new MutationObserver(records => {
-      console.warn('dropped records', records);
+      codeInput.value = parsedHtmlEl.innerHTML;
     });
     observer.observe(parsedHtmlEl, {
       attributes: true,
@@ -997,9 +1132,12 @@ const _parseHtml = (s, state) => {
       json: {},
     };
   } else {
+    // state.parsedHtmlEl.observer.takeRecords();
     morphdom(state.parsedHtmlEl, `<div>${s}</div>`);
   }
-  state.ops = state.parsedHtmlEl.observer.takeRecords().flatMap(mutationRecord => {
+  const mutationRecords = state.parsedHtmlEl.observer.takeRecords();
+  console.log('mutations', mutationRecords);
+  state.ops = mutationRecords.flatMap(mutationRecord => {
     const {type} = mutationRecord;
     console.log('mutation', mutationRecord);
     switch (type) {
@@ -1063,6 +1201,7 @@ const _parseHtml = (s, state) => {
           }
         } else {
           const oldTarget = _resolveKeyPath(state.json, keyPath);
+          console.log('old target', state.json, keyPath);
           keyPath.push('attrs', oldTarget.attrs.findIndex(a => a.name === attributeName));
           return [json1.removeOp(keyPath, attributeValue)];
         }
@@ -1086,10 +1225,6 @@ const _parseHtml = (s, state) => {
   state.json = parse5.parseFragment(s);
   return state;
 };
-const _getOps = div => {
-  const records = div.takeRecords();
-  console.log('got records');
-};
 let lastState = _parseHtml(codeInput.value);
 codeInput.addEventListener('change', e => {
   const newText = e.target.value;
@@ -1100,7 +1235,7 @@ codeInput.addEventListener('change', e => {
     console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
     newJson = json1.type.apply(newJson, lastState.ops[i]);
   }
-  console.log('got ops', parse5.serialize(lastJson), lastJson, lastState.ops, newJson, parse5.serialize(newJson));
+  console.log('got ops', parse5.serialize(lastJson), lastJson, lastState.ops, newJson, JSON.stringify(parse5.serialize(newJson)));
 });
 
 (async () => {
