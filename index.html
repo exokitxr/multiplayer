@@ -198,11 +198,11 @@ a:active {
 }
 .code {
   margin-top: 50px;
-  width: 600px;
+  width: 300px;
   border: 0;
   border-left: 5px solid #f2f3f5;
   font-family: monospace;
-  font-size: 15px;
+  font-size: 14px;
   outline: none;
 }
 .user-code {
@@ -354,8 +354,8 @@ header > .login-form.phase-3 > .phaseless-content
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
 
-      <textarea id=code class=code spellcheck=false><a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a></textarea>
-      <div class=user-code id=user-code><div></div></div>
+      <textarea class=code id=code1 spellcheck=false><a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a></textarea>
+      <textarea class=code id=code2 spellcheck=false><a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a></textarea>
 
       <div class=multibutton>
         <a class="button first" id="firstperson-button">Firstperson</a>
@@ -510,7 +510,7 @@ class XRIFrame extends HTMLElement {
         let url = this.getAttribute('src');
         console.log('set url', url);
       } else if (name === 'position') {
-        let position = newValue.split(' ');
+        let position = (newValue || '0 0 0').split(' ');
         if (position.length === 3) {
           position = position.map(s => parseFloat(s));
           if (position.every(n => isFinite(n))) {
@@ -518,7 +518,7 @@ class XRIFrame extends HTMLElement {
           }
         }
       } else if (name === 'orientation') {
-        let orientation = newValue.split(' ');
+        let orientation = (newValue || '0 0 0 1').split(' ');
         if (orientation.length === 4) {
           orientation = orientation.map(s => parseFloat(s));
           if (orientation.every(n => isFinite(n))) {
@@ -526,7 +526,7 @@ class XRIFrame extends HTMLElement {
           }
         }
       } else if (name === 'scale') {
-        let scale = newValue.split(' ');
+        let scale = (newValue || '1 1 1').split(' ');
         if (scale.length === 3) {
           scale = scale.map(s => parseFloat(s));
           if (scale.every(n => isFinite(n))) {
@@ -1080,7 +1080,6 @@ connectButton.addEventListener('click', () => {
   }
 });
 
-const codeInput = document.getElementById('code');
 const _getKeyPath = (parent, child) => {
   const result = [];
   for (; child; child = child.parentNode) {
@@ -1125,13 +1124,24 @@ const _parseHtml = s => {
   return result;
 };
 const _serializeHtml = parse5.serialize;
-const _updateHtml = (s, state) => {
-  const ops = [];
-  if (!state) {
-    const parsedHtmlEl = document.getElementById('user-code').childNodes[0];
-    morphdom(parsedHtmlEl, `<div>${s}</div>`);
-    const observer = new MutationObserver(records => {
-      codeInput.value = parsedHtmlEl.innerHTML;
+class HtmlConnection extends EventTarget {
+  constructor(clientId, text) {
+    super();
+
+    this.clientId = clientId;
+
+    const userCode = document.createElement('div');
+    userCode.classList.add('user-code');
+    document.body.appendChild(userCode);
+    const parsedHtmlEl = document.createElement('div');
+    userCode.appendChild(parsedHtmlEl);
+    morphdom(parsedHtmlEl, `<div>${text}</div>`);
+    const observer = new MutationObserver(() => {
+      const newText = parsedHtmlEl.innerHTML;
+      this.state.json = _parseHtml(newText);
+      this.dispatchEvent(new CustomEvent('localUpdate', {
+        detail: newText,
+      }));
     });
     observer.observe(parsedHtmlEl, {
       attributes: true,
@@ -1143,16 +1153,17 @@ const _updateHtml = (s, state) => {
     });
     parsedHtmlEl.observer = observer;
 
-    state = {
+    this.state = {
       parsedHtmlEl,
       ops: [],
-      json: {},
+      json: _parseHtml(text),
     };
-  } else {
-    // state.parsedHtmlEl.observer.takeRecords();
-    morphdom(state.parsedHtmlEl, `<div>${s}</div>`, {
-      onNodeAdded(n) {
-        const keyPath = _getKeyPath(state.parsedHtmlEl, n);
+  }
+  update(text, json = _parseHtml(text)) {
+    const ops = [];
+    morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`, {
+      onNodeAdded: n => {
+        const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
         // const index = _getNodeIndex(n);
         const {nodeType} = n;
         if (nodeType === Node.ELEMENT_NODE) {
@@ -1169,85 +1180,95 @@ const _updateHtml = (s, state) => {
           console.warn('cannot serialize node', n);
         }
       },
-      onBeforeNodeDiscarded(n) {
-        const keyPath = _getKeyPath(state.parsedHtmlEl, n);
+      onBeforeNodeDiscarded: n => {
+        const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
         ops.push(json1.removeOp(keyPath));
       },
     });
-  }
-  const mutationRecords = state.parsedHtmlEl.observer.takeRecords();
-  console.log('mutations', mutationRecords);
-  state.ops = ops.concat(mutationRecords.flatMap(mutationRecord => {
-    const {type} = mutationRecord;
-    console.log('mutation', mutationRecord);
-    switch (type) {
-      case 'childList': {
-        return [];
-      }
-      case 'attributes': {
-        const {target, attributeName} = mutationRecord;
-        const keyPath = _getKeyPath(state.parsedHtmlEl, target);
-        const attributeValue = target.getAttribute(attributeName);
-        if (attributeValue !== null) {
-          const {oldValue} = mutationRecord;
-          if (oldValue !== null) {
-            keyPath.push('attrs', Array.from(target.attributes).findIndex(a => a.name === attributeName));
-            return [json1.replaceOp(keyPath, oldValue, {name: attributeName, value: attributeValue})];
-            /* return [{
-              type: 'attribute',
-              keyPath,
-              // name: attributeName,
-              value: attributeValue,
-            }]; */
+    const mutationRecords = this.state.parsedHtmlEl.observer.takeRecords();
+    // console.log('mutations', mutationRecords);
+    this.state.ops = ops.concat(mutationRecords.flatMap(mutationRecord => {
+      const {type} = mutationRecord;
+      // console.log('mutation', mutationRecord);
+      switch (type) {
+        case 'childList': {
+          return [];
+        }
+        case 'attributes': {
+          const {target, attributeName} = mutationRecord;
+          const keyPath = _getKeyPath(this.state.parsedHtmlEl, target);
+          const attributeValue = target.getAttribute(attributeName);
+          if (attributeValue !== null) {
+            const {oldValue} = mutationRecord;
+            if (oldValue !== null) {
+              keyPath.push('attrs', Array.from(target.attributes).findIndex(a => a.name === attributeName));
+              return [json1.replaceOp(keyPath, oldValue, {name: attributeName, value: attributeValue})];
+              /* return [{
+                type: 'attribute',
+                keyPath,
+                // name: attributeName,
+                value: attributeValue,
+              }]; */
+            } else {
+              keyPath.push('attrs', target.attributes.length);
+              return [json1.insertOp(keyPath, {name: attributeName, value: attributeValue})];
+            }
           } else {
-            keyPath.push('attrs', target.attributes.length);
-            return [json1.insertOp(keyPath, {name: attributeName, value: attributeValue})];
+            console.log('resolve', this.state.parsedHtmlEl, target, this.state.json, keyPath)
+            const oldTarget = _resolveKeyPath(this.state.json, keyPath);
+            // console.log('old target', this.state.json, keyPath);
+            keyPath.push('attrs', oldTarget.attrs.findIndex(a => a.name === attributeName));
+            return [json1.removeOp(keyPath, attributeValue)];
           }
-        } else {
-          const oldTarget = _resolveKeyPath(state.json, keyPath);
-          console.log('old target', state.json, keyPath);
-          keyPath.push('attrs', oldTarget.attrs.findIndex(a => a.name === attributeName));
-          return [json1.removeOp(keyPath, attributeValue)];
+        }
+        case 'characterData': {
+          const {target, attributeName} = mutationRecord;
+          const keyPath = _getKeyPath(this.state.parsedHtmlEl, target);
+          return [json1.replaceOp(keyPath, _parseHtml(mutationRecord.oldValue).childNodes[0], _parseHtml(target.data).childNodes[0])];
+          /* return [{
+            type: 'characterData',
+            keyPath,
+            text: data,
+          }]; */
+        }
+        default: {
+          throw new Error(`unknown mutation type: ${type}`);
         }
       }
-      case 'characterData': {
-        const {target, attributeName} = mutationRecord;
-        const keyPath = _getKeyPath(state.parsedHtmlEl, target);
-        return [json1.replaceOp(keyPath, _parseHtml(mutationRecord.oldValue).childNodes[0], _parseHtml(target.data).childNodes[0])];
-        /* return [{
-          type: 'characterData',
-          keyPath,
-          text: data,
-        }]; */
-      }
-      default: {
-        throw new Error(`unknown mutation type: ${type}`);
-      }
+    }));
+    this.state.json = json;
+  }
+}
+class HtmlServer {
+  createConnection(clientId, text) {
+    return new HtmlConnection(clientId, text);
+  }
+}
+const htmlServer = new HtmlServer();
+[
+  document.getElementById('code1'),
+  document.getElementById('code2'),
+].forEach((codeInput, clientId) => {
+  const c = htmlServer.createConnection(clientId, codeInput.value);
+  c.addEventListener('localUpdate', e => {
+    codeInput.value = e.detail;
+  });
+  codeInput.addEventListener('change', e => {
+    let newText = e.target.value;
+    const newJson = _parseHtml(newText);
+    const normalizedNewText = _serializeHtml(newJson);
+    if (normalizedNewText !== newText) {
+      codeInput.value = normalizedNewText;
     }
-  }));
-  state.json = _parseHtml(s);
-  return state;
-};
-let lastState = _updateHtml(codeInput.value);
-codeInput.addEventListener('change', e => {
-  let newText = e.target.value;
-  const normalizedNewText = _serializeHtml(_parseHtml(newText));
-  if (normalizedNewText !== newText) {
-    codeInput.value = normalizedNewText;
-  }
-  newText = normalizedNewText;
-  const lastJson = lastState.json;
-  lastState = _updateHtml(newText, lastState);
-  let newJson = json1.type.create(lastJson);
-  for (let i = 0; i < lastState.ops.length; i++) {
-    console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
-    newJson = json1.type.apply(newJson, lastState.ops[i]);
-  }
-  const newNewText = _serializeHtml(newJson);
-  console.log('got ops', lastJson, lastState.ops, newJson, JSON.stringify(newNewText), [newText, newNewText]);
-  /* if (newNewText !== newText) {
-    e.target.value = newNewText;
-  } */
+    c.update(normalizedNewText, newJson);
+    /*let newJson = json1.type.create(lastJson);
+    for (let i = 0; i < lastState.ops.length; i++) {
+      console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
+      newJson = json1.type.apply(newJson, lastState.ops[i]);
+    }
+    const newNewText = _serializeHtml(newJson);
+    console.log('got ops', lastJson, lastState.ops, newJson, JSON.stringify(newNewText), [newText, newNewText]); */
+  });
 });
 
 (async () => {
