@@ -951,9 +951,15 @@ const _getKeyPath = (parent, child) => {
     if (child === parent) {
       break;
     }
-    result.push(_getNodeIndex(child));
+    result.push(_getNodeIndex(child), 'childNodes'); // reversed
   }
   return result.reverse();
+};
+const _resolveKeyPath = (node, keyPath) => {
+  for (let i = 0; i < keyPath.length; i++) {
+    node = node[keyPath[i]];
+  }
+  return node;
 };
 const _getNodeIndex = n => {
   const {parentNode} = n;
@@ -980,6 +986,8 @@ const _parseHtml = (s, state) => {
       characterData: true,
       childList: true,
       subtree: true,
+      attributeOldValue: true,
+      characterDataOldValue: true,
     });
     parsedHtmlEl.observer = observer;
 
@@ -1000,13 +1008,23 @@ const _parseHtml = (s, state) => {
         return Array.from(addedNodes).map(n => {
           const keyPath = _getKeyPath(state.parsedHtmlEl, n);
           // const index = _getNodeIndex(n);
-          const {outerHTML, data} = n;
-          return {
-            type: 'add',
-            keyPath,
-            // index,
-            html: outerHTML !== undefined ? outerHTML : data,
-          };
+          const {nodeType} = n;
+          if (nodeType === Node.ELEMENT_NODE) {
+            const {outerHTML, data} = n;
+            // console.log('add 1', n.nodeType);
+            // console.log('add 2', parse5.parseFragment(n.outerHTML));
+            return json1.insertOp(keyPath, parse5.parseFragment(n.outerHTML).childNodes[0]);
+            /* return {
+              type: 'add',
+              keyPath,
+              // index,
+              html: outerHTML !== undefined ? outerHTML : data,
+            }; */
+          } else if (nodeType === Node.TEXT_NODE) {
+            return json1.insertOp(keyPath, parse5.parseFragment(n.data).childNodes[0]);
+          } else {
+            console.warn('cannot serialize node', n);
+          }
         }).concat(Array.from(removedNodes).map(n => {
           let keyPath;
           if (previousSibling) {
@@ -1015,36 +1033,50 @@ const _parseHtml = (s, state) => {
           } else if (nextSibling) {
             keyPath = _getKeyPath(state.parsedHtmlEl, nextSibling);
           } else {
-            keypath = [0];
+            keyPath = ['childNodes', 0];
           }
-          // const index = _getNodeIndex(n);
-          return {
+          return json1.removeOp(keyPath);
+          /* return {
             type: 'remove',
             keyPath,
-            // index,
-          };
+          }; */
         }));
       }
       case 'attributes': {
         const {target, attributeName} = mutationRecord;
         const keyPath = _getKeyPath(state.parsedHtmlEl, target);
         const attributeValue = target.getAttribute(attributeName);
-        return [{
-          type: 'attribute',
-          keyPath,
-          name: attributeName,
-          value: attributeValue,
-        }];
+        if (attributeValue !== null) {
+          const {oldValue} = mutationRecord;
+          if (oldValue !== null) {
+            keyPath.push('attrs', Array.from(target.attributes).findIndex(a => a.name === attributeName));
+            return [json1.replaceOp(keyPath, oldValue, {name: attributeName, value: attributeValue})];
+            /* return [{
+              type: 'attribute',
+              keyPath,
+              // name: attributeName,
+              value: attributeValue,
+            }]; */
+          } else {
+            keyPath.push('attrs', target.attributes.length);
+            return [json1.insertOp(keyPath, {name: attributeName, value: attributeValue})];
+          }
+        } else {
+          const oldTarget = _resolveKeyPath(state.json, keyPath);
+          keyPath.push('attrs', oldTarget.attrs.findIndex(a => a.name === attributeName));
+          return [json1.removeOp(keyPath, attributeValue)];
+        }
       }
       case 'characterData': {
         const {target, attributeName} = mutationRecord;
         const keyPath = _getKeyPath(state.parsedHtmlEl, target);
-        const {data} = target;
-        return [{
+        // console.log('replace', mutationRecord.oldValue, target.data, parse5.parseFragment(target.data).childNodes[0]);
+        return [json1.replaceOp(keyPath, parse5.parseFragment(mutationRecord.oldValue).childNodes[0], parse5.parseFragment(target.data).childNodes[0])];
+        /* return [{
           type: 'characterData',
           keyPath,
-          html: data,
-        }];
+          text: data,
+        }]; */
       }
       default: {
         throw new Error(`unknown mutation type: ${type}`);
@@ -1061,8 +1093,14 @@ const _getOps = div => {
 let lastState = _parseHtml(codeInput.value);
 codeInput.addEventListener('change', e => {
   const newText = e.target.value;
+  const lastJson = lastState.json;
   lastState = _parseHtml(newText, lastState);
-  console.log('got ops', lastState);
+  let newJson = json1.type.create(lastJson);
+  for (let i = 0; i < lastState.ops.length; i++) {
+    console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
+    newJson = json1.type.apply(newJson, lastState.ops[i]);
+  }
+  console.log('got ops', parse5.serialize(lastJson), lastJson, lastState.ops, newJson, parse5.serialize(newJson));
 });
 
 (async () => {
