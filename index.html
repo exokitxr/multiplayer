@@ -1172,7 +1172,9 @@ class HtmlConnection extends EventTarget {
       detail: text,
     }));
   }
-  pushUpdate(text, json = _parseHtml(text)) {
+  pushUpdate(text) {
+    const json = _parseHtml(text);
+
     const ops = [];
     morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`, {
       onNodeAdded: n => {
@@ -1281,7 +1283,7 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
     if (normalizedNewText !== newText) {
       codeInput.value = normalizedNewText;
     }
-    c.pushUpdate(normalizedNewText, newJson);
+    c.pushUpdate(normalizedNewText);
     /*let newJson = json1.type.create(lastJson);
     for (let i = 0; i < lastState.ops.length; i++) {
       console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
