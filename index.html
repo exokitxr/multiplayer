@@ -1124,6 +1124,52 @@ const _parseHtml = s => {
   return result;
 };
 const _serializeHtml = parse5.serialize;
+const _mutateHtml = (el, text) => {
+  const ops = [];
+  morphdom(el, `<div>${text}</div>`, {
+    onNodeAdded: n => {
+      const keyPath = _getKeyPath(el, n);
+      const {nodeType} = n;
+      if (nodeType === Node.ELEMENT_NODE) {
+        const json = _parseHtml(n.outerHTML).childNodes[0];
+        json.childNodes = [];
+        ops.push(json1.insertOp(keyPath, json));
+      } else if (nodeType === Node.TEXT_NODE) {
+        ops.push(json1.insertOp(keyPath, _parseHtml(n.nodeValue).childNodes[0]));
+      } else {
+        console.warn('cannot serialize node', n);
+      }
+    },
+    onBeforeNodeDiscarded: n => {
+      const keyPath = _getKeyPath(el, n);
+      ops.push(json1.removeOp(keyPath));
+    },
+    onBeforeNodeValueChange: (n, newValue) => {
+      const keyPath = _getKeyPath(el, n);
+      ops.push(json1.replaceOp(keyPath, _parseHtml(n.nodeValue).childNodes[0], _parseHtml(newValue).childNodes[0]));
+    },
+    onBeforeAddAttr: (n, name, value) => {
+      const keyPath = _getKeyPath(el, n);
+      const oldIndex = Array.from(n.attributes).findIndex(a => a.name === name);
+      if (oldIndex !== -1) {
+        keyPath.push('attrs', oldIndex);
+        const oldValue = n.getAttribute(name);
+        ops.push(json1.replaceOp(keyPath, oldValue, {name, value}));
+      } else {
+        keyPath.push('attrs', n.attributes.length);
+        ops.push(json1.insertOp(keyPath, {name, value}));
+      }
+    },
+    onBeforeRemoveAttr: (n, name) => {
+      const keyPath = _getKeyPath(el, n);
+      const oldIndex = Array.from(n.attributes).findIndex(a => a.name === name);
+      keyPath.push('attrs', oldIndex);
+      const value = n.getAttribute(name);
+      ops.push(json1.removeOp(keyPath, {name, value}));
+    },
+  });
+  return ops;
+};
 class HtmlConnection extends EventTarget {
   constructor(clientId, htmlServer) {
     super();
@@ -1136,9 +1182,17 @@ class HtmlConnection extends EventTarget {
     document.body.appendChild(userCode);
     const parsedHtmlEl = document.createElement('div');
     userCode.appendChild(parsedHtmlEl);
+
+    const parsedHtmlEl2 = document.createElement('div');
+
     const observer = new MutationObserver(() => {
       const newText = parsedHtmlEl.innerHTML;
-      this.state.json = _parseHtml(newText);
+
+      parsedHtmlEl2.innerHTML = _serializeHtml(this.state.json);
+      const ops = _mutateHtml(parsedHtmlEl2, newText);
+      this.applyOps(ops);
+      this.htmlServer.pushOps(ops, this);
+
       this.dispatchEvent(new CustomEvent('localUpdate', {
         detail: newText,
       }));
@@ -1148,8 +1202,6 @@ class HtmlConnection extends EventTarget {
       characterData: true,
       childList: true,
       subtree: true,
-      /* attributeOldValue: true,
-      characterDataOldValue: true, */
     });
     parsedHtmlEl.observer = observer;
 
@@ -1186,49 +1238,7 @@ class HtmlConnection extends EventTarget {
     }
   }
   pushUpdate(text) {
-    const ops = [];
-    morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`, {
-      onNodeAdded: n => {
-        const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
-        const {nodeType} = n;
-        if (nodeType === Node.ELEMENT_NODE) {
-          const json = _parseHtml(n.outerHTML).childNodes[0];
-          json.childNodes = [];
-          ops.push(json1.insertOp(keyPath, json));
-        } else if (nodeType === Node.TEXT_NODE) {
-          ops.push(json1.insertOp(keyPath, _parseHtml(n.nodeValue).childNodes[0]));
-        } else {
-          console.warn('cannot serialize node', n);
-        }
-      },
-      onBeforeNodeDiscarded: n => {
-        const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
-        ops.push(json1.removeOp(keyPath));
-      },
-      onBeforeNodeValueChange: (n, newValue) => {
-        const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
-        ops.push(json1.replaceOp(keyPath, _parseHtml(n.nodeValue).childNodes[0], _parseHtml(newValue).childNodes[0]));
-      },
-      onBeforeAddAttr: (n, name, value) => {
-        const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
-        const oldIndex = Array.from(n.attributes).findIndex(a => a.name === name);
-        if (oldIndex !== -1) {
-          keyPath.push('attrs', oldIndex);
-          const oldValue = n.getAttribute(name);
-          ops.push(json1.replaceOp(keyPath, oldValue, {name, value}));
-        } else {
-          keyPath.push('attrs', n.attributes.length);
-          ops.push(json1.insertOp(keyPath, {name, value}));
-        }
-      },
-      onBeforeRemoveAttr: (n, name) => {
-        const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
-        const oldIndex = Array.from(n.attributes).findIndex(a => a.name === name);
-        keyPath.push('attrs', oldIndex);
-        const value = n.getAttribute(name);
-        ops.push(json1.removeOp(keyPath, {name, value}));
-      },
-    });
+    const ops = _mutateHtml(this.state.parsedHtmlEl, text);
     this.state.parsedHtmlEl.observer.takeRecords();
     console.log('ops', ops);
     this.applyOps(ops);
