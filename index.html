@@ -354,8 +354,8 @@ header > .login-form.phase-3 > .phaseless-content
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
 
-      <textarea class=code id=code1 spellcheck=false><a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a></textarea>
-      <textarea class=code id=code2 spellcheck=false><a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a></textarea>
+      <textarea class=code id=code1 spellcheck=false></textarea>
+      <textarea class=code id=code2 spellcheck=false></textarea>
 
       <div class=multibutton>
         <a class="button first" id="firstperson-button">Firstperson</a>
@@ -1111,7 +1111,7 @@ const _getNodeIndex = n => {
 const _parseHtml = s => {
   const result = parse5.parseFragment(s);
   const _recurse = n => {
-    delete n.parent;
+    delete n.parentNode;
 
     if (n.childNodes) {
       const childNodes = Array.from(n.childNodes);
@@ -1125,17 +1125,18 @@ const _parseHtml = s => {
 };
 const _serializeHtml = parse5.serialize;
 class HtmlConnection extends EventTarget {
-  constructor(clientId, text) {
+  constructor(clientId, htmlServer) {
     super();
 
     this.clientId = clientId;
+    this.htmlServer = htmlServer;
 
     const userCode = document.createElement('div');
     userCode.classList.add('user-code');
     document.body.appendChild(userCode);
     const parsedHtmlEl = document.createElement('div');
     userCode.appendChild(parsedHtmlEl);
-    morphdom(parsedHtmlEl, `<div>${text}</div>`);
+    // morphdom(parsedHtmlEl, `<div>${text}</div>`);
     const observer = new MutationObserver(() => {
       const newText = parsedHtmlEl.innerHTML;
       this.state.json = _parseHtml(newText);
@@ -1156,10 +1157,22 @@ class HtmlConnection extends EventTarget {
     this.state = {
       parsedHtmlEl,
       ops: [],
-      json: _parseHtml(text),
+      json: null,//_parseHtml(text),
     };
   }
-  update(text, json = _parseHtml(text)) {
+  pullUpdate(json) {
+    const text = _serializeHtml(json);
+    morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`);
+    this.state.parsedHtmlEl.observer.takeRecords();
+    this.state.json = JSON.parse(JSON.stringify(json));
+
+    console.log('init', {json, text});
+
+    this.dispatchEvent(new CustomEvent('localUpdate', {
+      detail: text,
+    }));
+  }
+  pushUpdate(text, json = _parseHtml(text)) {
     const ops = [];
     morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`, {
       onNodeAdded: n => {
@@ -1240,11 +1253,19 @@ class HtmlConnection extends EventTarget {
   }
 }
 class HtmlServer {
+  constructor(text) {
+    this.json = _parseHtml(text);
+    this.history = [];
+  }
   createConnection(clientId, text) {
-    return new HtmlConnection(clientId, text);
+    const c = new HtmlConnection(clientId, this);
+    Promise.resolve().then(() => {
+      c.pullUpdate(this.json);
+    });
+    return c;
   }
 }
-const htmlServer = new HtmlServer();
+const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
 [
   document.getElementById('code1'),
   document.getElementById('code2'),
@@ -1253,14 +1274,14 @@ const htmlServer = new HtmlServer();
   c.addEventListener('localUpdate', e => {
     codeInput.value = e.detail;
   });
-  codeInput.addEventListener('change', e => {
-    let newText = e.target.value;
+  codeInput.addEventListener('change', () => {
+    let newText = codeInput.value;
     const newJson = _parseHtml(newText);
     const normalizedNewText = _serializeHtml(newJson);
     if (normalizedNewText !== newText) {
       codeInput.value = normalizedNewText;
     }
-    c.update(normalizedNewText, newJson);
+    c.pushUpdate(normalizedNewText, newJson);
     /*let newJson = json1.type.create(lastJson);
     for (let i = 0; i < lastState.ops.length; i++) {
       console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
