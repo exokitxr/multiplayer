@@ -1271,12 +1271,12 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
 ].forEach((codeInput, clientId) => {
   const c = htmlServer.createConnection(clientId, codeInput.value);
   c.addEventListener('localUpdate', e => {
-    console.log('local update', clientId, e.detail, new Error().stack);
+    // console.log('local update', clientId, e.detail, new Error().stack);
     codeInput.value = e.detail;
   });
   codeInput.addEventListener('change', () => {
     const newText = codeInput.value;
-    console.log('change', clientId, newText);
+    // console.log('change', clientId, newText);
     const newJson = _parseHtml(newText);
     const normalizedNewText = _serializeHtml(newJson);
     if (normalizedNewText !== newText) {
