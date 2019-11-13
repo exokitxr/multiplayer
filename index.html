@@ -1109,7 +1109,7 @@ const _getNodeIndex = n => {
   return -1;
 };
 const _parseHtml = (s, state) => {
-  const hadState = !!state;
+  const ops = [];
   if (!state) {
     const parsedHtmlEl = document.getElementById('user-code').childNodes[0];
     morphdom(parsedHtmlEl, `<div>${s}</div>`);
@@ -1133,52 +1133,41 @@ const _parseHtml = (s, state) => {
     };
   } else {
     // state.parsedHtmlEl.observer.takeRecords();
-    morphdom(state.parsedHtmlEl, `<div>${s}</div>`);
+    morphdom(state.parsedHtmlEl, `<div>${s}</div>`, {
+      onNodeAdded(n) {
+        const keyPath = _getKeyPath(state.parsedHtmlEl, n);
+        // const index = _getNodeIndex(n);
+        const {nodeType} = n;
+        if (nodeType === Node.ELEMENT_NODE) {
+          // console.log('add 1', n.nodeType);
+          // console.log('add 2', parse5.parseFragment(n.outerHTML));
+          ops.push(json1.insertOp(keyPath, parse5.parseFragment(n.outerHTML).childNodes[0]));
+          /* return {
+            type: 'add',
+            keyPath,
+            // index,
+            html: outerHTML !== undefined ? outerHTML : data,
+          }; */
+        } else if (nodeType === Node.TEXT_NODE) {
+          ops.push(json1.insertOp(keyPath, parse5.parseFragment(n.data).childNodes[0]));
+        } else {
+          console.warn('cannot serialize node', n);
+        }
+      },
+      onBeforeNodeDiscarded(n) {
+        const keyPath = _getKeyPath(state.parsedHtmlEl, n);
+        ops.push(json1.removeOp(keyPath));
+      },
+    });
   }
   const mutationRecords = state.parsedHtmlEl.observer.takeRecords();
   console.log('mutations', mutationRecords);
-  state.ops = mutationRecords.flatMap(mutationRecord => {
+  state.ops = ops.concat(mutationRecords.flatMap(mutationRecord => {
     const {type} = mutationRecord;
     console.log('mutation', mutationRecord);
     switch (type) {
       case 'childList': {
-        const {addedNodes, removedNodes, previousSibling, nextSibling} = mutationRecord;
-        return Array.from(addedNodes).map(n => {
-          const keyPath = _getKeyPath(state.parsedHtmlEl, n);
-          // const index = _getNodeIndex(n);
-          const {nodeType} = n;
-          if (nodeType === Node.ELEMENT_NODE) {
-            const {outerHTML, data} = n;
-            // console.log('add 1', n.nodeType);
-            // console.log('add 2', parse5.parseFragment(n.outerHTML));
-            return json1.insertOp(keyPath, parse5.parseFragment(n.outerHTML).childNodes[0]);
-            /* return {
-              type: 'add',
-              keyPath,
-              // index,
-              html: outerHTML !== undefined ? outerHTML : data,
-            }; */
-          } else if (nodeType === Node.TEXT_NODE) {
-            return json1.insertOp(keyPath, parse5.parseFragment(n.data).childNodes[0]);
-          } else {
-            console.warn('cannot serialize node', n);
-          }
-        }).concat(Array.from(removedNodes).map(n => {
-          let keyPath;
-          if (previousSibling) {
-            keyPath = _getKeyPath(state.parsedHtmlEl, previousSibling);
-            keyPath[keyPath.length - 1]++;
-          } else if (nextSibling) {
-            keyPath = _getKeyPath(state.parsedHtmlEl, nextSibling);
-          } else {
-            keyPath = ['childNodes', 0];
-          }
-          return json1.removeOp(keyPath);
-          /* return {
-            type: 'remove',
-            keyPath,
-          }; */
-        }));
+        return [];
       }
       case 'attributes': {
         const {target, attributeName} = mutationRecord;
@@ -1221,7 +1210,7 @@ const _parseHtml = (s, state) => {
         throw new Error(`unknown mutation type: ${type}`);
       }
     }
-  });
+  }));
   state.json = parse5.parseFragment(s);
   return state;
 };
