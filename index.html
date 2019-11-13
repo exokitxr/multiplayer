@@ -576,6 +576,7 @@ class XRIFrame extends HTMLElement {
     this.control = control;
   }
   disconnectedCallback() {
+    console.log('disconnected', this);
     scene.remove(this.object);
     scene.remove(this.control);
     this.control.dispose();
