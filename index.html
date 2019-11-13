@@ -1108,7 +1108,23 @@ const _getNodeIndex = n => {
   // }
   return -1;
 };
-const _parseHtml = (s, state) => {
+const _parseHtml = s => {
+  const result = parse5.parseFragment(s);
+  const _recurse = n => {
+    delete n.parent;
+
+    if (n.childNodes) {
+      const childNodes = Array.from(n.childNodes);
+      for (let i = 0; i < childNodes.length; i++) {
+        _recurse(childNodes[i]);
+      }
+    }
+  };
+  _recurse(result);
+  return result;
+};
+const _serializeHtml = parse5.serialize;
+const _updateHtml = (s, state) => {
   const ops = [];
   if (!state) {
     const parsedHtmlEl = document.getElementById('user-code').childNodes[0];
@@ -1139,9 +1155,7 @@ const _parseHtml = (s, state) => {
         // const index = _getNodeIndex(n);
         const {nodeType} = n;
         if (nodeType === Node.ELEMENT_NODE) {
-          // console.log('add 1', n.nodeType);
-          // console.log('add 2', parse5.parseFragment(n.outerHTML));
-          ops.push(json1.insertOp(keyPath, parse5.parseFragment(n.outerHTML).childNodes[0]));
+          ops.push(json1.insertOp(keyPath, _parseHtml(n.outerHTML).childNodes[0]));
           /* return {
             type: 'add',
             keyPath,
@@ -1149,7 +1163,7 @@ const _parseHtml = (s, state) => {
             html: outerHTML !== undefined ? outerHTML : data,
           }; */
         } else if (nodeType === Node.TEXT_NODE) {
-          ops.push(json1.insertOp(keyPath, parse5.parseFragment(n.data).childNodes[0]));
+          ops.push(json1.insertOp(keyPath, _parseHtml(n.data).childNodes[0]));
         } else {
           console.warn('cannot serialize node', n);
         }
@@ -1198,8 +1212,7 @@ const _parseHtml = (s, state) => {
       case 'characterData': {
         const {target, attributeName} = mutationRecord;
         const keyPath = _getKeyPath(state.parsedHtmlEl, target);
-        // console.log('replace', mutationRecord.oldValue, target.data, parse5.parseFragment(target.data).childNodes[0]);
-        return [json1.replaceOp(keyPath, parse5.parseFragment(mutationRecord.oldValue).childNodes[0], parse5.parseFragment(target.data).childNodes[0])];
+        return [json1.replaceOp(keyPath, _parseHtml(mutationRecord.oldValue).childNodes[0], _parseHtml(target.data).childNodes[0])];
         /* return [{
           type: 'characterData',
           keyPath,
@@ -1211,20 +1224,20 @@ const _parseHtml = (s, state) => {
       }
     }
   }));
-  state.json = parse5.parseFragment(s);
+  state.json = _parseHtml(s);
   return state;
 };
-let lastState = _parseHtml(codeInput.value);
+let lastState = _updateHtml(codeInput.value);
 codeInput.addEventListener('change', e => {
   const newText = e.target.value;
   const lastJson = lastState.json;
-  lastState = _parseHtml(newText, lastState);
+  lastState = _updateHtml(newText, lastState);
   let newJson = json1.type.create(lastJson);
   for (let i = 0; i < lastState.ops.length; i++) {
     console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
     newJson = json1.type.apply(newJson, lastState.ops[i]);
   }
-  console.log('got ops', parse5.serialize(lastJson), lastJson, lastState.ops, newJson, JSON.stringify(parse5.serialize(newJson)));
+  console.log('got ops', _serializeHtml(lastJson), lastJson, lastState.ops, newJson, JSON.stringify(_serializeHtml(newJson)));
 });
 
 (async () => {
