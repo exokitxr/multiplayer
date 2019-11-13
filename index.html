@@ -1166,8 +1166,6 @@ class HtmlConnection extends EventTarget {
     this.state.parsedHtmlEl.observer.takeRecords();
     this.state.json = JSON.parse(JSON.stringify(json));
 
-    console.log('init', {json, text});
-
     this.dispatchEvent(new CustomEvent('localUpdate', {
       detail: text,
     }));
