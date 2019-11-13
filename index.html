@@ -1230,7 +1230,12 @@ const _updateHtml = (s, state) => {
 };
 let lastState = _updateHtml(codeInput.value);
 codeInput.addEventListener('change', e => {
-  const newText = e.target.value;
+  let newText = e.target.value;
+  const normalizedNewText = _serializeHtml(_parseHtml(newText));
+  if (normalizedNewText !== newText) {
+    codeInput.value = normalizedNewText;
+  }
+  newText = normalizedNewText;
   const lastJson = lastState.json;
   lastState = _updateHtml(newText, lastState);
   let newJson = json1.type.create(lastJson);
@@ -1238,7 +1243,11 @@ codeInput.addEventListener('change', e => {
     console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
     newJson = json1.type.apply(newJson, lastState.ops[i]);
   }
-  console.log('got ops', _serializeHtml(lastJson), lastJson, lastState.ops, newJson, JSON.stringify(_serializeHtml(newJson)));
+  const newNewText = _serializeHtml(newJson);
+  console.log('got ops', lastJson, lastState.ops, newJson, JSON.stringify(newNewText), [newText, newNewText]);
+  /* if (newNewText !== newText) {
+    e.target.value = newNewText;
+  } */
 });
 
 (async () => {
