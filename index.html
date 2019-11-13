@@ -1194,7 +1194,7 @@ class HtmlConnection extends EventTarget {
         if (nodeType === Node.ELEMENT_NODE) {
           ops.push(json1.insertOp(keyPath, _parseHtml(n.outerHTML).childNodes[0]));
         } else if (nodeType === Node.TEXT_NODE) {
-          ops.push(json1.insertOp(keyPath, _parseHtml(n.data).childNodes[0]));
+          ops.push(json1.insertOp(keyPath, _parseHtml(n.nodeValue).childNodes[0]));
         } else {
           console.warn('cannot serialize node', n);
         }
