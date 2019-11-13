@@ -1217,9 +1217,10 @@ class HtmlConnection extends EventTarget {
           }
         }
         case 'characterData': {
-          const {target, attributeName} = mutationRecord;
+          return [];
+          /* const {target, attributeName} = mutationRecord;
           const keyPath = _getKeyPath(this.state.parsedHtmlEl, target);
-          return [json1.replaceOp(keyPath, _parseHtml(mutationRecord.oldValue).childNodes[0], _parseHtml(target.data).childNodes[0])];
+          return [json1.replaceOp(keyPath, _parseHtml(mutationRecord.oldValue).childNodes[0], _parseHtml(target.data).childNodes[0])]; */
         }
         default: {
           throw new Error(`unknown mutation type: ${type}`);
