@@ -1163,15 +1163,29 @@ class HtmlConnection extends EventTarget {
     const text = _serializeHtml(json);
     morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`);
     this.state.parsedHtmlEl.observer.takeRecords();
-    this.state.json = JSON.parse(JSON.stringify(json));
+    this.state.json = json;
 
     this.dispatchEvent(new CustomEvent('localUpdate', {
       detail: text,
     }));
   }
-  pushUpdate(text) {
-    const json = _parseHtml(text);
+  pullOps(ops) {
+    this.applyOps(ops);
 
+    const text = _serializeHtml(this.state.json);
+    morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`);
+    this.state.parsedHtmlEl.observer.takeRecords();
+
+    this.dispatchEvent(new CustomEvent('localUpdate', {
+      detail: text,
+    }));
+  }
+  applyOps(ops) {
+    for (let i = 0; i < ops.length; i++) {
+      this.state.json = json1.type.apply(this.state.json, ops[i]);
+    }
+  }
+  pushUpdate(text) {
     const ops = [];
     morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`, {
       onNodeAdded: n => {
@@ -1213,10 +1227,10 @@ class HtmlConnection extends EventTarget {
         ops.push(json1.removeOp(keyPath, {name, value}));
       },
     });
-    console.log('ops', ops);
     this.state.parsedHtmlEl.observer.takeRecords();
-    this.state.ops = ops;
-    this.state.json = json;
+    console.log('ops', ops);
+    this.applyOps(ops);
+    this.htmlServer.pushOps(ops, this);
   }
 }
 class HtmlServer {
@@ -1224,13 +1238,28 @@ class HtmlServer {
     this.firstJson = _parseHtml(text);
     this.lastJson = JSON.parse(JSON.stringify(this.firstJson));
     this.history = [];
+    this.connections = [];
   }
   createConnection(clientId, text) {
     const c = new HtmlConnection(clientId, this);
     Promise.resolve().then(() => {
-      c.pullUpdate(this.lastJson);
+      c.pullUpdate(JSON.parse(JSON.stringify(this.lastJson)));
     });
+    this.connections.push(c);
     return c;
+  }
+  pushOps(ops, c) {
+    for (let i = 0; i < ops.length; i++) {
+      this.lastJson = json1.type.apply(this.lastJson, ops[i]);
+    }
+    this.history.push.apply(this.history, ops);
+
+    for (let i = 0; i < this.connections.length; i++) {
+      const c2 = this.connections[i];
+      if (c2 !== c) {
+        c2.pullOps(ops);
+      }
+    }
   }
 }
 const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
@@ -1240,23 +1269,18 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
 ].forEach((codeInput, clientId) => {
   const c = htmlServer.createConnection(clientId, codeInput.value);
   c.addEventListener('localUpdate', e => {
+    console.log('local update', clientId, e.detail, new Error().stack);
     codeInput.value = e.detail;
   });
   codeInput.addEventListener('change', () => {
-    let newText = codeInput.value;
+    const newText = codeInput.value;
+    console.log('change', clientId, newText);
     const newJson = _parseHtml(newText);
     const normalizedNewText = _serializeHtml(newJson);
     if (normalizedNewText !== newText) {
       codeInput.value = normalizedNewText;
     }
     c.pushUpdate(normalizedNewText);
-    /*let newJson = json1.type.create(lastJson);
-    for (let i = 0; i < lastState.ops.length; i++) {
-      console.log('apply new json', newJson, lastState.ops, lastState.ops[i]);
-      newJson = json1.type.apply(newJson, lastState.ops[i]);
-    }
-    const newNewText = _serializeHtml(newJson);
-    console.log('got ops', lastJson, lastState.ops, newJson, JSON.stringify(newNewText), [newText, newNewText]); */
   });
 });
 
