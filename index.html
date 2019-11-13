@@ -1211,7 +1211,6 @@ class HtmlConnection extends EventTarget {
               return [json1.insertOp(keyPath, {name: attributeName, value: attributeValue})];
             }
           } else {
-            console.log('resolve', this.state.parsedHtmlEl, target, this.state.json, keyPath)
             const oldTarget = _resolveKeyPath(this.state.json, keyPath);
             keyPath.push('attrs', oldTarget.attrs.findIndex(a => a.name === attributeName));
             return [json1.removeOp(keyPath, attributeValue)];
