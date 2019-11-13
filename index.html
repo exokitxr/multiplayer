@@ -1254,13 +1254,14 @@ class HtmlConnection extends EventTarget {
 }
 class HtmlServer {
   constructor(text) {
-    this.json = _parseHtml(text);
+    this.firstJson = _parseHtml(text);
+    this.lastJson = JSON.parse(JSON.stringify(this.firstJson));
     this.history = [];
   }
   createConnection(clientId, text) {
     const c = new HtmlConnection(clientId, this);
     Promise.resolve().then(() => {
-      c.pullUpdate(this.json);
+      c.pullUpdate(this.lastJson);
     });
     return c;
   }
