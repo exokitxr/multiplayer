@@ -1136,7 +1136,6 @@ class HtmlConnection extends EventTarget {
     document.body.appendChild(userCode);
     const parsedHtmlEl = document.createElement('div');
     userCode.appendChild(parsedHtmlEl);
-    // morphdom(parsedHtmlEl, `<div>${text}</div>`);
     const observer = new MutationObserver(() => {
       const newText = parsedHtmlEl.innerHTML;
       this.state.json = _parseHtml(newText);
@@ -1157,7 +1156,7 @@ class HtmlConnection extends EventTarget {
     this.state = {
       parsedHtmlEl,
       ops: [],
-      json: null,//_parseHtml(text),
+      json: null,
     };
   }
   pullUpdate(json) {
@@ -1177,16 +1176,9 @@ class HtmlConnection extends EventTarget {
     morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`, {
       onNodeAdded: n => {
         const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
-        // const index = _getNodeIndex(n);
         const {nodeType} = n;
         if (nodeType === Node.ELEMENT_NODE) {
           ops.push(json1.insertOp(keyPath, _parseHtml(n.outerHTML).childNodes[0]));
-          /* return {
-            type: 'add',
-            keyPath,
-            // index,
-            html: outerHTML !== undefined ? outerHTML : data,
-          }; */
         } else if (nodeType === Node.TEXT_NODE) {
           ops.push(json1.insertOp(keyPath, _parseHtml(n.data).childNodes[0]));
         } else {
@@ -1199,10 +1191,8 @@ class HtmlConnection extends EventTarget {
       },
     });
     const mutationRecords = this.state.parsedHtmlEl.observer.takeRecords();
-    // console.log('mutations', mutationRecords);
     this.state.ops = ops.concat(mutationRecords.flatMap(mutationRecord => {
       const {type} = mutationRecord;
-      // console.log('mutation', mutationRecord);
       switch (type) {
         case 'childList': {
           return [];
@@ -1216,12 +1206,6 @@ class HtmlConnection extends EventTarget {
             if (oldValue !== null) {
               keyPath.push('attrs', Array.from(target.attributes).findIndex(a => a.name === attributeName));
               return [json1.replaceOp(keyPath, oldValue, {name: attributeName, value: attributeValue})];
-              /* return [{
-                type: 'attribute',
-                keyPath,
-                // name: attributeName,
-                value: attributeValue,
-              }]; */
             } else {
               keyPath.push('attrs', target.attributes.length);
               return [json1.insertOp(keyPath, {name: attributeName, value: attributeValue})];
@@ -1229,7 +1213,6 @@ class HtmlConnection extends EventTarget {
           } else {
             console.log('resolve', this.state.parsedHtmlEl, target, this.state.json, keyPath)
             const oldTarget = _resolveKeyPath(this.state.json, keyPath);
-            // console.log('old target', this.state.json, keyPath);
             keyPath.push('attrs', oldTarget.attrs.findIndex(a => a.name === attributeName));
             return [json1.removeOp(keyPath, attributeValue)];
           }
@@ -1238,11 +1221,6 @@ class HtmlConnection extends EventTarget {
           const {target, attributeName} = mutationRecord;
           const keyPath = _getKeyPath(this.state.parsedHtmlEl, target);
           return [json1.replaceOp(keyPath, _parseHtml(mutationRecord.oldValue).childNodes[0], _parseHtml(target.data).childNodes[0])];
-          /* return [{
-            type: 'characterData',
-            keyPath,
-            text: data,
-          }]; */
         }
         default: {
           throw new Error(`unknown mutation type: ${type}`);
