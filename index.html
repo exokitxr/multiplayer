@@ -1192,7 +1192,9 @@ class HtmlConnection extends EventTarget {
         const keyPath = _getKeyPath(this.state.parsedHtmlEl, n);
         const {nodeType} = n;
         if (nodeType === Node.ELEMENT_NODE) {
-          ops.push(json1.insertOp(keyPath, _parseHtml(n.outerHTML).childNodes[0]));
+          const json = _parseHtml(n.outerHTML).childNodes[0];
+          json.childNodes = [];
+          ops.push(json1.insertOp(keyPath, json));
         } else if (nodeType === Node.TEXT_NODE) {
           ops.push(json1.insertOp(keyPath, _parseHtml(n.nodeValue).childNodes[0]));
         } else {
