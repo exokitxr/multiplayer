@@ -1005,7 +1005,7 @@ const _parseHtml = (s, state) => {
             type: 'add',
             keyPath,
             // index,
-            outerHTML: outerHTML !== undefined ? outerHTML : data,
+            html: outerHTML !== undefined ? outerHTML : data,
           };
         }).concat(Array.from(removedNodes).map(n => {
           let keyPath;
@@ -1039,11 +1039,11 @@ const _parseHtml = (s, state) => {
       case 'characterData': {
         const {target, attributeName} = mutationRecord;
         const keyPath = _getKeyPath(state.parsedHtmlEl, target);
-        const {innerText} = target;
+        const {data} = target;
         return [{
           type: 'characterData',
           keyPath,
-          innerText,
+          html: data,
         }];
       }
       default: {
