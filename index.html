@@ -731,20 +731,24 @@ const rig = {
   height: 1.7,
   shoulderWidth: 0.5,
   microphoneWorker: null,
+  volume: 0,
   setMicrophoneMediaStream(microphoneMediaStream) {
     if (this.microphoneWorker) {
       this.microphoneWorker.close();
       this.microphoneWorker = null;
+      setTimeout(() => {
+        this.volume = 0;
+      });
     }
     if (microphoneMediaStream) {
       this.microphoneWorker = new MicrophoneWorker(microphoneMediaStream);
       this.microphoneWorker.addEventListener('volume', e => {
-        console.log('volume', e.data);
+        this.volume = this.volume*0.8 + e.data*0.2;
       });
     }
   },
   update() {
-    // XXX
+    meshes.mouth.quaternion.copy(meshes.mouth.initialQuaternion).multiply(localQuaternion.setFromAxisAngle(localVector.set(1, 0, 0), Math.PI/2*this.volume));
   },
   decapitate() {
     meshes.eyes.visible = false;
