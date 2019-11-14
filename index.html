@@ -491,24 +491,6 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   };
   return mesh;
 };
-const meshes = {
-  eyes: _makeCubeMesh(0xFF0000),
-  mouth: _makeCubeMesh(0x800000),
-  leftHand: _makeCubeMesh(0x00FF00),
-  rightHand: _makeCubeMesh(0x0000FF),
-};
-for (const k in meshes) {
-  if (k === 'mouth') {
-    const mouthMesh = meshes[k];
-    mouthMesh.position.y = -0.01;
-    mouthMesh.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI));
-    mouthMesh.initialQuaternion = mouthMesh.quaternion.clone();
-    mouthMesh.scale.multiply(new THREE.Vector3(1, 0.5, 0.9));
-    meshes.eyes.add(mouthMesh);
-  } else {
-    scene.add(meshes[k]);
-  }
-}
 
 const mirrorMesh = (() => {
   const mirrorWidth = 3;
@@ -721,44 +703,76 @@ class XRIFrame extends HTMLElement {
 }
 customElements.define('xr-iframe', XRIFrame);
 
-const rig = {
-  inputs: {
-    hmd: meshes.eyes,
-    leftGamepad: meshes.leftHand,
-    rightGamepad: meshes.rightHand,
-  },
-  outputs: meshes,
-  height: 1.7,
-  shoulderWidth: 0.5,
-  microphoneWorker: null,
-  volume: 0,
-  setMicrophoneMediaStream(microphoneMediaStream) {
-    if (this.microphoneWorker) {
-      this.microphoneWorker.close();
-      this.microphoneWorker = null;
-      setTimeout(() => {
-        this.volume = 0;
-      });
+const _makeRig = () => {
+  const meshes = {
+    eyes: _makeCubeMesh(0xFF0000),
+    mouth: _makeCubeMesh(0x800000),
+    leftHand: _makeCubeMesh(0x0000FF),
+    rightHand: _makeCubeMesh(0x000080),
+  };
+  meshes.eyes.scaleFactor = 1;
+  meshes.leftHand.pointer = 0;
+  meshes.leftHand.grip = 0;
+  meshes.rightHand.pointer = 0;
+  meshes.rightHand.grip = 0;
+  for (const k in meshes) {
+    if (k === 'mouth') {
+      const mouthMesh = meshes[k];
+      mouthMesh.position.y = -0.01;
+      mouthMesh.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI));
+      mouthMesh.initialQuaternion = mouthMesh.quaternion.clone();
+      mouthMesh.scale.multiply(new THREE.Vector3(1, 0.5, 0.9));
+      meshes.eyes.add(mouthMesh);
+    } else {
+      scene.add(meshes[k]);
     }
-    if (microphoneMediaStream) {
-      this.microphoneWorker = new MicrophoneWorker(microphoneMediaStream);
-      this.microphoneWorker.addEventListener('volume', e => {
-        this.volume = this.volume*0.8 + e.data*0.2;
-      });
-    }
-  },
-  update() {
-    meshes.mouth.quaternion.copy(meshes.mouth.initialQuaternion).multiply(localQuaternion.setFromAxisAngle(localVector.set(1, 0, 0), Math.PI/2*this.volume));
-  },
-  decapitate() {
-    meshes.eyes.visible = false;
-    meshes.mouth.visible = false;
-  },
-  undecapitate() {
-    meshes.eyes.visible = true;
-    meshes.mouth.visible = true;
-  },
+  }
+  return {
+    inputs: {
+      hmd: meshes.eyes,
+      leftGamepad: meshes.leftHand,
+      rightGamepad: meshes.rightHand,
+    },
+    outputs: meshes,
+    height: 1.7,
+    shoulderWidth: 0.5,
+    microphoneWorker: null,
+    volume: 0,
+    setMicrophoneMediaStream(microphoneMediaStream) {
+      if (this.microphoneWorker) {
+        this.microphoneWorker.close();
+        this.microphoneWorker = null;
+        setTimeout(() => {
+          this.volume = 0;
+        });
+      }
+      if (microphoneMediaStream) {
+        this.microphoneWorker = new MicrophoneWorker(microphoneMediaStream);
+        this.microphoneWorker.addEventListener('volume', e => {
+          this.volume = this.volume*0.8 + e.data*0.2;
+        });
+      }
+    },
+    update() {
+      meshes.mouth.quaternion.copy(meshes.mouth.initialQuaternion).multiply(localQuaternion.setFromAxisAngle(localVector.set(1, 0, 0), Math.PI/2*this.volume));
+    },
+    decapitate() {
+      meshes.eyes.visible = false;
+      meshes.mouth.visible = false;
+    },
+    undecapitate() {
+      meshes.eyes.visible = true;
+      meshes.mouth.visible = true;
+    },
+    destroy() {
+      for (const k in meshes) {
+        scene.remove(meshes[k]);
+      }
+    },
+  };
 };
+const rig = _makeRig();
+const heightFactor = 1;
 
 const lastPresseds = [false, false];
 const lastBs = [false, false];
@@ -966,11 +980,11 @@ function animate(timestamp, frame, referenceSpace) {
       const scaleFactor = currentDistance / startDistance;
 
       let startGripPosition = localVector3.copy(startGripPositions[0]).add(startGripPositions[1]).divideScalar(2)
-        /* .divideScalar(heightFactor)
-        .add(scene.position); */
+        .divideScalar(heightFactor)
+        .add(scene.position);
       let currentGripPosition = localVector4.copy(lastPositions[0]).add(lastPositions[1]).divideScalar(2)
-        /* .divideScalar(heightFactor)
-        .add(scene.position); */
+        .divideScalar(heightFactor)
+        .add(scene.position);
       startGripPosition.applyMatrix4(localMatrix.getInverse(startSceneMatrix));
       currentGripPosition.applyMatrix4(localMatrix/*.getInverse(startSceneMatrix)*/);
 
@@ -1052,12 +1066,12 @@ function animate(timestamp, frame, referenceSpace) {
 
     if (controlsBound === 'firstperson') {
       rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
-      // camera.position.divideScalar(heightFactor).add(scene.position);
+      camera.position.divideScalar(heightFactor).add(scene.position);
       // camera.quaternion.multiply(z180Quaternion);
       rig.decapitate();
     } else if (controlsBound === 'thirdperson') {
       rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
-      // camera.position.divideScalar(heightFactor).add(scene.position);
+      camera.position.divideScalar(heightFactor).add(scene.position);
       // camera.quaternion.multiply(z180Quaternion);
       camera.position.add(localVector.set(0, 0.5, 2).applyQuaternion(camera.quaternion));
       rig.undecapitate();
@@ -1424,8 +1438,9 @@ connectButton.addEventListener('click', () => {
 
         clearInterval(updateInterval);
 
-        if (peerConnection.model) {
-          scene.remove(peerConnection.model.scene);
+        if (peerConnection.rig) {
+          peerConnection.rig.destroy();
+          peerConnection.rig = null;
         }
       });
       peerConnection.addEventListener('pose', e => {
@@ -1469,107 +1484,92 @@ connectButton.addEventListener('click', () => {
           });
         }
       });
-      peerConnection.addEventListener('message', async e => {
+      const _initPeerRig = () => {
+        peerConnection.rig = _makeRig();
+        peerConnection.rig.setMicrophoneMediaStream(peerConnection.mediaStream);
+
+        peerConnection.rig.starts = {
+          hmd: {
+            position: peerConnection.rig.inputs.hmd.position.clone(),
+            rotation: peerConnection.rig.inputs.hmd.quaternion.clone(),
+            scaleFactor: peerConnection.rig.inputs.hmd.scaleFactor,
+          },
+          gamepads: [
+            {
+              position: peerConnection.rig.inputs.leftGamepad.position.clone(),
+              rotation:  peerConnection.rig.inputs.leftGamepad.quaternion.clone(),
+              pointer: peerConnection.rig.inputs.leftGamepad.pointer,
+              grip: peerConnection.rig.inputs.leftGamepad.grip,
+            },
+            {
+              position: peerConnection.rig.inputs.rightGamepad.position.clone(),
+              rotation: peerConnection.rig.inputs.rightGamepad.quaternion.clone(),
+              pointer: peerConnection.rig.inputs.rightGamepad.pointer,
+              grip: peerConnection.rig.inputs.rightGamepad.grip,
+            },
+          ],
+        };
+        peerConnection.rig.targets = {
+          hmd: {
+            position: new THREE.Vector3(),
+            rotation: new THREE.Quaternion(),
+            scaleFactor: 1,
+          },
+          gamepads: [
+            {
+              position: new THREE.Vector3(),
+              rotation: new THREE.Quaternion(),
+              pointer: 0,
+              grip: 0,
+            },
+            {
+              position: new THREE.Vector3(),
+              rotation: new THREE.Quaternion(),
+              pointer: 0,
+              grip: 0,
+            },
+          ],
+          timestamp: Date.now(),
+        };
+        // const heightFactor = _getHeightFactor(peerConnection.rig.height);
+        peerConnection.rig.update = (_update => function update() {
+          const now = Date.now();
+          const {timestamp} = peerConnection.rig.targets;
+          const lerpFactor = Math.min(Math.max((now - timestamp) / (peerPoseUpdateRate*2), 0), 1);
+
+          peerConnection.rig.inputs.hmd.quaternion.copy(peerConnection.rig.starts.hmd.rotation).slerp(peerConnection.rig.targets.hmd.rotation, lerpFactor);
+          peerConnection.rig.inputs.hmd.position.copy(peerConnection.rig.starts.hmd.position).lerp(
+            localVector.copy(peerConnection.rig.targets.hmd.position).multiplyScalar(heightFactor),
+            lerpFactor
+          );
+          peerConnection.rig.inputs.hmd.scaleFactor = peerConnection.rig.starts.hmd.scaleFactor * (1-lerpFactor) + peerConnection.rig.targets.hmd.scaleFactor * lerpFactor;
+
+          peerConnection.rig.inputs.leftGamepad.position.copy(peerConnection.rig.starts.gamepads[0].position).lerp(
+            localVector.copy(peerConnection.rig.targets.gamepads[0].position).multiplyScalar(heightFactor),
+            lerpFactor
+          );
+          peerConnection.rig.inputs.leftGamepad.quaternion.copy(peerConnection.rig.starts.gamepads[0].rotation).slerp(peerConnection.rig.targets.gamepads[0].rotation, lerpFactor);
+          peerConnection.rig.inputs.leftGamepad.pointer = peerConnection.rig.starts.gamepads[0].pointer * (1-lerpFactor) + peerConnection.rig.targets.gamepads[0].pointer * lerpFactor;
+          peerConnection.rig.inputs.leftGamepad.grip = peerConnection.rig.starts.gamepads[0].grip * (1-lerpFactor) + peerConnection.rig.targets.gamepads[0].grip * lerpFactor;
+
+          peerConnection.rig.inputs.rightGamepad.position.copy(peerConnection.rig.starts.gamepads[1].position).lerp(
+            localVector.copy(peerConnection.rig.targets.gamepads[1].position).multiplyScalar(heightFactor),
+            lerpFactor
+          );
+          peerConnection.rig.inputs.rightGamepad.quaternion.copy(peerConnection.rig.starts.gamepads[1].rotation).slerp(peerConnection.rig.targets.gamepads[1].rotation, lerpFactor);
+          peerConnection.rig.inputs.rightGamepad.pointer = peerConnection.rig.starts.gamepads[1].pointer * (1-lerpFactor) + peerConnection.rig.targets.gamepads[1].pointer * lerpFactor;
+          peerConnection.rig.inputs.rightGamepad.grip = peerConnection.rig.starts.gamepads[1].grip * (1-lerpFactor) + peerConnection.rig.targets.gamepads[1].grip * lerpFactor;
+
+          _update.apply(this, arguments);
+        })(peerConnection.rig.update);
+      };
+      _initPeerRig();
+      /* peerConnection.addEventListener('message', async e => {
         console.log('got message', e);
         const data = JSON.parse(e.data);
         const {method} = data;
-        if (method === 'model') {
-          const {url} = data;
-          console.log('got peer model', {url});
-
-          if (peerConnection.model) {
-            scene.remove(peerConnection.model.scene);
-            peerConnection.rig.destroy();
-          }
-
-          peerConnection.model = await _loadModelUrl(url);
-          peerConnection.rig = new Avatar(peerConnection.model, {
-            fingers: true,
-            hair: true,
-            visemes: true,
-            microphoneMediaStream: peerConnection.mediaStream,
-            muted: false,
-          });
-          scene.add(peerConnection.model.scene);
-
-          peerConnection.rig.starts = {
-            hmd: {
-              position: peerConnection.rig.inputs.hmd.position.clone(),
-              rotation: peerConnection.rig.inputs.hmd.quaternion.clone(),
-              scaleFactor: peerConnection.rig.inputs.hmd.scaleFactor,
-            },
-            gamepads: [
-              {
-                position: peerConnection.rig.inputs.leftGamepad.position.clone(),
-                rotation:  peerConnection.rig.inputs.leftGamepad.quaternion.clone(),
-                pointer: peerConnection.rig.inputs.leftGamepad.pointer,
-                grip: peerConnection.rig.inputs.leftGamepad.grip,
-              },
-              {
-                position: peerConnection.rig.inputs.rightGamepad.position.clone(),
-                rotation: peerConnection.rig.inputs.rightGamepad.quaternion.clone(),
-                pointer: peerConnection.rig.inputs.rightGamepad.pointer,
-                grip: peerConnection.rig.inputs.rightGamepad.grip,
-              },
-            ],
-          };
-          peerConnection.rig.targets = {
-            hmd: {
-              position: new THREE.Vector3(),
-              rotation: new THREE.Quaternion(),
-              scaleFactor: 1,
-            },
-            gamepads: [
-              {
-                position: new THREE.Vector3(),
-                rotation: new THREE.Quaternion(),
-                pointer: 0,
-                grip: 0,
-              },
-              {
-                position: new THREE.Vector3(),
-                rotation: new THREE.Quaternion(),
-                pointer: 0,
-                grip: 0,
-              },
-            ],
-            timestamp: Date.now(),
-          };
-          const heightFactor = _getHeightFactor(peerConnection.rig.height);
-          peerConnection.rig.update = (_update => function update() {
-            const now = Date.now();
-            const {timestamp} = peerConnection.rig.targets;
-            const lerpFactor = Math.min(Math.max((now - timestamp) / (peerPoseUpdateRate*2), 0), 1);  
-
-            peerConnection.rig.inputs.hmd.quaternion.copy(peerConnection.rig.starts.hmd.rotation).slerp(peerConnection.rig.targets.hmd.rotation, lerpFactor);
-            peerConnection.rig.inputs.hmd.position.copy(peerConnection.rig.starts.hmd.position).lerp(
-              localVector.copy(peerConnection.rig.targets.hmd.position).multiplyScalar(heightFactor),
-              lerpFactor
-            );
-            peerConnection.rig.inputs.hmd.scaleFactor = peerConnection.rig.starts.hmd.scaleFactor * (1-lerpFactor) + peerConnection.rig.targets.hmd.scaleFactor * lerpFactor;
-
-            peerConnection.rig.inputs.leftGamepad.position.copy(peerConnection.rig.starts.gamepads[0].position).lerp(
-              localVector.copy(peerConnection.rig.targets.gamepads[0].position).multiplyScalar(heightFactor),
-              lerpFactor
-            );
-            peerConnection.rig.inputs.leftGamepad.quaternion.copy(peerConnection.rig.starts.gamepads[0].rotation).slerp(peerConnection.rig.targets.gamepads[0].rotation, lerpFactor);
-            peerConnection.rig.inputs.leftGamepad.pointer = peerConnection.rig.starts.gamepads[0].pointer * (1-lerpFactor) + peerConnection.rig.targets.gamepads[0].pointer * lerpFactor;
-            peerConnection.rig.inputs.leftGamepad.grip = peerConnection.rig.starts.gamepads[0].grip * (1-lerpFactor) + peerConnection.rig.targets.gamepads[0].grip * lerpFactor;
-
-            peerConnection.rig.inputs.rightGamepad.position.copy(peerConnection.rig.starts.gamepads[1].position).lerp(
-              localVector.copy(peerConnection.rig.targets.gamepads[1].position).multiplyScalar(heightFactor),
-              lerpFactor
-            );
-            peerConnection.rig.inputs.rightGamepad.quaternion.copy(peerConnection.rig.starts.gamepads[1].rotation).slerp(peerConnection.rig.targets.gamepads[1].rotation, lerpFactor);
-            peerConnection.rig.inputs.rightGamepad.pointer = peerConnection.rig.starts.gamepads[1].pointer * (1-lerpFactor) + peerConnection.rig.targets.gamepads[1].pointer * lerpFactor;
-            peerConnection.rig.inputs.rightGamepad.grip = peerConnection.rig.starts.gamepads[1].grip * (1-lerpFactor) + peerConnection.rig.targets.gamepads[1].grip * lerpFactor;
-
-            _update.apply(this, arguments);
-          })(peerConnection.rig.update);
-        } else {
-          console.warn('invalid method', {method});
-        }
-      });
+        console.warn('invalid method', {method});
+      }); */
     });
     channelConnection.addEventListener('message', e => {
       const data = JSON.parse(e.data);
