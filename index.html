@@ -386,6 +386,7 @@ import './HelioWebXRPolyfill.js';
 import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
 import {HTMLServer} from 'https://sync.exokit.org/sync-server.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
+import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
@@ -1599,7 +1600,33 @@ htmlClient.addEventListener('message', e => {
 });
 const addXrIframeButton = document.getElementById('add-xr-iframe-button');
 addXrIframeButton.addEventListener('click', () => {
-  console.log('add xr iframe');
+  const dom = parseHtml(codeInput.value);
+  const _findNodeWithTagName = (node, tagName) => {
+    const _recurse = node => {
+      if (node.tagName === 'xr-site') {
+        return node;
+      } else {
+        if (node.childNodes) {
+          for (let i = 0; i < node.childNodes.length; i++) {
+            const result = _recurse(node.childNodes[i]);
+            if (result !== null) {
+              return result;
+            }
+          }
+        }
+        return null;
+      }
+    };
+    return _recurse(node);
+  };
+  const xrSite = _findNodeWithTagName(dom, 'xr-site');
+  if (xrSite) {
+    xrSite.childNodes.push(parseHtml(`<xr-iframe></xr-iframe>`).childNodes[0]);
+    codeInput.value = serializeHtml(dom);
+    codeInput.dispatchEvent(new CustomEvent('change'));
+  } else {
+    console.warn('no xr-site to add to');
+  }
 });
 
 (async () => {
