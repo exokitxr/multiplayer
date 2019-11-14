@@ -205,6 +205,16 @@ a:active {
   font-size: 14px;
   outline: none;
 }
+.minibuttons {
+  position: relative;
+}
+.minibuttons button {
+  position: absolute;
+  bottom: 0;
+}
+.minibuttons button + button {
+  left: 50px;
+}
 .user-code {
   display: none;
 }
@@ -354,7 +364,15 @@ header > .login-form.phase-3 > .phaseless-content
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
 
+      <div class=minibuttons>
+        <button id=push1>Push</button>
+        <button id=pull1>Pull</button>
+      </div>
       <textarea class=code id=code1 spellcheck=false></textarea>
+      <div class=minibuttons>
+        <button id=push2>Push</button>
+        <button id=pull2>Pull</button>
+      </div>
       <textarea class=code id=code2 spellcheck=false></textarea>
 
       <div class=multibutton>
@@ -1210,6 +1228,8 @@ class HtmlConnection extends EventTarget {
       ops: [],
       json: null,
     };
+    this.outQueue = [];
+    this.inQueue = [];
   }
   pullUpdate(json) {
     const text = _serializeHtml(json);
@@ -1242,7 +1262,15 @@ class HtmlConnection extends EventTarget {
     this.state.parsedHtmlEl.observer.takeRecords();
     console.log('ops', ops);
     this.applyOps(ops);
-    this.htmlServer.pushOps(ops, this);
+    this.outQueue.push.apply(this.outQueue, ops);
+  }
+  flushOut() {
+    this.htmlServer.pushOps(this.outQueue, this);
+    this.outQueue.length = 0;
+  }
+  flushIn() {
+    this.pullOps(this.inQueue);
+    this.inQueue.length = 0;
   }
 }
 class HtmlServer {
@@ -1269,16 +1297,16 @@ class HtmlServer {
     for (let i = 0; i < this.connections.length; i++) {
       const c2 = this.connections[i];
       if (c2 !== c) {
-        c2.pullOps(ops);
+        c2.inQueue.push.apply(c2.inQueue, ops);
       }
     }
   }
 }
 const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
 [
-  document.getElementById('code1'),
-  document.getElementById('code2'),
-].forEach((codeInput, clientId) => {
+  [document.getElementById('code1'), document.getElementById('push1'), document.getElementById('pull1')],
+  [document.getElementById('code2'), document.getElementById('push2'), document.getElementById('pull2')],
+].forEach(([codeInput, pushButton, pullButton], clientId) => {
   const c = htmlServer.createConnection(clientId, codeInput.value);
   c.addEventListener('localUpdate', e => {
     // console.log('local update', clientId, e.detail, new Error().stack);
@@ -1294,7 +1322,15 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
     }
     c.pushUpdate(normalizedNewText);
   });
+  pushButton.addEventListener('click', () => {
+    c.flushOut();
+  });
+  pullButton.addEventListener('click', () => {
+    c.flushIn();
+  });
 });
+
+
 
 (async () => {
   let result;
