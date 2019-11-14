@@ -1209,7 +1209,7 @@ class HtmlConnection extends EventTarget {
       parsedHtmlEl2.innerHTML = _serializeHtml(this.state.json);
       const ops = _mutateHtml(parsedHtmlEl2, newText);
       this.applyOps(ops);
-      this.htmlServer.pushOps(ops, this);
+      this.outQueue.push.apply(this.outQueue, ops);
 
       this.dispatchEvent(new CustomEvent('localUpdate', {
         detail: newText,
@@ -1269,7 +1269,14 @@ class HtmlConnection extends EventTarget {
     this.outQueue.length = 0;
   }
   flushIn() {
-    this.pullOps(this.inQueue);
+    for (let i = 0; i < this.inQueue.length; i++) {
+      const op = this.inQueue[i];
+      if (Array.isArray(op)) {
+        this.pullOps([op]);
+      } else {
+        this.pullUpdate(op);
+      }
+    }
     this.inQueue.length = 0;
   }
 }
@@ -1282,9 +1289,7 @@ class HtmlServer {
   }
   createConnection(clientId, text) {
     const c = new HtmlConnection(clientId, this);
-    Promise.resolve().then(() => {
-      c.pullUpdate(JSON.parse(JSON.stringify(this.lastJson)));
-    });
+    c.inQueue.push(JSON.parse(JSON.stringify(this.lastJson)));
     this.connections.push(c);
     return c;
   }
@@ -1328,9 +1333,14 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
   pullButton.addEventListener('click', () => {
     c.flushIn();
   });
+
+  c.flushIn();
+  if (clientId === 1) {
+    codeInput.value = `<a class=lol>zol<b></b><xr-iframe src=lol position="2 1 0"></xr-iframe></a>`;
+    codeInput.dispatchEvent(new CustomEvent('change'));
+  }
+  c.flushOut();
 });
-
-
 
 (async () => {
   let result;
