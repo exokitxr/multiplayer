@@ -1310,7 +1310,6 @@ class HtmlConnection extends EventTarget {
   }
   flushOut() {
     this.htmlServer.pushOps(this.outQueue, this.state.baseIndex - this.outQueue.length, this);
-    // console.log('flush out', this.outQueue);
     this.outQueue = [];
     this.dispatchEvent(new CustomEvent('outQueue', {
       detail: this.outQueue.length,
@@ -1326,8 +1325,6 @@ class HtmlConnection extends EventTarget {
         if (this.state.sync) {
           this.pullOps(entry.ops, entry.baseIndex);
         }
-      /* } else if (type === 'trim') {
-        this.pullTrim(entry.baseIndex); */
       } else {
         console.warn(`unknown entry type: ${type}`);
       }
@@ -1402,12 +1399,7 @@ class HtmlServer {
       c.dispatchEvent(new CustomEvent('inQueue', {
         detail: c.inQueue.length,
       }));
-    } /* else {
-      c.inQueue.push({
-        type: 'trim',
-        baseIndex: this.baseIndex + this.history.length,
-      });
-    } */
+    }
   }
 }
 const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
