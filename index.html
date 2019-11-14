@@ -387,6 +387,7 @@ import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js
 import {HTMLServer} from 'https://sync.exokit.org/sync-server.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
 import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
+import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
@@ -729,6 +730,19 @@ const rig = {
   outputs: meshes,
   height: 1.7,
   shoulderWidth: 0.5,
+  microphoneWorker: null,
+  setMicrophoneMediaStream(microphoneMediaStream) {
+    if (this.microphoneWorker) {
+      this.microphoneWorker.close();
+      this.microphoneWorker = null;
+    }
+    if (microphoneMediaStream) {
+      this.microphoneWorker = new MicrophoneWorker(microphoneMediaStream);
+      this.microphoneWorker.addEventListener('volume', e => {
+        console.log('volume', e.data);
+      });
+    }
+  },
   update() {
     // XXX
   },
