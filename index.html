@@ -1252,6 +1252,8 @@ class HtmlConnection extends EventTarget {
     this.state = {
       parsedHtmlEl,
       json: null,
+      baseIndex: 0,
+      sync: true,
     };
     this.outQueue = [];
     this.inQueue = [];
@@ -1261,26 +1263,40 @@ class HtmlConnection extends EventTarget {
     morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`);
     this.state.parsedHtmlEl.observer.takeRecords();
     this.state.json = json;
+    this.state.baseIndex = baseIndex;
+    if (!this.state.sync) {
+      console.log('resync');
+    }
+    this.state.sync = true;
 
     this.dispatchEvent(new CustomEvent('localUpdate', {
       detail: text,
     }));
   }
-  pullOps(ops) {
-    this.applyOps(ops);
+  pullOps(ops, baseIndex) {
+    if (baseIndex === this.state.baseIndex) {
+      this.applyOps(ops);
 
-    const text = _serializeHtml(this.state.json);
-    morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`);
-    this.state.parsedHtmlEl.observer.takeRecords();
+      const text = _serializeHtml(this.state.json);
+      morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`);
+      this.state.parsedHtmlEl.observer.takeRecords();
 
-    this.dispatchEvent(new CustomEvent('localUpdate', {
-      detail: text,
-    }));
+      this.dispatchEvent(new CustomEvent('localUpdate', {
+        detail: text,
+      }));
+    } else {
+      console.log('desync', ops, baseIndex, this.state.baseIndex);
+      this.state.sync = false;
+    }
   }
+  /* pullTrim(baseIndex) {
+    this.state.baseIndex = baseIndex;
+  } */
   applyOps(ops) {
     for (let i = 0; i < ops.length; i++) {
       this.state.json = json1.type.apply(this.state.json, ops[i]);
     }
+    this.state.baseIndex += ops.length;
   }
   pushUpdate(text) {
     const ops = _mutateHtml(this.state.parsedHtmlEl, text);
@@ -1293,7 +1309,8 @@ class HtmlConnection extends EventTarget {
     }));
   }
   flushOut() {
-    this.htmlServer.pushOps(this.outQueue, this);
+    this.htmlServer.pushOps(this.outQueue, this.state.baseIndex - this.outQueue.length, this);
+    // console.log('flush out', this.outQueue);
     this.outQueue = [];
     this.dispatchEvent(new CustomEvent('outQueue', {
       detail: this.outQueue.length,
@@ -1304,9 +1321,13 @@ class HtmlConnection extends EventTarget {
       const entry = this.inQueue[i];
       const {type} = entry;
       if (type === 'init') {
-        this.pullInit(entry.json);
+        this.pullInit(entry.json, entry.baseIndex);
       } else if (type === 'ops') {
-        this.pullOps(entry.ops);
+        if (this.state.sync) {
+          this.pullOps(entry.ops, entry.baseIndex);
+        }
+      /* } else if (type === 'trim') {
+        this.pullTrim(entry.baseIndex); */
       } else {
         console.warn(`unknown entry type: ${type}`);
       }
@@ -1320,8 +1341,8 @@ class HtmlConnection extends EventTarget {
 class HtmlServer {
   constructor(text) {
     this.firstJson = _parseHtml(text);
-    this.baseIndex = 0;
     this.lastJson = JSON.parse(JSON.stringify(this.firstJson));
+    this.baseIndex = 0;
     this.history = [];
     this.connections = [];
   }
@@ -1330,30 +1351,63 @@ class HtmlServer {
     c.inQueue.push({
       type: 'init',
       json: JSON.parse(JSON.stringify(this.lastJson)),
+      baseIndex: this.baseIndex + this.history.length,
     });
     this.connections.push(c);
     return c;
   }
-  pushOps(ops, c) {
-    for (let i = 0; i < ops.length; i++) {
-      this.lastJson = json1.type.apply(this.lastJson, ops[i]);
-    }
-    this.history.push.apply(this.history, ops);
-
-    for (let i = 0; i < this.connections.length; i++) {
-      const c2 = this.connections[i];
-      if (c2 !== c) {
-        console.log('in ops', c.clientId, ops.length);
-        c2.inQueue.push({
-          type: 'ops',
-          ops,
-          baseIndex: this.baseIndex + this.history.length,
-        });
-        c2.dispatchEvent(new CustomEvent('inQueue', {
-          detail: c2.inQueue.length,
-        }));
+  pushOps(ops, baseIndex, c) {
+    const currentBaseIndex = this.baseIndex + this.history.length;
+    if (currentBaseIndex !== baseIndex) {
+      const delay = currentBaseIndex - baseIndex;
+      for (let i = 0; i < ops.length; i++) {
+        for (let j = 0; j < delay; j++) {
+          const result = json1.type.tryTransform(ops[i], this.history[this.history.length - delay + j], 'left');
+          if (result.ok) {
+            ops[i] = result.result;
+          } else {
+            ops[i] = null;
+            break;
+          }
+        }
       }
+      ops = ops.filter(op => op !== null);
     }
+    if (ops.length > 0) {
+      for (let i = 0; i < this.connections.length; i++) {
+        const c2 = this.connections[i];
+        if (c2 !== c) {
+          c2.inQueue.push({
+            type: 'ops',
+            ops,
+            baseIndex: this.baseIndex + this.history.length,
+          });
+          c2.dispatchEvent(new CustomEvent('inQueue', {
+            detail: c2.inQueue.length,
+          }));
+        }
+      }
+
+      for (let i = 0; i < ops.length; i++) {
+        this.lastJson = json1.type.apply(this.lastJson, ops[i]);
+      }
+      this.history.push.apply(this.history, ops);
+    }
+    if (currentBaseIndex !== baseIndex) {
+      c.inQueue.push({
+        type: 'init',
+        json: JSON.parse(JSON.stringify(this.lastJson)),
+        baseIndex: this.baseIndex + this.history.length,
+      });
+      c.dispatchEvent(new CustomEvent('inQueue', {
+        detail: c.inQueue.length,
+      }));
+    } /* else {
+      c.inQueue.push({
+        type: 'trim',
+        baseIndex: this.baseIndex + this.history.length,
+      });
+    } */
   }
 }
 const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
@@ -1395,6 +1449,7 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
     codeInput.dispatchEvent(new CustomEvent('change'));
   }
   c.flushOut();
+  c.flushIn();
 });
 
 (async () => {
