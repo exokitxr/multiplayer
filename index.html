@@ -128,7 +128,12 @@ a:hover {
 a:active {
   color: #1976d2;
 }
-.body > .multibutton {
+.iframe-buttons {
+  position: absolute;
+  right: 330px;
+  bottom: 30px;
+}
+.code-buttons {
   position: absolute;
   right: 30px;
   bottom: 30px;
@@ -361,16 +366,18 @@ header > .login-form.phase-3 > .phaseless-content
       </div>
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
-
-      <textarea class=code id=code spellcheck=false><xr-site>disconnected</xr-site></textarea>
-
-      <div class=multibutton>
+      <div class="iframe-buttons multibutton">
         <a class="button first" id="enable-mic-button" style="display: none;">Enable Mic</a>
         <a class="button first" id="disable-mic-button" disabled style="display: none;">Disable Mic</a>
         <a class="button" id="firstperson-button">Firstperson</a>
         <a class="button" id="thirdperson-button">Thirdperson</a>
         <a class="button last" id="enter-xr-button" style="display: none;">Enter XR</a>
         <a class="button last" id="no-xr-button" disabled style="display: none;">No XR</a>
+      </div>
+
+      <textarea class=code id=code spellcheck=false><xr-site>disconnected</xr-site></textarea>
+      <div class="code-buttons multibutton">
+        <a class="button first last" id="add-xr-iframe-button">Add XRIFrame</a>
       </div>
     </div>
     <script type=module>
@@ -1589,6 +1596,10 @@ htmlClient.addEventListener('message', e => {
       baseIndex,
     }));
   }
+});
+const addXrIframeButton = document.getElementById('add-xr-iframe-button');
+addXrIframeButton.addEventListener('click', () => {
+  console.log('add xr iframe');
 });
 
 (async () => {
