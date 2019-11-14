@@ -415,13 +415,10 @@ scene.add(gridHelper);
 const cubeGeometry = new THREE.ConeBufferGeometry(0.05, 0.2, 3)
   .applyMatrix(new THREE.Matrix4().makeTranslation(0, 0.2/2, 0.05/2))
   .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1))
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1))
   ))
   .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI)
-  ))
-  .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI*0.0375)
+    new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI*0.0375)
   ));
 const materials ={};
 const _getCubeMaterial = color => {
