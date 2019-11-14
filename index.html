@@ -1210,6 +1210,9 @@ class HtmlConnection extends EventTarget {
       const ops = _mutateHtml(parsedHtmlEl2, newText);
       this.applyOps(ops);
       this.outQueue.push.apply(this.outQueue, ops);
+      this.dispatchEvent(new CustomEvent('outQueue', {
+        detail: this.outQueue.length,
+      }));
 
       this.dispatchEvent(new CustomEvent('localUpdate', {
         detail: newText,
@@ -1263,10 +1266,16 @@ class HtmlConnection extends EventTarget {
     console.log('ops', ops);
     this.applyOps(ops);
     this.outQueue.push.apply(this.outQueue, ops);
+    this.dispatchEvent(new CustomEvent('outQueue', {
+      detail: this.outQueue.length,
+    }));
   }
   flushOut() {
     this.htmlServer.pushOps(this.outQueue, this);
     this.outQueue.length = 0;
+    this.dispatchEvent(new CustomEvent('outQueue', {
+      detail: this.outQueue.length,
+    }));
   }
   flushIn() {
     for (let i = 0; i < this.inQueue.length; i++) {
@@ -1278,6 +1287,9 @@ class HtmlConnection extends EventTarget {
       }
     }
     this.inQueue.length = 0;
+    this.dispatchEvent(new CustomEvent('inQueue', {
+      detail: this.inQueue.length,
+    }));
   }
 }
 class HtmlServer {
@@ -1303,6 +1315,9 @@ class HtmlServer {
       const c2 = this.connections[i];
       if (c2 !== c) {
         c2.inQueue.push.apply(c2.inQueue, ops);
+        c2.dispatchEvent(new CustomEvent('inQueue', {
+          detail: c2.inQueue.length,
+        }));
       }
     }
   }
@@ -1316,6 +1331,12 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
   c.addEventListener('localUpdate', e => {
     // console.log('local update', clientId, e.detail, new Error().stack);
     codeInput.value = e.detail;
+  });
+  c.addEventListener('inQueue', e => {
+    pullButton.innerText = `Pull (${e.detail})`;
+  });
+  c.addEventListener('outQueue', e => {
+    pushButton.innerText = `Push (${e.detail})`;
   });
   codeInput.addEventListener('change', () => {
     const newText = codeInput.value;
