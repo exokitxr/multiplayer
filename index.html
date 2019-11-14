@@ -1129,19 +1129,44 @@ const _getNodeIndex = n => {
 const _parseHtml = s => {
   const result = parse5.parseFragment(s);
   const _recurse = n => {
-    delete n.parentNode;
-
+    if (n.parentNode) {
+      delete n.parentNode;
+    }
+    if (n.attrs) {
+      const attrs = {};
+      for (let i = 0; i < n.attrs.length; i++) {
+        attrs[n.attrs[i].name] = n.attrs[i];
+      }
+      n.attrs = attrs;
+    }
     if (n.childNodes) {
-      const childNodes = Array.from(n.childNodes);
-      for (let i = 0; i < childNodes.length; i++) {
-        _recurse(childNodes[i]);
+      for (let i = 0; i < n.childNodes.length; i++) {
+        _recurse(n.childNodes[i]);
       }
     }
   };
   _recurse(result);
   return result;
 };
-const _serializeHtml = parse5.serialize;
+const _serializeHtml = j => {
+  j = JSON.parse(JSON.stringify(j));
+  const _recurse = n => {
+    if (n.attrs) {
+      const attrs = [];
+      for (const k in n.attrs) {
+        attrs.push(n.attrs[k]);
+      }
+      n.attrs = attrs;
+    }
+    if (n.childNodes) {
+      for (let i = 0; i < n.childNodes.length; i++) {
+        _recurse(n.childNodes[i]);
+      }
+    }
+  };
+  _recurse(j);
+  return parse5.serialize(j);
+};
 const _mutateHtml = (el, text) => {
   const ops = [];
   morphdom(el, `<div>${text}</div>`, {
@@ -1168,20 +1193,18 @@ const _mutateHtml = (el, text) => {
     },
     onBeforeAddAttr: (n, name, value) => {
       const keyPath = _getKeyPath(el, n);
-      const oldIndex = Array.from(n.attributes).findIndex(a => a.name === name);
-      if (oldIndex !== -1) {
-        keyPath.push('attrs', oldIndex);
-        const oldValue = n.getAttribute(name);
-        ops.push(json1.replaceOp(keyPath, oldValue, {name, value}));
-      } else {
-        keyPath.push('attrs', n.attributes.length);
+      const oldValue = n.getAttribute(name);
+      if (oldValue === null) {
+        keyPath.push('attrs', name);
         ops.push(json1.insertOp(keyPath, {name, value}));
+      } else {
+        keyPath.push('attrs', name);
+        ops.push(json1.replaceOp(keyPath, {name, value: oldValue}, {name, value}));
       }
     },
     onBeforeRemoveAttr: (n, name) => {
       const keyPath = _getKeyPath(el, n);
-      const oldIndex = Array.from(n.attributes).findIndex(a => a.name === name);
-      keyPath.push('attrs', oldIndex);
+      keyPath.push('attrs', name);
       const value = n.getAttribute(name);
       ops.push(json1.removeOp(keyPath, {name, value}));
     },
