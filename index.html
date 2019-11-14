@@ -1343,7 +1343,7 @@ class HtmlServer {
     this.history = [];
     this.connections = [];
   }
-  createConnection(clientId, text) {
+  createConnection(clientId) {
     const c = new HtmlConnection(clientId, this);
     c.inQueue.push({
       type: 'init',
@@ -1407,7 +1407,7 @@ const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></x
   [document.getElementById('code1'), document.getElementById('push1'), document.getElementById('pull1')],
   [document.getElementById('code2'), document.getElementById('push2'), document.getElementById('pull2')],
 ].forEach(([codeInput, pushButton, pullButton], clientId) => {
-  const c = htmlServer.createConnection(clientId, codeInput.value);
+  const c = htmlServer.createConnection(clientId);
   c.addEventListener('localUpdate', e => {
     // console.log('local update', clientId, e.detail, new Error().stack);
     codeInput.value = e.detail;
