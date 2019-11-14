@@ -361,16 +361,7 @@ header > .login-form.phase-3 > .phaseless-content
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
 
-      <div class=minibuttons>
-        <button id=push1>Push</button>
-        <button id=pull1>Pull</button>
-      </div>
-      <textarea class=code id=code1 spellcheck=false></textarea>
-      <div class=minibuttons>
-        <button id=push2>Push</button>
-        <button id=pull2>Pull</button>
-      </div>
-      <textarea class=code id=code2 spellcheck=false></textarea>
+      <textarea class=code id=code spellcheck=false><xr-site>disconnected</xr-site></textarea>
 
       <div class=multibutton>
         <a class="button first" id="firstperson-button">Firstperson</a>
@@ -808,6 +799,8 @@ thirdpersonButton.addEventListener('click', async () => {
   }
 });
 
+let rig = null;
+
 let session = null;
 const enterXrButton = document.getElementById('enter-xr-button');
 const noXrButton = document.getElementById('no-xr-button');
@@ -900,11 +893,6 @@ connectButton.addEventListener('click', () => {
         console.log('add peer connection', peerConnection);
 
         peerConnections.push(peerConnection);
-
-        peerConnection.send(JSON.stringify({
-          method: 'model',
-          url: modelUrl,
-        }));
 
         updateInterval = setInterval(() => {
           if (rig) {
@@ -1090,6 +1078,21 @@ connectButton.addEventListener('click', () => {
         }
       });
     });
+    channelConnection.addEventListener('message', e => {
+      const data = JSON.parse(e.data);
+      const {method} = data;
+      switch (method) {
+        case 'init':
+        case 'ops': {
+          htmlClient.write(data);
+          break;
+        }
+        default: {
+          console.warn(`ws got invalid method: ${method}`);
+          break;
+        }
+      }
+    });
 
     connectButton.style.display = 'none';
   } else {
@@ -1097,65 +1100,28 @@ connectButton.addEventListener('click', () => {
   }
 });
 
-const htmlServer = new HTMLServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
-[
-  [document.getElementById('code1'), document.getElementById('push1'), document.getElementById('pull1')],
-  [document.getElementById('code2'), document.getElementById('push2'), document.getElementById('pull2')],
-].forEach(([codeInput, pushButton, pullButton], clientId) => {
-  const c = new HTMLClient(clientId);
-  c.addEventListener('localUpdate', e => {
-    // console.log('local update', clientId, e.detail, new Error().stack);
-    codeInput.value = e.detail;
-  });
-  let inQueue = [];
-  let outQueue = [];
-  htmlServer.addEventListener('send', e => {
-    const data = e.detail;
-    const {connection} = data;
-    if (connection === c) {
-      inQueue.push(data.message);
-      pullButton.innerText = `Pull (${inQueue.length})`;
-    }
-  });
-  const _flushIn = () => {
-    for (let i = 0; i < inQueue.length; i++) {
-      c.write(inQueue[i]);
-    }
-    inQueue.length = 0;
-    pullButton.innerText = `Pull (${inQueue.length})`;
-  };
-  const _flushOut = () => {
-    htmlServer.pushOps(outQueue, c.state.baseIndex - outQueue.length, c);
-    outQueue = [];
-    pushButton.innerText = `Push (${outQueue.length})`;
-  };
-  c.addEventListener('message', e => {
-    outQueue.push.apply(outQueue, e.detail);
-    pushButton.innerText = `Push (${outQueue.length})`;
-  });
-  codeInput.addEventListener('change', () => {
-    const newText = codeInput.value;
-    // console.log('change', clientId, newText);
-    const normalizedNewText = c.pushUpdate(newText);
-    if (normalizedNewText !== newText) {
-      codeInput.value = normalizedNewText;
-    }
-  });
-  pushButton.addEventListener('click', () => {
-    _flushOut();
-  });
-  pullButton.addEventListener('click', () => {
-    _flushIn();
-  });
-
-  htmlServer.connect(c);
-  _flushIn();
-  if (clientId === 1) {
-    codeInput.value = `<a class=lol>zol<b></b><xr-iframe src=lol position="2 1 0"></xr-iframe></a>`;
-    codeInput.dispatchEvent(new CustomEvent('change'));
+const codeInput = document.getElementById('code');
+codeInput.addEventListener('change', () => {
+  const newText = codeInput.value;
+  const normalizedNewText = htmlClient.pushUpdate(newText);
+  if (normalizedNewText !== newText) {
+    codeInput.value = normalizedNewText;
   }
-  _flushOut();
-  _flushIn();
+});
+const htmlClient = new HTMLClient(codeInput.value);
+htmlClient.addEventListener('localUpdate', e => {
+  // console.log('local update', i, e.detail, new Error().stack);
+  codeInput.value = e.detail;
+});
+htmlClient.addEventListener('message', e => {
+  if (channelConnection) {
+    const {ops, baseIndex} = e.detail;
+    channelConnection.send(JSON.stringify({
+      method: 'ops',
+      ops,
+      baseIndex,
+    }));
+  }
 });
 
 (async () => {
