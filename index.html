@@ -1228,7 +1228,6 @@ class HtmlConnection extends EventTarget {
 
     this.state = {
       parsedHtmlEl,
-      ops: [],
       json: null,
     };
     this.outQueue = [];
@@ -1272,18 +1271,21 @@ class HtmlConnection extends EventTarget {
   }
   flushOut() {
     this.htmlServer.pushOps(this.outQueue, this);
-    this.outQueue.length = 0;
+    this.outQueue = [];
     this.dispatchEvent(new CustomEvent('outQueue', {
       detail: this.outQueue.length,
     }));
   }
   flushIn() {
     for (let i = 0; i < this.inQueue.length; i++) {
-      const op = this.inQueue[i];
-      if (Array.isArray(op)) {
-        this.pullOps([op]);
+      const entry = this.inQueue[i];
+      const {type} = entry;
+      if (type === 'init') {
+        this.pullUpdate(entry.json);
+      } else if (type === 'ops') {
+        this.pullOps(entry.ops);
       } else {
-        this.pullUpdate(op);
+        console.warn(`unknown entry type: ${type}`);
       }
     }
     this.inQueue.length = 0;
@@ -1295,13 +1297,17 @@ class HtmlConnection extends EventTarget {
 class HtmlServer {
   constructor(text) {
     this.firstJson = _parseHtml(text);
+    this.baseIndex = 0;
     this.lastJson = JSON.parse(JSON.stringify(this.firstJson));
     this.history = [];
     this.connections = [];
   }
   createConnection(clientId, text) {
     const c = new HtmlConnection(clientId, this);
-    c.inQueue.push(JSON.parse(JSON.stringify(this.lastJson)));
+    c.inQueue.push({
+      type: 'init',
+      json: JSON.parse(JSON.stringify(this.lastJson)),
+    });
     this.connections.push(c);
     return c;
   }
@@ -1314,7 +1320,12 @@ class HtmlServer {
     for (let i = 0; i < this.connections.length; i++) {
       const c2 = this.connections[i];
       if (c2 !== c) {
-        c2.inQueue.push.apply(c2.inQueue, ops);
+        console.log('in ops', c.clientId, ops.length);
+        c2.inQueue.push({
+          type: 'ops',
+          ops,
+          baseIndex: this.baseIndex + this.history.length,
+        });
         c2.dispatchEvent(new CustomEvent('inQueue', {
           detail: c2.inQueue.length,
         }));
