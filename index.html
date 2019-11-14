@@ -1211,7 +1211,7 @@ const _mutateHtml = (el, text) => {
   });
   return ops;
 };
-class HtmlClient extends EventTarget {
+class HTMLClient extends EventTarget {
   constructor(clientId) {
     super();
 
@@ -1315,7 +1315,7 @@ class HtmlClient extends EventTarget {
     }));
   }
 }
-class HtmlServer extends EventTarget {
+class HTMLServer extends EventTarget {
   constructor(text) {
     super();
 
@@ -1391,12 +1391,12 @@ class HtmlServer extends EventTarget {
     }
   }
 }
-const htmlServer = new HtmlServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
+const htmlServer = new HTMLServer(`<a class=lol>zol<b></b><xr-iframe src=lol></xr-iframe></a>`);
 [
   [document.getElementById('code1'), document.getElementById('push1'), document.getElementById('pull1')],
   [document.getElementById('code2'), document.getElementById('push2'), document.getElementById('pull2')],
 ].forEach(([codeInput, pushButton, pullButton], clientId) => {
-  const c = new HtmlClient(clientId);
+  const c = new HTMLClient(clientId);
   c.addEventListener('localUpdate', e => {
     // console.log('local update', clientId, e.detail, new Error().stack);
     codeInput.value = e.detail;
