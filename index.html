@@ -1233,7 +1233,7 @@ class HtmlConnection extends EventTarget {
     this.outQueue = [];
     this.inQueue = [];
   }
-  pullUpdate(json) {
+  pullInit(json, baseIndex) {
     const text = _serializeHtml(json);
     morphdom(this.state.parsedHtmlEl, `<div>${text}</div>`);
     this.state.parsedHtmlEl.observer.takeRecords();
@@ -1281,7 +1281,7 @@ class HtmlConnection extends EventTarget {
       const entry = this.inQueue[i];
       const {type} = entry;
       if (type === 'init') {
-        this.pullUpdate(entry.json);
+        this.pullInit(entry.json);
       } else if (type === 'ops') {
         this.pullOps(entry.ops);
       } else {
