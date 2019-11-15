@@ -402,17 +402,24 @@ import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
 const floorPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0));
+const colors = {
+  normal: 0x808080,
+  highlight: 0xAAAAAA,
+  select: 0x42a5f5,
+};
 
 const localVector = new THREE.Vector3();
 const localVector2 = new THREE.Vector3();
 const localVector3 = new THREE.Vector3();
 const localVector4 = new THREE.Vector3();
 const localVector5 = new THREE.Vector3();
+const localVector2D = new THREE.Vector2();
 const localQuaternion = new THREE.Quaternion();
 const localQuaternion2 = new THREE.Quaternion();
 const localMatrix = new THREE.Matrix4();
 const localEuler = new THREE.Euler();
 const localRay = new THREE.Ray();
+const localRaycaster = new THREE.Raycaster();
 
 const z180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 
@@ -708,19 +715,20 @@ class XRIFrame extends HTMLElement {
 customElements.define('xr-iframe', XRIFrame);
 
 const boundingBoxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-const boundingBoxMaterial = new THREE.MeshPhongMaterial({
-  color: 0x00FFFF,
-  transparent: true,
-  opacity: 0.3,
-});
-const _makeBoundingBoxMesh = object => {
-  const boundingBox = new THREE.Box3().setFromObject(object);
-  const mesh = new THREE.Mesh(boundingBoxGeometry, boundingBoxMaterial);
+const _makeBoundingBoxMesh = target => {
+  const boundingBox = new THREE.Box3().setFromObject(target);
+  const material = new THREE.MeshPhongMaterial({
+    color: colors.normal,
+    transparent: true,
+    opacity: 0.3,
+  });
+  const mesh = new THREE.Mesh(boundingBoxGeometry, material);
   boundingBox.getCenter(mesh.position);
   boundingBox.getSize(mesh.scale);
   if (mesh.scale.x === 0 || mesh.scale.y === 0 || mesh.scale.z === 0) {
     mesh.visible = false;
   }
+  mesh.target = target;
   return mesh;
 };
 class XRModel extends HTMLElement {
@@ -1387,6 +1395,62 @@ const _keydown = e => {
   }
 };
 window.addEventListener('keydown', _keydown);
+
+let hoveredBoundingBoxMesh = null;
+let selectedBoundingBoxMesh = null;
+const _mousemove = e => {
+  /* localCamera.matrixWorldInverse.fromArray(fakeXrDisplay.viewMatrix);
+  localCamera.matrixWorld.getInverse(localCamera.matrixWorldInverse);
+  localCamera.projectionMatrix.fromArray(fakeXrDisplay.projectionMatrix);
+  localCamera.projectionMatrixInverse.getInverse(localCamera.projectionMatrix); */
+
+  hoveredBoundingBoxMesh = null;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  const xFactor = (e.clientX - rect.left) / rect.width;
+  const yFactor = -(e.clientY - rect.top) / rect.height;
+  localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
+
+  const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).map(xrModel => xrModel.model.boundingBoxMesh);
+  if (intersectionCandidates.length > 0) {
+    for (let i = 0; i < intersectionCandidates.length; i++) {
+      const boundingBoxMesh = intersectionCandidates[i];
+      boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.normal);
+    }
+    for (let i = 0; i < intersectionCandidates.length; i++) {
+      const boundingBoxMesh = intersectionCandidates[i];
+      const intersections = localRaycaster.intersectObject(boundingBoxMesh);
+      if (intersections.length > 0) {
+        hoveredBoundingBoxMesh = boundingBoxMesh;
+        boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.highlight);
+        break;
+      }
+    }
+    // console.log('intersections', intersections.length, intersectionCandidates.length);
+  }
+
+  /* mouse.quaternion.setFromRotationMatrix(
+    localMatrix.lookAt(
+      localRaycaster.ray.origin,
+      localVector.copy(localRaycaster.ray.origin).add(localRaycaster.ray.direction),
+      localVector2.set(0, 1, 0)
+    )
+  );
+  mouse.position.copy(localRaycaster.ray.origin).add(localVector.set(0, 0, -0.5).applyQuaternion(mouse.quaternion)); */
+};
+window.addEventListener('mousemove', _mousemove);
+const _click = () => {
+  console.log('select', hoveredBoundingBoxMesh);
+  if (selectedBoundingBoxMesh) {
+    selectedBoundingBoxMesh.material.color.setHex(colors.normal);
+  }
+  selectedBoundingBoxMesh = hoveredBoundingBoxMesh;
+  if (selectedBoundingBoxMesh) {
+    selectedBoundingBoxMesh.material.color.setHex(colors.select);
+  }
+};
+window.addEventListener('click', _click);
+
 const _bindControls = type => {
   const _keydown = e => {
     switch (e.which) {
