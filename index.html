@@ -1629,6 +1629,67 @@ htmlClient.addEventListener('message', e => {
     }));
   }
 });
+
+const _uploadFile = file => {
+  if (channelConnection) {
+    fetch(`https://presence.exokit.org/channels/${channelConnection.channelName}/${file.name}`, {
+      method: 'PUT',
+      body: file,
+    })
+      .then(res => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          return res.json();
+        } else {
+          throw new Error(`invalid status code: ${res.statusCode}`);
+        }
+      })
+      .then(j => {
+        console.log('upload complete', j);
+      })
+      .catch(err => {
+        console.warn(err);
+      });
+  } else {
+    console.warn('not uploading file while disconnected', file);
+  }
+};
+const _bindUploadFileButton = inputFileEl => {
+  inputFileEl.addEventListener('change', async e => {
+    const {files} = e.target;
+    if (files.length === 1) {
+      const [file] = files;
+      _uploadFile(file);
+    }
+
+    const {parentNode} = inputFileEl;
+    parentNode.removeChild(inputFileEl);
+    const newInputFileEl = document.createElement('input');
+    newInputFileEl.type = 'file';
+    newInputFileEl.id = 'upload-file-button';
+    newInputFileEl.style.display = 'none';
+    parentNode.appendChild(newInputFileEl);
+    _bindUploadFileButton(newInputFileEl);
+  });
+};
+_bindUploadFileButton(document.getElementById('upload-file-button'));
+window.document.addEventListener('dragover', e => {
+  e.preventDefault();
+});
+window.document.addEventListener('drop', async e => {
+  e.preventDefault();
+
+  if (e.dataTransfer.items.length !== 1) {
+    return;
+  }
+
+  for (var i = 0; i < e.dataTransfer.items.length; i++) {
+    if (e.dataTransfer.items[i].kind === 'file') {
+      const file = e.dataTransfer.items[i].getAsFile();
+      _uploadFile(file);
+    }
+  }
+});
+
 const addXrIframeButton = document.getElementById('add-xr-iframe-button');
 addXrIframeButton.addEventListener('click', () => {
   const dom = parseHtml(codeInput.value);
