@@ -397,6 +397,7 @@ import {HTMLServer} from 'https://sync.exokit.org/sync-server.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
 import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
+import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
@@ -628,7 +629,7 @@ class XRIFrame extends HTMLElement {
       // console.log('got change'); // XXX
       this.position = object.position.toArray();
       this.orientation = object.quaternion.toArray();
-      this.scale = object.scale.toArray();  
+      this.scale = object.scale.toArray();
     });
     control.addEventListener('dragging-changed', e => {
       orbitControls.enabled = !e.value;
@@ -702,15 +703,184 @@ class XRIFrame extends HTMLElement {
       }
     }
   }
-
-  get name() {
-    return this.getAttribute('name');
-  }
-  set name(name) {
-    this.setAttribute('name', name);
-  }
 }
 customElements.define('xr-iframe', XRIFrame);
+
+class XRModel extends HTMLElement {
+  constructor() {
+    super();
+
+    this.model = null;
+    this.control = null;
+  }
+  async attributeChangedCallback(name, oldValue, newValue) {
+    if (this.model) {
+      if (name === 'src') {
+        const url = this.getAttribute('src');
+
+        // console.log('load 2', url, new Error().stack);
+
+        let model = await ModelLoader.loadModelUrl(url);
+        model = model.scene;
+        model.position.fromArray(this.position);
+        model.quaternion.fromArray(this.orientation);
+        model.scale.fromArray(this.scale);
+
+        scene.remove(this.model);
+        scene.add(model);
+
+        this.control.detach();
+        this.control.attach(model);
+        this.model = model;
+      } else if (name === 'position') {
+        let position = (newValue || '0 0 0').split(' ');
+        if (position.length === 3) {
+          position = position.map(s => parseFloat(s));
+          if (position.every(n => isFinite(n))) {
+            this.model.position.fromArray(position);
+          }
+        }
+      } else if (name === 'orientation') {
+        let orientation = (newValue || '0 0 0 1').split(' ');
+        if (orientation.length === 4) {
+          orientation = orientation.map(s => parseFloat(s));
+          if (orientation.every(n => isFinite(n))) {
+            this.model.quaternion.fromArray(orientation);
+          }
+        }
+      } else if (name === 'scale') {
+        let scale = (newValue || '1 1 1').split(' ');
+        if (scale.length === 3) {
+          scale = scale.map(s => parseFloat(s));
+          if (scale.every(n => isFinite(n))) {
+            this.model.scale.fromArray(scale);
+          }
+        }
+      }
+    }
+  }
+  static get observedAttributes() {
+    return [
+      'src',
+      'position',
+      'orientation',
+      'scale',
+    ];
+  }
+  async connectedCallback() {
+    console.log('connected', this);
+
+    this.model = new THREE.Object3D();
+    this.model.position.fromArray(this.position);
+    this.model.quaternion.fromArray(this.orientation);
+    this.model.scale.fromArray(this.scale);
+    scene.add(this.model);
+
+    const control = new THREE.TransformControls(camera, renderer.domElement);
+    control.size = 3;
+    control.addEventListener('change', e => {
+      this.position = this.model.position.toArray();
+      this.orientation = this.model.quaternion.toArray();
+      this.scale = this.model.scale.toArray();
+    });
+    control.addEventListener('dragging-changed', e => {
+      orbitControls.enabled = !e.value;
+    });
+    control.addEventListener('mouseEnter', () => {
+      control.draggable = true;
+    });
+    control.addEventListener('mouseLeave', () => {
+      control.draggable = false;
+    });
+    scene.add(control);
+    control.attach(this.model);
+    this.control = control;
+
+    if (this.src) {
+      // console.log('load 1', this.src, new Error().stack);
+
+      let model = await ModelLoader.loadModelUrl(this.src);
+      model = model.scene;
+
+      scene.remove(this.model);
+      scene.add(model);
+
+      this.control.detach();
+      this.control.attach(model);
+
+      this.model = model;
+      this.model.position.fromArray(this.position);
+      this.model.quaternion.fromArray(this.orientation);
+      this.model.scale.fromArray(this.scale);
+    }
+  }
+  disconnectedCallback() {
+    console.log('disconnected', this);
+
+    scene.remove(this.model);
+    this.model = null;
+
+    scene.remove(this.control);
+    this.control.dispose();
+    this.control = null;
+  }
+
+  get src() {
+    return this.getAttribute('src');
+  }
+  set src(src) {
+    this.setAttribute('src', src);
+  }
+
+  get position() {
+    const s = this.getAttribute('position');
+    return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0];
+  }
+  set position(position) {
+    if (!Array.isArray(position)) {
+      position = Array.from(position);
+    }
+    if (position.length === 3 && position.every(n => isFinite(n))) {
+      const oldPosition = this.position;
+      if (position.some((n, i) => n !== oldPosition[i])) {
+        this.setAttribute('position', position.join(' '));
+      }
+    }
+  }
+
+  get orientation() {
+    const s = this.getAttribute('orientation');
+    return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0, 1];
+  }
+  set orientation(orientation) {
+    if (!Array.isArray(orientation)) {
+      orientation = Array.from(orientation);
+    }
+    if (orientation.length === 4 && orientation.every(n => isFinite(n))) {
+      const oldOrientation = this.orientation;
+      if (orientation.some((n, i) => n !== oldOrientation[i])) {
+        this.setAttribute('orientation', orientation.join(' '));
+      }
+    }
+  }
+
+  get scale() {
+    const s = this.getAttribute('scale');
+    return s ? s.split(' ').map(s => parseFloat(s)) : [1, 1, 1];
+  }
+  set scale(scale) {
+    if (!Array.isArray(scale)) {
+      scale = Array.from(scale);
+    }
+    if (scale.length === 3 && scale.every(n => isFinite(n))) {
+      const oldScale = this.scale;
+      if (scale.some((n, i) => n !== oldScale[i])) {
+        this.setAttribute('scale', scale.join(' '));
+      }
+    }
+  }
+}
+customElements.define('xr-model', XRModel);
 
 const _makeRig = () => {
   const meshes = {
