@@ -1860,27 +1860,27 @@ window.document.addEventListener('drop', async e => {
   }
 });
 
+const _findNodeWithTagName = (node, tagName) => {
+  const _recurse = node => {
+    if (node.tagName === 'xr-site') {
+      return node;
+    } else {
+      if (node.childNodes) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          const result = _recurse(node.childNodes[i]);
+          if (result !== null) {
+            return result;
+          }
+        }
+      }
+      return null;
+    }
+  };
+  return _recurse(node);
+};
 const addXrIframeButton = document.getElementById('add-xr-iframe-button');
 addXrIframeButton.addEventListener('click', () => {
   const dom = parseHtml(codeInput.value);
-  const _findNodeWithTagName = (node, tagName) => {
-    const _recurse = node => {
-      if (node.tagName === 'xr-site') {
-        return node;
-      } else {
-        if (node.childNodes) {
-          for (let i = 0; i < node.childNodes.length; i++) {
-            const result = _recurse(node.childNodes[i]);
-            if (result !== null) {
-              return result;
-            }
-          }
-        }
-        return null;
-      }
-    };
-    return _recurse(node);
-  };
   const xrSite = _findNodeWithTagName(dom, 'xr-site');
   if (xrSite) {
     xrSite.childNodes.push(parseHtml(`<xr-iframe></xr-iframe>`).childNodes[0]);
