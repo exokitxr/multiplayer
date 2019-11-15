@@ -749,6 +749,7 @@ class XRModel extends HTMLElement {
         model = model.scene;
         model.boundingBoxMesh = _makeBoundingBoxMesh(model);
         model.add(model.boundingBoxMesh);
+        model.element = this;
         model.position.fromArray(this.position);
         model.quaternion.fromArray(this.orientation);
         model.scale.fromArray(this.scale);
@@ -799,6 +800,7 @@ class XRModel extends HTMLElement {
 
     this.model = new THREE.Object3D();
     this.model.boundingBoxMesh = _makeBoundingBoxMesh(this.model);
+    this.model.element = this;
     this.model.add(this.model.boundingBoxMesh);
     this.model.position.fromArray(this.position);
     this.model.quaternion.fromArray(this.orientation);
@@ -840,6 +842,7 @@ class XRModel extends HTMLElement {
 
       this.model = model;
       this.model.boundingBoxMesh = _makeBoundingBoxMesh(this.model);
+      this.model.element = this;
       this.model.add(this.model.boundingBoxMesh);
       this.model.position.fromArray(this.position);
       this.model.quaternion.fromArray(this.orientation);
