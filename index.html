@@ -137,6 +137,7 @@ a:active {
   position: absolute;
   right: 30px;
   bottom: 30px;
+  display: flex;
 }
 .multibutton {
   display: flex;
@@ -376,8 +377,16 @@ header > .login-form.phase-3 > .phaseless-content
       </div>
 
       <textarea class=code id=code spellcheck=false><xr-site>disconnected</xr-site></textarea>
-      <div class="code-buttons multibutton">
-        <a class="button first last" id="add-xr-iframe-button">Add XRIFrame</a>
+      <div class=code-buttons>
+        <div class=multibutton>
+          <label for="upload-file-button" id="upload-file-label" style="display: none">
+            <a class="button first last">Upload model...</a>
+            <input type="file" id="upload-file-button" style="display: none">
+          </label>
+        </div>
+        <div class=multibutton>
+          <a class="button first last" id="add-xr-iframe-button">Add XRIFrame</a>
+        </div>
       </div>
     </div>
     <script type=module>
