@@ -1815,6 +1815,17 @@ const _uploadFile = file => {
       })
       .then(j => {
         console.log('upload complete', j);
+        const {url} = j;
+
+        const dom = parseHtml(codeInput.value);
+        const xrSite = _findNodeWithTagName(dom, 'xr-site');
+        if (xrSite) {
+          xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(url)}"></xr-model>`).childNodes[0]);
+          codeInput.value = serializeHtml(dom);
+          codeInput.dispatchEvent(new CustomEvent('change'));
+        } else {
+          console.warn('no xr-site to add to');
+        }
       })
       .catch(err => {
         console.warn(err);
