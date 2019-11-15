@@ -1637,10 +1637,10 @@ const _uploadFile = file => {
       body: file,
     })
       .then(res => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (res.status >= 200 && res.status < 300) {
           return res.json();
         } else {
-          throw new Error(`invalid status code: ${res.statusCode}`);
+          throw new Error(`invalid status code: ${res.status}`);
         }
       })
       .then(j => {
