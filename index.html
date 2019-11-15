@@ -1394,6 +1394,15 @@ const _keydown = e => {
         _setMode('scale');
         break;
       }
+      case 46: { // del
+        if (selectedBoundingBoxMesh) {
+          const {target} = selectedBoundingBoxMesh;
+          const {element} = target;
+          element.parentNode.removeChild(element);
+          selectedBoundingBoxMesh = null;
+        }
+        break;
+      }
     }
   }
 };
