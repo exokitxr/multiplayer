@@ -1213,9 +1213,9 @@ function animate(timestamp, frame, referenceSpace) {
       _processScale();
     }
 
-    for (let i = 0; i < mirrorMesh.buttonMeshes.length; i++) {
+    /* for (let i = 0; i < mirrorMesh.buttonMeshes.length; i++) {
       mirrorMesh.buttonMeshes[i].material.color.setHex((i === li || i === ri) ? colors.highlight : colors.normal);
-    }
+    } */
   } else if (controlsBound) {
     localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
     localEuler.x = Math.min(Math.max(localEuler.x - mouse.movementY * 0.01, -Math.PI/2), Math.PI/2);
