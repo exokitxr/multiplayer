@@ -1599,6 +1599,8 @@ connectButton.addEventListener('click', () => {
     });
 
     connectButton.style.display = 'none';
+    const uploadFileLabel = document.getElementById('upload-file-label');
+    uploadFileLabel.style.display = null;
   } else {
     console.warn(`invalid user/channel: ${channelInputValue}`);
   }
