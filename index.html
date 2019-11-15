@@ -1383,6 +1383,8 @@ connectButton.addEventListener('click', () => {
     console.log(`connecting to ${userName}/${channelName}`);
 
     channelConnection = new XRChannelConnection(`wss://presence.exokit.org/?u=${encodeURIComponent(userName)}&c=${encodeURIComponent(channelName)}`);
+    channelConnection.userName = userName;
+    channelConnection.channelName = channelName;
     channelConnection.addEventListener('open', () => {
       console.log('xr channel open');
     });
