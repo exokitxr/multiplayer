@@ -623,6 +623,7 @@ class XRIFrame extends HTMLElement {
     this.object = object;
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
+    control.setMode(transformMode);
     control.attach(object);
     control.size = 3;
     control.addEventListener('change', e => {
@@ -777,6 +778,7 @@ class XRModel extends HTMLElement {
     scene.add(this.model);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
+    control.setMode(transformMode);
     control.size = 3;
     control.addEventListener('change', e => {
       this.position = this.model.position.toArray();
@@ -1337,6 +1339,32 @@ window.document.addEventListener('pointerlockchange', () => {
   }
 });
 
+let transformMode = 'translate';
+const _keydown = e => {
+  if (!controlsBound) {
+    const _setMode = mode => {
+      transformMode = mode;
+      Array.from(document.querySelectorAll('xr-iframe')).concat(Array.from(document.querySelectorAll('xr-model'))).forEach(xrNode => {
+        xrNode.control.setMode(mode);
+      });
+    };
+    switch (e.which) {
+      case 87: { // W
+        _setMode('translate');
+        break;
+      }
+      case 69: { // E
+        _setMode('rotate');
+        break;
+      }
+      case 82: { // R
+        _setMode('scale');
+        break;
+      }
+    }
+  }
+};
+window.addEventListener('keydown', _keydown);
 const _bindControls = type => {
   const _keydown = e => {
     switch (e.which) {
