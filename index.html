@@ -402,6 +402,7 @@ import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js
 import {HTMLServer} from 'https://sync.exokit.org/sync-server.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
 import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
+import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 
@@ -923,76 +924,34 @@ class XRModel extends HTMLElement {
 }
 customElements.define('xr-model', XRModel);
 
-const _makeRig = () => {
-  const meshes = {
-    eyes: _makeCubeMesh(0xFF0000),
-    mouth: _makeCubeMesh(0x800000),
-    leftHand: _makeCubeMesh(0x0000FF),
-    rightHand: _makeCubeMesh(0x000080),
-  };
-  meshes.eyes.scaleFactor = 1;
-  meshes.leftHand.pointer = 0;
-  meshes.leftHand.grip = 0;
-  meshes.rightHand.pointer = 0;
-  meshes.rightHand.grip = 0;
-  for (const k in meshes) {
-    if (k === 'mouth') {
-      const mouthMesh = meshes[k];
-      mouthMesh.position.y = -0.01;
-      mouthMesh.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI));
-      mouthMesh.initialQuaternion = mouthMesh.quaternion.clone();
-      mouthMesh.scale.multiply(new THREE.Vector3(1, 0.5, 0.9));
-      meshes.eyes.add(mouthMesh);
-    } else {
-      scene.add(meshes[k]);
-    }
+const userHeight = 1.7;
+const _getHeightFactor = rigHeight => rigHeight / userHeight;
+
+let rig = null;
+let modelUrl = '';
+let heightFactor = 0;
+const _setLocalModel = newModel => {
+  if (rig) {
+    scene.remove(rig.model);
+    rig.destroy();
+    rig = null;
   }
-  return {
-    inputs: {
-      hmd: meshes.eyes,
-      leftGamepad: meshes.leftHand,
-      rightGamepad: meshes.rightHand,
-    },
-    outputs: meshes,
-    height: 1.7,
-    shoulderWidth: 0.5,
-    microphoneWorker: null,
-    volume: 0,
-    setMicrophoneMediaStream(microphoneMediaStream) {
-      if (this.microphoneWorker) {
-        this.microphoneWorker.close();
-        this.microphoneWorker = null;
-        setTimeout(() => {
-          this.volume = 0;
-        });
-      }
-      if (microphoneMediaStream) {
-        this.microphoneWorker = new MicrophoneWorker(microphoneMediaStream);
-        this.microphoneWorker.addEventListener('volume', e => {
-          this.volume = this.volume*0.8 + e.data*0.2;
-        });
-      }
-    },
-    update() {
-      meshes.mouth.quaternion.copy(meshes.mouth.initialQuaternion).multiply(localQuaternion.setFromAxisAngle(localVector.set(1, 0, 0), Math.PI/2*this.volume));
-    },
-    decapitate() {
-      meshes.eyes.visible = false;
-      meshes.mouth.visible = false;
-    },
-    undecapitate() {
-      meshes.eyes.visible = true;
-      meshes.mouth.visible = true;
-    },
-    destroy() {
-      for (const k in meshes) {
-        scene.remove(meshes[k]);
-      }
-    },
-  };
+
+  rig = new Avatar(newModel, {
+    fingers: true,
+    hair: true,
+    visemes: true,
+    // decapitate: true,
+    microphoneMediaStream,
+    debug: !newModel,
+  });
+  scene.add(rig.model);
+  window.model = newModel;
+
+  heightFactor = _getHeightFactor(rig.height);
+
+  scene.scale.set(1, 1, 1).divideScalar(heightFactor);
 };
-const rig = _makeRig();
-const heightFactor = 1;
 
 const lastPresseds = [false, false];
 const lastBs = [false, false];
@@ -1287,12 +1246,12 @@ function animate(timestamp, frame, referenceSpace) {
     if (controlsBound === 'firstperson') {
       rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
       camera.position.divideScalar(heightFactor).add(scene.position);
-      // camera.quaternion.multiply(z180Quaternion);
+      camera.quaternion.multiply(z180Quaternion);
       rig.decapitate();
     } else if (controlsBound === 'thirdperson') {
       rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
       camera.position.divideScalar(heightFactor).add(scene.position);
-      // camera.quaternion.multiply(z180Quaternion);
+      camera.quaternion.multiply(z180Quaternion);
       camera.position.add(localVector.set(0, 0.5, 2).applyQuaternion(camera.quaternion));
       rig.undecapitate();
     } else {
@@ -2066,6 +2025,8 @@ addXrIframeButton.addEventListener('click', () => {
     console.log('no xr');
     noXrButton.style.display = null;
   }
+
+  _setLocalModel(null);
 })();
 
 window.addEventListener('resize', e => {
