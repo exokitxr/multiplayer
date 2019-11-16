@@ -1723,8 +1723,8 @@ connectButton.addEventListener('click', () => {
         clearInterval(updateInterval);
 
         if (peerConnection.rig) {
+          scene.remove(peerConnection.rig.model);
           peerConnection.rig.destroy();
-          peerConnection.rig = null;
         }
       });
       peerConnection.addEventListener('pose', e => {
