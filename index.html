@@ -1648,11 +1648,11 @@ enableMicButton.style.display = null;
 
 let channelConnection = null;
 const peerConnections = [];
-const _sendAllPeerConnections = s => {
+/* const _sendAllPeerConnections = s => {
   for (let i = 0; i < peerConnections.length; i++) {
     peerConnections[i].send(s);
   }
-};
+}; */
 const channelInput = document.getElementById('channel-input');
 const connectButton = document.getElementById('connect-button');
 connectButton.addEventListener('click', () => {
