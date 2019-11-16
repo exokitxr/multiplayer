@@ -1433,11 +1433,17 @@ const _click = () => {
 renderer.domElement.addEventListener('click', _click);
 
 const setAvatarButton = document.getElementById('set-avatar-button');
-setAvatarButton.addEventListener('click', () => {
+setAvatarButton.addEventListener('click', async () => {
   const {target} = selectedBoundingBoxMesh;
   const {element} = target;
   const {src} = element;
-  console.log('set avatar', src);
+  if (src) {
+    console.log('set avatar', src);
+    const model = await _loadModelUrl(src);
+    _setLocalModel(model);
+  } else {
+    _setLocalModel(null);
+  }
 });
 
 const _bindControls = type => {
@@ -1911,6 +1917,23 @@ htmlClient.addEventListener('message', e => {
     }));
   }
 });
+
+const _patchModel = object => {
+  object.scene.traverse(o => {
+    if (o.isMesh) {
+      o.frustumCulled = false;
+
+      if (o.material.opacity === 0) {
+        o.material.opacity = 1;
+      }
+    }
+  });
+};
+const _loadModelUrl = async (url, filename) => {
+  const model = await ModelLoader.loadModelUrl(url, filename);
+  _patchModel(model);
+  return model;
+};
 
 const _uploadFile = file => {
   if (channelConnection) {
