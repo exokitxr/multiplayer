@@ -84,9 +84,8 @@ header nav:not(.selected):hover span {
 h1, h2, h3, h4, h5, h6, p {
   font-weight: inherit;
 }
-li {
-  /* padding-left: 20px;
-  padding-right: 20px; */
+.screenshot-image {
+  width: 100%;
 }
 .iframe-wrapper {
   position: relative;
@@ -429,6 +428,10 @@ header > .login-form.phase-3 > .phaseless-content
             <nav class="button first last" id=set-avatar-button>Set avatar</nav>
             <nav class="button first last" id=setting-avatar-button style="display: none">Setting avatar...</nav>
           </div>
+          <div class=multibutton>
+            <nav class="button first last" id=screenshot-button>Screenshot</nav>
+          </div>
+          <img class=screenshot-image id=screenshot-image>
         </div>
         <div id=avatar-details style="display: none;">
           <div class=multibutton>
@@ -1600,6 +1603,52 @@ unsetAvatarButton.addEventListener('click', () => {
   }));
 
   avatarDetails.style.display = 'none';
+});
+
+const screenshotButton = document.getElementById('screenshot-button');
+const screenshotImage = document.getElementById('screenshot-image');
+screenshotButton.addEventListener('click', async () => {
+  const {target} = selectedBoundingBoxMesh;
+  const {element} = target;
+  const {model} = element;
+  console.log('screenshot', model);
+  if (model) {
+    const scene = new THREE.Scene();
+
+    const ambientLight = new THREE.AmbientLight(0x808080);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+    directionalLight.position.set(0.5, 1, 0.5);
+    scene.add(directionalLight);
+
+    /* const gridHelper = new THREE.GridHelper(10, 10);
+    scene.add(gridHelper); */
+
+    const camera = new THREE.PerspectiveCamera(90, 1, 0.1, 1000);
+    const dist = 10;
+    camera.position.copy(model.boundingBoxMesh.position).add(new THREE.Vector3(0, 0, dist).applyQuaternion(model.quaternion));
+    camera.lookAt(model.boundingBoxMesh.position.clone().applyMatrix4(model.matrixWorld));
+    const height = Math.max(model.boundingBoxMesh.scale.x, model.boundingBoxMesh.scale.y, model.boundingBoxMesh.scale.z);
+    camera.fov = 2 * Math.atan( height / ( 2 * dist ) ) * ( 180 / Math.PI );
+    camera.updateProjectionMatrix();
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(1024, 1024);
+
+    const oldParent = model.parent;
+    model.boundingBoxMesh.visible = false;
+    scene.add(model);
+    renderer.render(scene, camera);
+    oldParent.add(model);
+    model.boundingBoxMesh.visible = true;
+
+    const blob = await new Promise((accept, reject) => {
+      renderer.domElement.toBlob(accept, 'image/png');
+    });
+    const url = URL.createObjectURL(blob);
+    screenshotImage.src = url;
+  }
 });
 
 const _bindControls = type => {
