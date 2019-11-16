@@ -1416,6 +1416,7 @@ window.addEventListener('keydown', _keydown);
 
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
+const selectedObjectDetails = document.getElementById('selected-object-details');
 const _mousemove = e => {
   /* localCamera.matrixWorldInverse.fromArray(fakeXrDisplay.viewMatrix);
   localCamera.matrixWorld.getInverse(localCamera.matrixWorldInverse);
@@ -1456,7 +1457,7 @@ const _mousemove = e => {
   );
   mouse.position.copy(localRaycaster.ray.origin).add(localVector.set(0, 0, -0.5).applyQuaternion(mouse.quaternion)); */
 };
-window.addEventListener('mousemove', _mousemove);
+renderer.domElement.addEventListener('mousemove', _mousemove);
 const _click = () => {
   console.log('select', hoveredBoundingBoxMesh);
   if (selectedBoundingBoxMesh) {
@@ -1465,9 +1466,20 @@ const _click = () => {
   selectedBoundingBoxMesh = hoveredBoundingBoxMesh;
   if (selectedBoundingBoxMesh) {
     selectedBoundingBoxMesh.material.color.setHex(colors.select);
+    selectedObjectDetails.style.display = null;
+  } else {
+    selectedObjectDetails.style.display = 'none';
   }
 };
-window.addEventListener('click', _click);
+renderer.domElement.addEventListener('click', _click);
+
+const setAvatarButton = document.getElementById('set-avatar-button');
+setAvatarButton.addEventListener('click', () => {
+  const {target} = selectedBoundingBoxMesh;
+  const {element} = target;
+  const {src} = element;
+  console.log('set avatar', src);
+});
 
 const _bindControls = type => {
   const _keydown = e => {
