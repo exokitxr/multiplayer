@@ -69,7 +69,7 @@ header nav:not(.selected):hover span {
   background-color: #FFF;
   overflow-y: auto;
 }
-h1, h2, h3, h4, h5, h6, p, .examples > .multibutton {
+h1, h2, h3, h4, h5, h6, p, .examples .multibutton {
   margin: 15px 0;
   padding: 0 20px;
   font-weight: inherit;
@@ -363,6 +363,12 @@ header > .login-form.phase-3 > .phaseless-content
         <input type=text value="avaer/multiplayer" placeholder="user/channel" id=channel-input>
         <div class=multibutton>
           <nav class="button first last" id=connect-button>Connect</nav>
+        </div>
+        <div id=selected-object-details style="display: none;">
+          <h3>Selected object</h3>
+          <div class=multibutton>
+            <nav class="button first last" id=set-avatar-button>Set avatar</nav>
+          </div>
         </div>
       </div>
 
