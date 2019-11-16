@@ -1769,7 +1769,16 @@ connectButton.addEventListener('click', () => {
         }
       });
       const _initPeerRig = () => {
-        peerConnection.rig = _makeRig();
+        const model = null;
+        peerConnection.rig = new Avatar(model, {
+          fingers: true,
+          hair: true,
+          visemes: true,
+          microphoneMediaStream: peerConnection.mediaStream,
+          muted: false,
+          debug: !model,
+        });
+        scene.add(peerConnection.rig.model);
         peerConnection.rig.setMicrophoneMediaStream(peerConnection.mediaStream);
 
         peerConnection.rig.starts = {
