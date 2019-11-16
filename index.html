@@ -742,18 +742,20 @@ class XRModel extends HTMLElement {
   constructor() {
     super();
 
+    this.object = null;
     this.model = null;
+    this.fakeModel = null;
     this.control = null;
   }
   async attributeChangedCallback(name, oldValue, newValue) {
-    if (this.model) {
+    if (this.control) {
       if (name === 'src') {
-        const url = this.getAttribute('src');
+        const url = this.src;
 
         // console.log('load 2', url, new Error().stack);
 
-        let model = await ModelLoader.loadModelUrl(url);
-        model = model.scene;
+        const object = await ModelLoader.loadModelUrl(url);
+        model = object.scene;
         model.boundingBoxMesh = _makeBoundingBoxMesh(model);
         model.add(model.boundingBoxMesh);
         model.element = this;
@@ -764,15 +766,17 @@ class XRModel extends HTMLElement {
         scene.remove(this.model);
         scene.add(model);
 
-        this.control.detach();
+        // this.control.detach();
         this.control.attach(model);
+
+        this.object = object;
         this.model = model;
       } else if (name === 'position') {
         let position = (newValue || '0 0 0').split(' ');
         if (position.length === 3) {
           position = position.map(s => parseFloat(s));
           if (position.every(n => isFinite(n))) {
-            this.model.position.fromArray(position);
+            this.control.object.position.fromArray(position);
           }
         }
       } else if (name === 'orientation') {
@@ -780,7 +784,7 @@ class XRModel extends HTMLElement {
         if (orientation.length === 4) {
           orientation = orientation.map(s => parseFloat(s));
           if (orientation.every(n => isFinite(n))) {
-            this.model.quaternion.fromArray(orientation);
+            this.control.object.quaternion.fromArray(orientation);
           }
         }
       } else if (name === 'scale') {
@@ -788,8 +792,18 @@ class XRModel extends HTMLElement {
         if (scale.length === 3) {
           scale = scale.map(s => parseFloat(s));
           if (scale.every(n => isFinite(n))) {
-            this.model.scale.fromArray(scale);
+            this.control.object.scale.fromArray(scale);
           }
+        }
+      } else if (name === 'wearer') {
+        const selfWearer = channelConnection ? channelConnection.connectionId : '';
+        if (oldValue === selfWearer) {
+          _setLocalModel(null);
+          this.control.attach(this.model);
+        }
+        if (newValue === selfWearer) {
+          this.control.attach(this.fakeModel);
+          _setLocalModel(this.object);
         }
       }
     }
@@ -800,28 +814,18 @@ class XRModel extends HTMLElement {
       'position',
       'orientation',
       'scale',
+      'wearer',
     ];
   }
-  async connectedCallback() {
-    console.log('connected', this);
+  connectedCallback() {
+    console.log('connected', this, this.getAttribute('src'), this.getAttribute('orientation'), this.getAttribute('scale'));
 
-    this.model = new THREE.Object3D();
-    this.model.boundingBoxMesh = _makeBoundingBoxMesh(this.model);
-    this.model.element = this;
-    this.model.add(this.model.boundingBoxMesh);
-    this.model.position.fromArray(this.position);
-    this.model.quaternion.fromArray(this.orientation);
-    this.model.scale.fromArray(this.scale);
-    scene.add(this.model);
+    this.fakeModel = new THREE.Object3D();
+    scene.add(this.fakeModel);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
     control.size = 3;
-    control.addEventListener('change', e => {
-      this.position = this.model.position.toArray();
-      this.orientation = this.model.quaternion.toArray();
-      this.scale = this.model.scale.toArray();
-    });
     control.addEventListener('dragging-changed', e => {
       orbitControls.enabled = !e.value;
     });
@@ -832,12 +836,30 @@ class XRModel extends HTMLElement {
       control.draggable = false;
     });
     scene.add(control);
-    control.attach(this.model);
+    control.attach(this.fakeModel);
     this.control = control;
 
-    if (this.src) {
-      // console.log('load 1', this.src, new Error().stack);
+    this.attributeChangedCallback('src', null, this.getAttribute('src'));
+    this.attributeChangedCallback('position', null, this.getAttribute('position'));
+    this.attributeChangedCallback('orientation', null, this.getAttribute('orientation'));
+    this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
 
+    control.addEventListener('change', e => {
+      this.position = control.object.position.toArray();
+      this.orientation = control.object.quaternion.toArray();
+      this.scale = control.object.scale.toArray();
+    });
+
+    /* this.model = new THREE.Object3D();
+    this.model.boundingBoxMesh = _makeBoundingBoxMesh(this.model);
+    this.model.element = this;
+    this.model.add(this.model.boundingBoxMesh);
+    this.model.position.fromArray(this.position);
+    this.model.quaternion.fromArray(this.orientation);
+    this.model.scale.fromArray(this.scale);
+    scene.add(this.model);
+
+    if (this.src) {
       let model = await ModelLoader.loadModelUrl(this.src);
       model = model.scene;
 
@@ -854,13 +876,16 @@ class XRModel extends HTMLElement {
       this.model.position.fromArray(this.position);
       this.model.quaternion.fromArray(this.orientation);
       this.model.scale.fromArray(this.scale);
-    }
+    } */
   }
   disconnectedCallback() {
     console.log('disconnected', this);
 
     scene.remove(this.model);
     this.model = null;
+
+    scene.remove(this.fakeModel);
+    this.fakeModel = null;
 
     scene.remove(this.control);
     this.control.dispose();
@@ -919,6 +944,17 @@ class XRModel extends HTMLElement {
       if (scale.some((n, i) => n !== oldScale[i])) {
         this.setAttribute('scale', scale.join(' '));
       }
+    }
+  }
+
+  get wearer() {
+    return this.getAttribute('wearer');
+  }
+  set wearer(wearer) {
+    if (wearer !== null) {
+      this.setAttribute('wearer', wearer);
+    } else {
+      this.removeAttribute('wearer');
     }
   }
 }
@@ -1389,7 +1425,9 @@ const _mousemove = e => {
   const yFactor = -(e.clientY - rect.top) / rect.height;
   localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
 
-  const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).map(xrModel => xrModel.model.boundingBoxMesh);
+  const intersectionCandidates = Array.from(document.querySelectorAll('xr-model'))
+    .map(xrModel => xrModel.model && xrModel.model.boundingBoxMesh)
+    .filter(boundingBoxMesh => boundingBoxMesh);
   if (intersectionCandidates.length > 0) {
     for (let i = 0; i < intersectionCandidates.length; i++) {
       const boundingBoxMesh = intersectionCandidates[i];
@@ -1436,14 +1474,14 @@ const setAvatarButton = document.getElementById('set-avatar-button');
 setAvatarButton.addEventListener('click', async () => {
   const {target} = selectedBoundingBoxMesh;
   const {element} = target;
-  const {src} = element;
-  if (src) {
-    console.log('set avatar', src);
-    const model = await _loadModelUrl(src);
-    _setLocalModel(model);
-  } else {
-    _setLocalModel(null);
-  }
+  const wearer = channelConnection ? channelConnection.connectionId : '';
+  console.log('set avatar', {element, wearer});
+  Array.from(document.querySelectorAll('xr-model')).forEach(xrModel => {
+    if (xrModel.wearer === wearer) {
+      xrModel.wearer = null;
+    }
+  });
+  element.wearer = wearer;
 });
 
 const _bindControls = type => {
