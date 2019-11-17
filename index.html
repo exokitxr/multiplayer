@@ -2238,8 +2238,7 @@ window.document.addEventListener('drop', async e => {
         }
       })();
       if (j !== null) {
-        const {type, src} = j;
-        if (type === 'site') {
+        const _loadElement = (tagName, src) => {
           const dom = parseHtml(codeInput.value);
           const xrSite = _findNodeWithTagName(dom, 'xr-site');
           if (xrSite) {
@@ -2269,12 +2268,19 @@ window.document.addEventListener('drop', async e => {
             } else {
               _defaultPosition();
             }
-            xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
+            xrSite.childNodes.push(parseHtml(`<${tagName} src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></${tagName}>`).childNodes[0]);
             codeInput.value = serializeHtml(dom);
             codeInput.dispatchEvent(new CustomEvent('change'));
           } else {
             console.warn('no xr-site to add to');
           }
+        };
+
+        const {type, src} = j;
+        if (type === 'site') {
+          _loadElement('xr-iframe', src);
+        } else if (type === 'avatar') {
+          _loadElement('xr-model', src);
         }
       }
     }
@@ -2327,11 +2333,11 @@ Promise.resolve().then(() => {
 
 const avatarModelsContent = document.getElementById('avatar-models-content');
 avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
-  return `<nav class=a-avatar>
+  return `<nav class=a-avatar draggable=true src="${encodeURI(`https://avatar-models.exokit.org/${url}`)}"">
     <div class=overlay>
       <div class=multibutton>
-        <nav class="button first">Add</nav>
-        <nav class="button last">Wear</nav>
+        <nav class="button first add-button">Add</nav>
+        <nav class="button last wear-button">Wear</nav>
       </div>
     </div>
     <img src="${icon}">
@@ -2340,6 +2346,41 @@ avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
     </div>
   </nav>`;
 }).join('\n');
+Promise.resolve().then(() => {
+  Array.from(avatarModelsContent.querySelectorAll('.a-avatar')).forEach(aAvatar => {
+    const src = aAvatar.getAttribute('src');
+    aAvatar.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text', JSON.stringify({
+        type: 'avatar',
+        src,
+      }));
+    });
+
+    const addButton = aAvatar.querySelector('.add-button');
+    addButton.addEventListener('click', () => {
+      const dom = parseHtml(codeInput.value);
+      const xrSite = _findNodeWithTagName(dom, 'xr-model');
+      if (xrSite) {
+        const position = camera.position.clone()
+          .divide(container.scale)
+          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+        xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
+        codeInput.value = serializeHtml(dom);
+        codeInput.dispatchEvent(new CustomEvent('change'));
+      } else {
+        console.warn('no xr-site to add to');
+      }
+    });
+
+    const wearButton = aAvatar.querySelector('.wear-button');
+    addButton.addEventListener('click', async () => {
+      console.log('wear avatar', src);
+      const model = await _loadModelUrl(src);
+      _setLocalModel(model);
+      modelUrl = src;
+    });
+  });
+});
 
 const _findNodeWithTagName = (node, tagName) => {
   const _recurse = node => {
