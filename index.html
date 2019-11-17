@@ -1586,11 +1586,6 @@ window.addEventListener('keydown', _keydown);
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
 const _mousemove = e => {
-  /* localCamera.matrixWorldInverse.fromArray(fakeXrDisplay.viewMatrix);
-  localCamera.matrixWorld.getInverse(localCamera.matrixWorldInverse);
-  localCamera.projectionMatrix.fromArray(fakeXrDisplay.projectionMatrix);
-  localCamera.projectionMatrixInverse.getInverse(localCamera.projectionMatrix); */
-
   hoveredBoundingBoxMesh = null;
 
   const rect = renderer.domElement.getBoundingClientRect();
@@ -1615,17 +1610,7 @@ const _mousemove = e => {
         break;
       }
     }
-    // console.log('intersections', intersections.length, intersectionCandidates.length);
   }
-
-  /* mouse.quaternion.setFromRotationMatrix(
-    localMatrix.lookAt(
-      localRaycaster.ray.origin,
-      localVector.copy(localRaycaster.ray.origin).add(localRaycaster.ray.direction),
-      localVector2.set(0, 1, 0)
-    )
-  );
-  mouse.position.copy(localRaycaster.ray.origin).add(localVector.set(0, 0, -0.5).applyQuaternion(mouse.quaternion)); */
 };
 renderer.domElement.addEventListener('mousemove', _mousemove);
 
