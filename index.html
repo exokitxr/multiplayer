@@ -1659,10 +1659,35 @@ const _keydown = e => {
 };
 window.addEventListener('keydown', _keydown);
 
+const _loadEw = async () => {
+  await import(`https://web.exokit.org/ew.js`);
+  console.log('loaded ew');
+};
+const _unloadEw = async () => {
+  const registrations = await navigator.serviceWorker.getRegistrations();
+  for (let i = 0; i < registrations.length; i++) {
+    registrations[i].unregister();
+  }
+  console.log('unloaded ew');
+};
 const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
 realityLayersSwitchWrap.addEventListener('click', () => {
   realityLayersSwitchWrap.classList.toggle('on');
+
+  const enabled = realityLayersSwitchWrap.classList.contains('on');
+  if (enabled) {
+    localStorage.setItem('realityLayers', true);
+    _loadEw();
+  } else {
+    localStorage.removeItem('realityLayers');
+    _unloadEw();
+  }
 });
+if (localStorage.getItem('realityLayers')) {
+  realityLayersSwitchWrap.classList.add('on');
+
+  _loadEw();
+}
 
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
