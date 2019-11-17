@@ -748,7 +748,7 @@ class XRIFrame extends HTMLElement {
     this.control = null;
   }
   async attributeChangedCallback(name, oldValue, newValue) {
-    if (this.object) {
+    if (this.control) {
       if (name === 'src') {
         let url = this.getAttribute('src');
         console.log('set url', url);
@@ -757,7 +757,7 @@ class XRIFrame extends HTMLElement {
         if (position.length === 3) {
           position = position.map(s => parseFloat(s));
           if (position.every(n => isFinite(n))) {
-            this.object.position.fromArray(position);
+            this.control.object.position.fromArray(position);
           }
         }
       } else if (name === 'orientation') {
@@ -765,7 +765,7 @@ class XRIFrame extends HTMLElement {
         if (orientation.length === 4) {
           orientation = orientation.map(s => parseFloat(s));
           if (orientation.every(n => isFinite(n))) {
-            this.object.quaternion.fromArray(orientation);
+            this.control.object.quaternion.fromArray(orientation);
           }
         }
       } else if (name === 'scale') {
@@ -773,7 +773,7 @@ class XRIFrame extends HTMLElement {
         if (scale.length === 3) {
           scale = scale.map(s => parseFloat(s));
           if (scale.every(n => isFinite(n))) {
-            this.object.scale.fromArray(scale);
+            this.control.object.scale.fromArray(scale);
           }
         }
       }
@@ -790,23 +790,12 @@ class XRIFrame extends HTMLElement {
   connectedCallback() {
     console.log('connected', this);
 
-    const object = new THREE.Object3D();
-    object.position.fromArray(this.position);
-    object.quaternion.fromArray(this.orientation);
-    object.scale.fromArray(this.scale);
-    scene.add(object);
-    this.object = object;
+    this.object = new THREE.Object3D();
+    scene.add(this.object);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
-    control.attach(object);
     control.size = 3;
-    control.addEventListener('change', e => {
-      // console.log('got change'); // XXX
-      this.position = object.position.toArray();
-      this.orientation = object.quaternion.toArray();
-      this.scale = object.scale.toArray();
-    });
     control.addEventListener('dragging-changed', e => {
       orbitControls.enabled = !e.value;
     });
@@ -817,7 +806,19 @@ class XRIFrame extends HTMLElement {
       control.draggable = false;
     });
     scene.add(control);
+    control.attach(this.object);
     this.control = control;
+
+    this.attributeChangedCallback('src', null, this.getAttribute('src'));
+    this.attributeChangedCallback('position', null, this.getAttribute('position'));
+    this.attributeChangedCallback('orientation', null, this.getAttribute('orientation'));
+    this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
+
+    control.addEventListener('change', e => {
+      this.position = control.object.position.toArray();
+      this.orientation = control.object.quaternion.toArray();
+      this.scale = control.object.scale.toArray();
+    });
   }
   disconnectedCallback() {
     console.log('disconnected', this);
