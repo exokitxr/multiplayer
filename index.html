@@ -2222,14 +2222,61 @@ window.document.addEventListener('dragover', e => {
 window.document.addEventListener('drop', async e => {
   e.preventDefault();
 
-  if (e.dataTransfer.items.length !== 1) {
-    return;
-  }
-
   for (var i = 0; i < e.dataTransfer.items.length; i++) {
-    if (e.dataTransfer.items[i].kind === 'file') {
-      const file = e.dataTransfer.items[i].getAsFile();
-      _uploadFile(file);
+    const item = e.dataTransfer.items[i];
+    if (item.kind === 'file') {
+      _uploadFile(item.getAsFile());
+    } else if (item.kind === 'string') {
+      const data = await new Promise((accept, reject) => {
+        item.getAsString(accept);
+      });
+      const j = (() => {
+        try {
+          return JSON.parse(data);
+        } catch(err) {
+          return null;
+        }
+      })();
+      if (j !== null) {
+        const {type, src} = j;
+        if (type === 'site') {
+          const dom = parseHtml(codeInput.value);
+          const xrSite = _findNodeWithTagName(dom, 'xr-site');
+          if (xrSite) {
+            const position = new THREE.Vector3();
+            const _defaultPosition = () => {
+              position.copy(camera.position)
+                .divide(container.scale)
+                .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+            };
+            if (e.target === renderer.domElement) {
+              const rect = renderer.domElement.getBoundingClientRect();
+              const xFactor = (e.clientX - rect.left) / rect.width;
+              const yFactor = -(e.clientY - rect.top) / rect.height;
+              const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
+                new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion),
+                camera.position.clone()
+                  .add(new THREE.Vector3(0, 0, -3).applyQuaternion(camera.quaternion))
+              );
+              localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
+              const intersection = localRaycaster.ray.intersectPlane(plane, new THREE.Vector3());
+              if (intersection) {
+                intersection.divide(container.scale);
+                position.copy(intersection);
+              } else {
+                _defaultPosition();
+              }
+            } else {
+              _defaultPosition();
+            }
+            xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
+            codeInput.value = serializeHtml(dom);
+            codeInput.dispatchEvent(new CustomEvent('change'));
+          } else {
+            console.warn('no xr-site to add to');
+          }
+        }
+      }
     }
   }
 });
@@ -2250,34 +2297,6 @@ siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
     </div>
   </nav>`;
 }).join('\n');
-renderer.domElement.addEventListener('dragover', e => {
-  e.preventDefault();
-});
-renderer.domElement.addEventListener('drop', e => {
-  e.preventDefault();
-  const data = e.dataTransfer.getData('text');
-  const j = (() => {
-    try {
-      return JSON.parse(data);
-    } catch(err) {
-      return null;
-    }
-  })();
-  if (j !== null) {
-    const {type, src} = j;
-    if (type === 'site') {
-      const dom = parseHtml(codeInput.value);
-      const xrSite = _findNodeWithTagName(dom, 'xr-site');
-      if (xrSite) {
-        xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}"></xr-iframe>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
-      } else {
-        console.warn('no xr-site to add to');
-      }
-    }
-  }
-});
 Promise.resolve().then(() => {
   Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
     const src = aSite.getAttribute('src');
@@ -2295,7 +2314,7 @@ Promise.resolve().then(() => {
       if (xrSite) {
         const position = camera.position.clone()
           .divide(container.scale)
-          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion))
+          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
         xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
         codeInput.value = serializeHtml(dom);
         codeInput.dispatchEvent(new CustomEvent('change'));
