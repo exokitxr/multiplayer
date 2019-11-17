@@ -105,20 +105,14 @@ header nav:not(.selected):hover span {
   justify-content: center;
   align-items: center;
 }
-.examples {
-  width: 200px;
-  padding-top: 50px;
-  background-color: #FFF;
-  overflow-y: auto;
-}
-.examples h1,
-.examples h2,
-.examples h3,
-.examples h4,
-.examples h5,
-.examples h6,
-.examples p,
-.examples .multibutton
+.details-content h1,
+.details-content h2,
+.details-content h3,
+.details-content h4,
+.details-content h5,
+.details-content h6,
+.details-content p,
+.details-content .multibutton
 {
   margin: 15px 0;
   padding: 0 20px;
@@ -363,6 +357,18 @@ a:active {
 {
   display: flex;
 }
+.selected-object-details,
+.avatar-details,
+.placeholder-details
+{
+  display: none;
+}
+.selected-object-details.open,
+.avatar-details.open,
+.selected-object-details:not(.open) + .avatar-details:not(.open) + .placeholder-details
+{
+  display: block;
+}
 .code {
   width: 100%;
   height: 100%;
@@ -522,25 +528,6 @@ header > .login-form.phase-3 > .phaseless-content
         </form>
       </header>
 
-      <div class=examples>
-        <div id=selected-object-details style="display: none;">
-          <h3>Selected object</h3>
-          <div class=multibutton>
-            <nav class="button first last" id=set-avatar-button>Set avatar</nav>
-            <nav class="button first last" id=setting-avatar-button style="display: none">Setting avatar...</nav>
-          </div>
-          <div class=multibutton>
-            <nav class="button first last" id=screenshot-button>Screenshot</nav>
-          </div>
-          <img class=screenshot-image id=screenshot-image>
-        </div>
-        <div id=avatar-details style="display: none;">
-          <div class=multibutton>
-            <nav class="button first last" id=unset-avatar-button>Unset avatar</nav>
-          </div>
-        </div>
-      </div>
-
       <div class=iframe-wrapper id=iframe-wrapper></div>
       <div class="iframe-buttons multibutton">
         <a class="button first" id="enable-mic-button" style="display: none;">Enable Mic</a>
@@ -553,7 +540,7 @@ header > .login-form.phase-3 > .phaseless-content
 
       <div class=sidebar>
         <div class=content-tabs>
-          <nav class="content-tab open">
+          <nav class="content-tab open" id=sites-content-tab>
             <div class=sub>Sites</div>
             <i class="fas fa-book-spells"></i>
           </nav>
@@ -573,6 +560,10 @@ header > .login-form.phase-3 > .phaseless-content
             <div class=sub>Code</div>
             <i class="fas fa-code"></i>
           </nav>
+          <nav class=content-tab id=details-content-tab>
+            <div class=sub>Details</div>
+            <i class="fas fa-info-circle"></i>
+          </nav>
         </div>
         <div class="content site-urls-content open" id=site-urls-content></div>
         <div class="content avatar-models-content" id=avatar-models-content></div>
@@ -587,6 +578,27 @@ header > .login-form.phase-3 > .phaseless-content
                 <input type="file" id="upload-file-button" style="display: none">
               </label>
             </div>
+          </div>
+        </div>
+        <div class="content details-content">
+          <div class=selected-object-details id=selected-object-details>
+            <h3>Selected object</h3>
+            <div class=multibutton>
+              <nav class="button first last" id=set-avatar-button>Set avatar</nav>
+              <nav class="button first last" id=setting-avatar-button style="display: none">Setting avatar...</nav>
+            </div>
+            <div class=multibutton>
+              <nav class="button first last" id=screenshot-button>Screenshot</nav>
+            </div>
+            <img class=screenshot-image id=screenshot-image>
+          </div>
+          <div class=avatar-details id=avatar-details>
+            <div class=multibutton>
+              <nav class="button first last" id=unset-avatar-button>Unset avatar</nav>
+            </div>
+          </div>
+          <div class=placeholder-details id=placeholder-details>
+            <h3>Nothing selected</h3>
           </div>
         </div>
       </div>
@@ -926,7 +938,10 @@ class XRIFrame extends HTMLElement {
 customElements.define('xr-iframe', XRIFrame);
 
 const contentTabs = Array.from(document.querySelectorAll('.content-tab'));
+const sitesContentTab = document.getElementById('sites-content-tab');
+const detailsContentTab = document.getElementById('details-content-tab');
 const contents = Array.from(document.querySelectorAll('.content'));
+// const detailsContent = document.getElementById('details-content');
 for (let i = 0; i < contentTabs.length; i++) {
   const contentTab = contentTabs[i];
   contentTab.addEventListener('click', e => {
@@ -1623,9 +1638,11 @@ const _click = () => {
   selectedBoundingBoxMesh = hoveredBoundingBoxMesh;
   if (selectedBoundingBoxMesh) {
     selectedBoundingBoxMesh.material.color.setHex(colors.select);
-    selectedObjectDetails.style.display = null;
+    selectedObjectDetails.classList.add('open');
+
+    detailsContentTab.click();
   } else {
-    selectedObjectDetails.style.display = 'none';
+    selectedObjectDetails.classList.remove('open');
   }
 };
 renderer.domElement.addEventListener('click', _click);
@@ -1647,11 +1664,11 @@ setAvatarButton.addEventListener('click', async () => {
     const model = await _loadModelUrl(src);
     _setLocalModel(model);
     modelUrl = src;
-    avatarDetails.style.display = null;
+    avatarDetails.classList.add('open');
   } else {
     _setLocalModel(null);
     modelUrl = null;
-    avatarDetails.style.display = 'none';
+    avatarDetails.classList.remove('open');
   }
 
   setAvatarButton.style.display = null;
@@ -1665,7 +1682,7 @@ unsetAvatarButton.addEventListener('click', () => {
     url: modelUrl,
   }));
 
-  avatarDetails.style.display = 'none';
+  avatarDetails.classList.remove('open');
 });
 
 const screenshotButton = document.getElementById('screenshot-button');
