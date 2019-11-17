@@ -43,7 +43,6 @@ header nav {
   padding: 0 10px;
   letter-spacing: 0.9px;
   align-items: center;
-  text-transform: uppercase;
 }
 header nav span {
   display: flex;
@@ -51,6 +50,7 @@ header nav span {
   padding: 10px;
   border-radius: 4px;
   align-items: center;
+  text-transform: uppercase;
 }
 header nav.selected span {
   background-color: #5c6bc0;
@@ -545,9 +545,6 @@ header > .login-form.phase-3 > .phaseless-content
                 <a class="button first last">Upload model...</a>
                 <input type="file" id="upload-file-button" style="display: none">
               </label>
-            </div>
-            <div class=multibutton>
-              <a class="button first last" id="add-xr-iframe-button">Add XRIFrame</a>
             </div>
           </div>
         </div>
@@ -2163,6 +2160,24 @@ const _loadModelUrl = async (url, filename) => {
   return model;
 };
 
+const _findNodeWithTagName = (node, tagName) => {
+  const _recurse = node => {
+    if (node.tagName === 'xr-site') {
+      return node;
+    } else {
+      if (node.childNodes) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          const result = _recurse(node.childNodes[i]);
+          if (result !== null) {
+            return result;
+          }
+        }
+      }
+      return null;
+    }
+  };
+  return _recurse(node);
+};
 const _uploadFile = file => {
   if (channelConnection) {
     fetch(`https://presence.exokit.org/channels/${channelConnection.channelName}/${file.name}`, {
@@ -2380,37 +2395,6 @@ Promise.resolve().then(() => {
       modelUrl = src;
     });
   });
-});
-
-const _findNodeWithTagName = (node, tagName) => {
-  const _recurse = node => {
-    if (node.tagName === 'xr-site') {
-      return node;
-    } else {
-      if (node.childNodes) {
-        for (let i = 0; i < node.childNodes.length; i++) {
-          const result = _recurse(node.childNodes[i]);
-          if (result !== null) {
-            return result;
-          }
-        }
-      }
-      return null;
-    }
-  };
-  return _recurse(node);
-};
-const addXrIframeButton = document.getElementById('add-xr-iframe-button');
-addXrIframeButton.addEventListener('click', () => {
-  const dom = parseHtml(codeInput.value);
-  const xrSite = _findNodeWithTagName(dom, 'xr-site');
-  if (xrSite) {
-    xrSite.childNodes.push(parseHtml(`<xr-iframe></xr-iframe>`).childNodes[0]);
-    codeInput.value = serializeHtml(dom);
-    codeInput.dispatchEvent(new CustomEvent('change'));
-  } else {
-    console.warn('no xr-site to add to');
-  }
 });
 
 (async () => {
