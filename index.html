@@ -260,14 +260,25 @@ a:active {
 .sidebar .content:not(.open) {
   display: none;
 }
-.site-urls-content .a-site {
+.site-urls-content,
+.avatar-models-content
+{
   display: flex;
+  flex-direction: column;
+}
+.site-urls-content .a-site,
+.avatar-models-content .a-avatar
+{
+  display: flex;
+  position: relative;
   padding: 5px 0;
   cursor: pointer;
 }
-.site-urls-content .a-site:hover {
+/* .site-urls-content .a-site:hover,
+.avatar-models-content .a-avatar:hover
+{
   background-color: #EEE;
-}
+} */
 .site-urls-content .a-site img {
   width: 50px;
   height: 50px;
@@ -284,6 +295,30 @@ a:active {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+.site-urls-content .a-site .overlay,
+.avatar-models-content .a-avatar .overlay
+{
+  display: none;
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  /* border: 0;
+  border-top-width: 3px;
+  border-bottom-width: 3px;
+  border-style: solid;
+  border-color: #000; */
+  padding: 10px;
+  background-image: linear-gradient(to right, transparent, #FFF 50%);
+  justify-content: flex-end;
+  align-items: center;
+}
+.site-urls-content .a-site:hover .overlay,
+.avatar-models-content .a-avatar:hover .overlay
+{
+  display: flex;
 }
 .code {
   width: 100%;
@@ -2225,22 +2260,49 @@ window.document.addEventListener('drop', async e => {
 
 const siteUrlsContent = document.getElementById('site-urls-content');
 siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
-  return `<nav class=a-site>
+  return `<nav class=a-site src="${encodeURI(url)}">
+    <div class=overlay>
+      <div class=multibutton>
+        <nav class="button first last add-button">Add</nav>
+      </div>
+    </div>
     <img src="${icon}">
     <div class=wrap>
       <div class=label>${label}</div>
-      <div class=url>${url}</div>
+      <div class=url>${encodeURI(url)}</div>
     </div>
   </nav>`;
 }).join('\n');
+Promise.resolve().then(() => {
+  Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
+    const addButton = aSite.querySelector('.add-button');
+    addButton.addEventListener('click', () => {
+      const src = aSite.getAttribute('src');
+      const dom = parseHtml(codeInput.value);
+      const xrSite = _findNodeWithTagName(dom, 'xr-site');
+      if (xrSite) {
+        xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}"></xr-iframe>`).childNodes[0]);
+        codeInput.value = serializeHtml(dom);
+        codeInput.dispatchEvent(new CustomEvent('change'));
+      } else {
+        console.warn('no xr-site to add to');
+      }
+    });
+  });
+});
 
 const avatarModelsContent = document.getElementById('avatar-models-content');
 avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
   return `<nav class=a-avatar>
+    <div class=overlay>
+      <div class=multibutton>
+        <nav class="button first">Add</nav>
+        <nav class="button last">Wear</nav>
+      </div>
+    </div>
     <img src="${icon}">
     <div class=wrap>
       <div class=label>${label}</div>
-      <div class=url>${url}</div>
     </div>
   </nav>`;
 }).join('\n');
