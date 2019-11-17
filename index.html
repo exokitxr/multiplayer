@@ -260,6 +260,31 @@ a:active {
 .sidebar .content:not(.open) {
   display: none;
 }
+.site-urls-content .a-site {
+  display: flex;
+  padding: 5px 0;
+  cursor: pointer;
+}
+.site-urls-content .a-site:hover {
+  background-color: #EEE;
+}
+.site-urls-content .a-site img {
+  width: 50px;
+  height: 50px;
+  margin-right: 10px;
+}
+.site-urls-content .a-site .wrap {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+.site-urls-content .a-site .url {
+  color: #666;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 .code {
   width: 100%;
   height: 100%;
@@ -473,8 +498,8 @@ header > .login-form.phase-3 > .phaseless-content
             <i class="fas fa-code"></i>
           </nav>
         </div>
-        <div class="content open"></div>
-        <div class="content"></div>
+        <div class="content site-urls-content open" id=site-urls-content></div>
+        <div class="content avatar-models-content" id=avatar-models-content></div>
         <div class="content"></div>
         <div class="content"></div>
         <div class="content">
@@ -504,6 +529,8 @@ import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import screenshot from './screenshot.js';
+import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
+import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
@@ -2194,6 +2221,29 @@ window.document.addEventListener('drop', async e => {
     }
   }
 });
+
+
+const siteUrlsContent = document.getElementById('site-urls-content');
+siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
+  return `<nav class=a-site>
+    <img src="${icon}">
+    <div class=wrap>
+      <div class=label>${label}</div>
+      <div class=url>${url}</div>
+    </div>
+  </nav>`;
+}).join('\n');
+
+const avatarModelsContent = document.getElementById('avatar-models-content');
+avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
+  return `<nav class=a-avatar>
+    <img src="${icon}">
+    <div class=wrap>
+      <div class=label>${label}</div>
+      <div class=url>${url}</div>
+    </div>
+  </nav>`;
+}).join('\n');
 
 const _findNodeWithTagName = (node, tagName) => {
   const _recurse = node => {
