@@ -976,7 +976,7 @@ class XRModel extends HTMLElement {
 
         // console.log('load 2', url, new Error().stack);
 
-        const object = await ModelLoader.loadModelUrl(url);
+        const object = await _loadModelUrl(url);
         model = object.scene;
         model.boundingBoxMesh = _makeBoundingBoxMesh(model);
         model.add(model.boundingBoxMesh);
