@@ -1689,7 +1689,10 @@ screenshotButton.addEventListener('click', async () => {
   const {model} = element;
   console.log('screenshot', model);
   if (model) {
-    const blob = await screenshot(model);
+    const blob = await screenshot(model, {
+      width: 192,
+      height: 192,
+    });
     const url = URL.createObjectURL(blob);
     if (screenshotImage.src) {
       URL.revokeObjectURL(screenshotImage.src);
