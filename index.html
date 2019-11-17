@@ -369,6 +369,57 @@ a:active {
 {
   display: block;
 }
+.switch-wrap {
+  display: flex;
+  align-items: center;
+  color: #AAA;
+  cursor: pointer;
+  user-select: none;
+  // transition: all 0.3s cubic-bezier(0, 1, 0, 1);
+}
+.switch {
+  position: relative;
+  margin-right: 5px;
+  padding: 2px;
+  border: 2px solid #AAA;
+  border-radius: 100px;
+  cursor: pointer;
+  // transition: all 0.3s cubic-bezier(0, 1, 0, 1);
+}
+.switch::before {
+  display: block;
+  position: relative;
+  height: 12px;
+  width: 24px;
+  background-color: #EEE;
+  border-radius: 100px;
+  content: '';
+}
+.switch::after {
+  display: block;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: 12px;
+  width: 12px;
+  background-color: #AAA;
+  border-radius: 100px;
+  content: '';
+  // transition: all 0.3s cubic-bezier(0, 1, 0, 1);
+}
+.switch-wrap.on {
+  color: #5c6bc0;
+}
+.switch-wrap.on .switch {
+  border-color: #5c6bc0;
+}
+/* .switch.on::before {
+  background-color: #BBB;
+} */
+.switch-wrap.on .switch::after {
+  left: 14px;
+  background-color: #5c6bc0;
+}
 .code {
   width: 100%;
   height: 100%;
@@ -560,6 +611,10 @@ header > .login-form.phase-3 > .phaseless-content
             <div class=sub>Code</div>
             <i class="fas fa-code"></i>
           </nav>
+          <nav class=content-tab>
+            <div class=sub>Settings</div>
+            <i class="fas fa-cog"></i>
+          </nav>
           <nav class=content-tab id=details-content-tab>
             <div class=sub>Details</div>
             <i class="fas fa-info-circle"></i>
@@ -579,6 +634,12 @@ header > .login-form.phase-3 > .phaseless-content
               </label>
             </div>
           </div>
+        </div>
+        <div class="content">
+          <label class=switch-wrap id=reality-layers-switch-wrap>
+            <div class=switch id=reality-layers-switch></div>
+            Reality layers
+          </label>
         </div>
         <div class="content details-content">
           <div class=selected-object-details id=selected-object-details>
@@ -1597,6 +1658,11 @@ const _keydown = e => {
   }
 };
 window.addEventListener('keydown', _keydown);
+
+const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
+realityLayersSwitchWrap.addEventListener('click', () => {
+  realityLayersSwitchWrap.classList.toggle('on');
+});
 
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
