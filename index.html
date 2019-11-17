@@ -1020,34 +1020,6 @@ class XRModel extends HTMLElement {
       this.orientation = control.object.quaternion.toArray();
       this.scale = control.object.scale.toArray();
     });
-
-    /* this.model = new THREE.Object3D();
-    this.model.boundingBoxMesh = _makeBoundingBoxMesh(this.model);
-    this.model.element = this;
-    this.model.add(this.model.boundingBoxMesh);
-    this.model.position.fromArray(this.position);
-    this.model.quaternion.fromArray(this.orientation);
-    this.model.scale.fromArray(this.scale);
-    scene.add(this.model);
-
-    if (this.src) {
-      let model = await ModelLoader.loadModelUrl(this.src);
-      model = model.scene;
-
-      scene.remove(this.model);
-      scene.add(model);
-
-      this.control.detach();
-      this.control.attach(model);
-
-      this.model = model;
-      this.model.boundingBoxMesh = _makeBoundingBoxMesh(this.model);
-      this.model.element = this;
-      this.model.add(this.model.boundingBoxMesh);
-      this.model.position.fromArray(this.position);
-      this.model.quaternion.fromArray(this.orientation);
-      this.model.scale.fromArray(this.scale);
-    } */
   }
   disconnectedCallback() {
     console.log('disconnected', this);
