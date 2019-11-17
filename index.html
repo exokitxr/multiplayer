@@ -503,6 +503,7 @@ import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
+import screenshot from './screenshot.js';
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
@@ -1613,40 +1614,11 @@ screenshotButton.addEventListener('click', async () => {
   const {model} = element;
   console.log('screenshot', model);
   if (model) {
-    const scene = new THREE.Scene();
-
-    const ambientLight = new THREE.AmbientLight(0x808080);
-    scene.add(ambientLight);
-
-    const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
-    directionalLight.position.set(0.5, 1, 0.5);
-    scene.add(directionalLight);
-
-    /* const gridHelper = new THREE.GridHelper(10, 10);
-    scene.add(gridHelper); */
-
-    const camera = new THREE.PerspectiveCamera(90, 1, 0.1, 1000);
-    const dist = 10;
-    camera.position.copy(model.boundingBoxMesh.position).add(new THREE.Vector3(0, 0, dist).applyQuaternion(model.quaternion));
-    camera.lookAt(model.boundingBoxMesh.position.clone().applyMatrix4(model.matrixWorld));
-    const height = Math.max(model.boundingBoxMesh.scale.x, model.boundingBoxMesh.scale.y, model.boundingBoxMesh.scale.z);
-    camera.fov = 2 * Math.atan( height / ( 2 * dist ) ) * ( 180 / Math.PI );
-    camera.updateProjectionMatrix();
-
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(1024, 1024);
-
-    const oldParent = model.parent;
-    model.boundingBoxMesh.visible = false;
-    scene.add(model);
-    renderer.render(scene, camera);
-    oldParent.add(model);
-    model.boundingBoxMesh.visible = true;
-
-    const blob = await new Promise((accept, reject) => {
-      renderer.domElement.toBlob(accept, 'image/png');
-    });
+    const blob = await screenshot(model);
     const url = URL.createObjectURL(blob);
+    if (screenshotImage.src) {
+      URL.revokeObjectURL(screenshotImage.src);
+    }
     screenshotImage.src = url;
   }
 });
