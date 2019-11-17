@@ -593,10 +593,14 @@ const z180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3
 
 const scene = new THREE.Scene();
 
+const container = new THREE.Object3D();
+scene.add(container);
+
 const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.y = 1.5;
 camera.position.z = 2;
 // camera.rotation.y = Math.PI;
+scene.add(camera);
 
 const ambientLight = new THREE.AmbientLight(0x808080);
 scene.add(ambientLight);
@@ -606,7 +610,7 @@ directionalLight.position.set(0.5, 1, 0.5);
 scene.add(directionalLight);
 
 const gridHelper = new THREE.GridHelper(10, 10);
-scene.add(gridHelper);
+container.add(gridHelper);
 
 const cubeGeometry = new THREE.ConeBufferGeometry(0.05, 0.2, 3)
   .applyMatrix(new THREE.Matrix4().makeTranslation(0, 0.2/2, 0.05/2))
@@ -717,7 +721,7 @@ const mirrorMesh = (() => {
 
   return mesh;
 })();
-scene.add(mirrorMesh);
+container.add(mirrorMesh);
 
 const renderer = new THREE.WebGLRenderer({
   // canvas: document.getElementById('canvas'),
@@ -791,7 +795,7 @@ class XRIFrame extends HTMLElement {
     console.log('connected', this);
 
     this.object = new THREE.Object3D();
-    scene.add(this.object);
+    container.add(this.object);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
@@ -822,7 +826,7 @@ class XRIFrame extends HTMLElement {
   }
   disconnectedCallback() {
     console.log('disconnected', this);
-    scene.remove(this.object);
+    container.remove(this.object);
     scene.remove(this.control);
     this.control.dispose();
   }
@@ -945,8 +949,8 @@ class XRModel extends HTMLElement {
         model.quaternion.fromArray(this.orientation);
         model.scale.fromArray(this.scale);
 
-        scene.remove(this.model);
-        scene.add(model);
+        container.remove(this.model);
+        container.add(model);
 
         // this.control.detach();
         this.control.attach(model);
@@ -992,7 +996,7 @@ class XRModel extends HTMLElement {
     console.log('connected', this, this.getAttribute('src'), this.getAttribute('orientation'), this.getAttribute('scale'));
 
     this.fakeModel = new THREE.Object3D();
-    scene.add(this.fakeModel);
+    container.add(this.fakeModel);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
@@ -1024,10 +1028,10 @@ class XRModel extends HTMLElement {
   disconnectedCallback() {
     console.log('disconnected', this);
 
-    scene.remove(this.model);
+    container.remove(this.model);
     this.model = null;
 
-    scene.remove(this.fakeModel);
+    container.remove(this.fakeModel);
     this.fakeModel = null;
 
     scene.remove(this.control);
@@ -1100,7 +1104,7 @@ let modelUrl = '';
 let heightFactor = 0;
 const _setLocalModel = newModel => {
   if (rig) {
-    scene.remove(rig.model);
+    container.remove(rig.model);
     rig.destroy();
     rig = null;
   }
@@ -1113,12 +1117,12 @@ const _setLocalModel = newModel => {
     microphoneMediaStream,
     debug: !newModel,
   });
-  scene.add(rig.model);
+  container.add(rig.model);
   window.model = newModel;
 
   heightFactor = _getHeightFactor(rig.height);
 
-  scene.scale.set(1, 1, 1).divideScalar(heightFactor);
+  container.scale.set(1, 1, 1).divideScalar(heightFactor);
 };
 
 const lastPresseds = [false, false];
@@ -1141,7 +1145,7 @@ function animate(timestamp, frame, referenceSpace) {
     const {inputSources} = session;
     const gamepads = navigator.getGamepads();
 
-    rig.inputs.hmd.position.copy(vrCamera.position).sub(scene.position).multiplyScalar(heightFactor);
+    rig.inputs.hmd.position.copy(vrCamera.position).sub(container.position).multiplyScalar(heightFactor);
     rig.inputs.hmd.quaternion.copy(vrCamera.quaternion);
 
     const _getGamepad = i => {
@@ -1153,7 +1157,7 @@ function animate(timestamp, frame, referenceSpace) {
         const {position, orientation, matrix} = transform;
         if (position) { // new WebXR api
           const rawP = localVector.copy(position);
-          const p = localVector2.copy(rawP).sub(scene.position).multiplyScalar(heightFactor);
+          const p = localVector2.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
           const q = localQuaternion.copy(orientation);
           const pressed = gamepad.buttons[0].pressed;
           const lastPressed = lastPresseds[i];
@@ -1190,7 +1194,7 @@ function animate(timestamp, frame, referenceSpace) {
           localMatrix
             .fromArray(transform.matrix)
             .decompose(rawP, q, s);
-          p.copy(rawP).sub(scene.position).multiplyScalar(heightFactor);
+          p.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
           const pressed = gamepad.buttons[0].pressed;
           const lastPressed = lastPresseds[i];
           const pointer = gamepad.buttons[0].value;
@@ -1230,7 +1234,7 @@ function animate(timestamp, frame, referenceSpace) {
       teleportMesh.visible = false;
 
       if (pad) {
-        localVector.copy(vrCamera.position).applyMatrix4(localMatrix.getInverse(scene.matrix));
+        localVector.copy(vrCamera.position).applyMatrix4(localMatrix.getInverse(container.matrix));
         localEuler.setFromQuaternion(quaternion, 'YXZ');
 
         for (let i = 0; i < 20; i++, localVector.add(localVector2), localEuler.x = Math.max(localEuler.x - Math.PI*0.07, -Math.PI/2)) {
@@ -1247,9 +1251,9 @@ function animate(timestamp, frame, referenceSpace) {
           }
         }
       } else if (lastPad) {
-        localVector.copy(teleportMesh.position).applyMatrix4(scene.matrix).sub(vrCamera.position);
+        localVector.copy(teleportMesh.position).applyMatrix4(container.matrix).sub(vrCamera.position);
         localVector.y = 0;
-        scene.position.sub(localVector);
+        container.position.sub(localVector);
       }
 
       if (padX !== 0 || padY !== 0) {
@@ -1261,7 +1265,7 @@ function animate(timestamp, frame, referenceSpace) {
         const hmdEuler = localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
         localEuler.x = 0;
         localEuler.z = 0;
-        scene.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
+        container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
       }
     };
 
@@ -1318,7 +1322,7 @@ function animate(timestamp, frame, referenceSpace) {
       for (let i = 0; i < startGripPositions.length; i++) {
         startGripPositions[i].copy(lastPositions[i]);
       }
-      startSceneMatrix.copy(scene.matrix);
+      startSceneMatrix.copy(container.matrix);
       startModelScale = rig ? rig.inputs.hmd.scaleFactor : 1;
     };
     const _processScale = () => {
@@ -1328,21 +1332,21 @@ function animate(timestamp, frame, referenceSpace) {
 
       let startGripPosition = localVector3.copy(startGripPositions[0]).add(startGripPositions[1]).divideScalar(2)
         .divideScalar(heightFactor)
-        .add(scene.position);
+        .add(container.position);
       let currentGripPosition = localVector4.copy(lastPositions[0]).add(lastPositions[1]).divideScalar(2)
         .divideScalar(heightFactor)
-        .add(scene.position);
+        .add(container.position);
       startGripPosition.applyMatrix4(localMatrix.getInverse(startSceneMatrix));
       currentGripPosition.applyMatrix4(localMatrix/*.getInverse(startSceneMatrix)*/);
 
       const positionDiff = localVector5.copy(currentGripPosition).sub(startGripPosition);
 
-      scene.matrix.copy(startSceneMatrix)
+      container.matrix.copy(startSceneMatrix)
         .multiply(localMatrix.makeTranslation(currentGripPosition.x, currentGripPosition.y, currentGripPosition.z))
         .multiply(localMatrix.makeScale(scaleFactor, scaleFactor, scaleFactor))
         .multiply(localMatrix.makeTranslation(-currentGripPosition.x, -currentGripPosition.y, -currentGripPosition.z))
         .multiply(localMatrix.makeTranslation(positionDiff.x, positionDiff.y, positionDiff.z))
-        .decompose(scene.position, scene.quaternion, scene.scale);
+        .decompose(container.position, container.quaternion, container.scale);
 
       if (rig) {
         rig.inputs.hmd.scaleFactor = startModelScale / scaleFactor;
@@ -1413,12 +1417,12 @@ function animate(timestamp, frame, referenceSpace) {
 
     if (controlsBound === 'firstperson') {
       rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
-      camera.position.divideScalar(heightFactor).add(scene.position);
+      camera.position.divideScalar(heightFactor).add(container.position);
       camera.quaternion.multiply(z180Quaternion);
       rig.decapitate();
     } else if (controlsBound === 'thirdperson') {
       rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
-      camera.position.divideScalar(heightFactor).add(scene.position);
+      camera.position.divideScalar(heightFactor).add(container.position);
       camera.quaternion.multiply(z180Quaternion);
       camera.position.add(localVector.set(0, 0.5, 2).applyQuaternion(camera.quaternion));
       rig.undecapitate();
@@ -1946,7 +1950,7 @@ connectButton.addEventListener('click', () => {
         clearInterval(updateInterval);
 
         if (peerConnection.rig) {
-          scene.remove(peerConnection.rig.model);
+          container.remove(peerConnection.rig.model);
           peerConnection.rig.destroy();
         }
       });
@@ -2000,7 +2004,7 @@ connectButton.addEventListener('click', () => {
           console.log('got peer model', {url});
 
           if (peerConnection.rig) {
-            scene.remove(peerConnection.rig.model);
+            container.remove(peerConnection.rig.model);
             peerConnection.rig.destroy();
           }
 
@@ -2013,7 +2017,7 @@ connectButton.addEventListener('click', () => {
             muted: false,
             debug: !model,
           });
-          scene.add(peerConnection.rig.model);
+          container.add(peerConnection.rig.model);
 
           peerConnection.rig.starts = {
             hmd: {
