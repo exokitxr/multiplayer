@@ -57,7 +57,7 @@ header nav.selected span {
   color: #FFF;
   cursor: default;
 }
-header nav:not(.selected):hover {
+header nav:not(.selected):not([disabled]):hover {
   cursor: pointer;
 }
 header nav:not(.selected):hover span {
@@ -209,7 +209,6 @@ a:active {
   border-radius: 100px;
   color: #5c6bc0;
   font-size: 13px;
-  cursor: pointer;
   outline: none
 }
 /* .button:not(:last-child) {
@@ -219,10 +218,10 @@ a:active {
   background-color: #5c6bc0;
   border-color: #5c6bc0;
   color: #FFF;
+  cursor: pointer;
 }
 .button[disabled] {
   color: #b71c1c;
-  cursor: auto;
 }
 #code-header:not(.open),
 #code-button:not(.open) .opened-text,
