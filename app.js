@@ -190,93 +190,123 @@ orbitControls.screenSpacePanning = true;
 orbitControls.enableMiddleZoom = false;
 orbitControls.update();
 
-if (typeof XRIFrame === 'undefined') {
-  class XRIFrame extends HTMLElement {
-    constructor() {
-      super();
+const objectSymbol = Symbol('object');
+const controlSymbol = Symbol('control');
+const observerSymbol = Symbol('observed');
+const _bindXrIframe = xrIframe => {
+  const object = new THREE.Object3D();
+  container.add(object);
+  xrIframe[objectSymbol] = object;
 
-      this.object = null;
-      this.control = null;
-    }
-    async attributeChangedCallback(name, oldValue, newValue) {
-      if (this.control) {
-        if (name === 'src') {
-          let url = this.getAttribute('src');
-          console.log('set url', url);
-        } else if (name === 'position') {
-          let position = (newValue || '0 0 0').split(' ');
-          if (position.length === 3) {
-            position = position.map(s => parseFloat(s));
-            if (position.every(n => isFinite(n))) {
-              this.control.object.position.fromArray(position);
-            }
+  const control = new THREE.TransformControls(camera, renderer.domElement);
+  control.setMode(transformMode);
+  control.size = 3;
+  control.addEventListener('dragging-changed', e => {
+    orbitControls.enabled = !e.value;
+  });
+  control.addEventListener('mouseEnter', () => {
+    control.draggable = true;
+  });
+  control.addEventListener('mouseLeave', () => {
+    control.draggable = false;
+  });
+  scene.add(control);
+  control.attach(object);
+  xrIframe[controlSymbol] = control;
+
+  function attributeChangedCallback(name, oldValue, newValue) {
+    if (this[controlSymbol]) {
+      if (name === 'src') {
+        let url = this.getAttribute('src');
+        console.log('set url', url);
+      } else if (name === 'position') {
+        let position = (newValue || '0 0 0').split(' ');
+        if (position.length === 3) {
+          position = position.map(s => parseFloat(s));
+          if (position.every(n => isFinite(n))) {
+            this[controlSymbol].object.position.fromArray(position);
           }
-        } else if (name === 'orientation') {
-          let orientation = (newValue || '0 0 0 1').split(' ');
-          if (orientation.length === 4) {
-            orientation = orientation.map(s => parseFloat(s));
-            if (orientation.every(n => isFinite(n))) {
-              this.control.object.quaternion.fromArray(orientation);
-            }
+        }
+      } else if (name === 'orientation') {
+        let orientation = (newValue || '0 0 0 1').split(' ');
+        if (orientation.length === 4) {
+          orientation = orientation.map(s => parseFloat(s));
+          if (orientation.every(n => isFinite(n))) {
+            this[controlSymbol].object.quaternion.fromArray(orientation);
           }
-        } else if (name === 'scale') {
-          let scale = (newValue || '1 1 1').split(' ');
-          if (scale.length === 3) {
-            scale = scale.map(s => parseFloat(s));
-            if (scale.every(n => isFinite(n))) {
-              this.control.object.scale.fromArray(scale);
-            }
+        }
+      } else if (name === 'scale') {
+        let scale = (newValue || '1 1 1').split(' ');
+        if (scale.length === 3) {
+          scale = scale.map(s => parseFloat(s));
+          if (scale.every(n => isFinite(n))) {
+            this[controlSymbol].object.scale.fromArray(scale);
           }
         }
       }
     }
-    static get observedAttributes() {
-      return [
-        'src',
-        'position',
-        'orientation',
-        'scale',
-      ];
+  }
+  attributeChangedCallback.call(xrIframe, 'src', null, xrIframe.getAttribute('src'));
+  attributeChangedCallback.call(xrIframe, 'position', null, xrIframe.getAttribute('position'));
+  attributeChangedCallback.call(xrIframe, 'orientation', null, xrIframe.getAttribute('orientation'));
+  attributeChangedCallback.call(xrIframe, 'scale', null, xrIframe.getAttribute('scale'));
+
+  xrIframe[observerSymbol] = new MutationObserver(mutationRecords => {
+    for (let i = 0; i < mutationRecords.length; i++) {
+      const {target, attributeName, oldValue} = mutationRecords[i];
+      const attributeValue = target.getAttribute(attributeName);
+      attributeChangedCallback.call(xrIframe, attributeName, oldValue, attributeValue);
     }
-    connectedCallback() {
-      console.log('connected', this);
+  }).observe(xrIframe, {
+    attributes: true,
+    attributeOldValue: true,
+    attributeFilter: [
+      'src',
+      'position',
+      'orientation',
+      'scale',
+    ],
+  });
 
-      this.object = new THREE.Object3D();
-      container.add(this.object);
+  control.addEventListener('change', e => {
+    xrIframe.position = control.object.position.toArray();
+    xrIframe.orientation = control.object.quaternion.toArray();
+    xrIframe.scale = control.object.scale.toArray();
+  });
+};
+const _unbindXrIframe = xrIframe => {
+  container.remove(xrIframe[objectSymbol]);
+  scene.remove(xrIframe[controlSymbol]);
+  xrIframe[controlSymbol].dispose();
+  xrIframe[observerSymbol].disconnect();
 
-      const control = new THREE.TransformControls(camera, renderer.domElement);
-      control.setMode(transformMode);
-      control.size = 3;
-      control.addEventListener('dragging-changed', e => {
-        orbitControls.enabled = !e.value;
-      });
-      control.addEventListener('mouseEnter', () => {
-        control.draggable = true;
-      });
-      control.addEventListener('mouseLeave', () => {
-        control.draggable = false;
-      });
-      scene.add(control);
-      control.attach(this.object);
-      this.control = control;
+  xrIframe[objectSymbol] = null;
+  xrIframe[controlSymbol] = null;
+  xrIframe[observerSymbol] = null;
+};
+new MutationObserver(mutationRecords => {
+  for (let i = 0; i < mutationRecords.length; i++) {
+    const {addedNodes, removedNodes} = mutationRecords[i];
 
-      this.attributeChangedCallback('src', null, this.getAttribute('src'));
-      this.attributeChangedCallback('position', null, this.getAttribute('position'));
-      this.attributeChangedCallback('orientation', null, this.getAttribute('orientation'));
-      this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
-
-      control.addEventListener('change', e => {
-        this.position = control.object.position.toArray();
-        this.orientation = control.object.quaternion.toArray();
-        this.scale = control.object.scale.toArray();
-      });
+    for (let j = 0; j < addedNodes.length; j++) {
+      const node = addedNodes[j];
+      if (node.tagName === 'XR-IFRAME' && !node[observerSymbol]) {
+        _bindXrIframe(node);
+      }
     }
-    disconnectedCallback() {
-      console.log('disconnected', this);
-      container.remove(this.object);
-      scene.remove(this.control);
-      this.control.dispose();
+    for (let j = 0; j < removedNodes.length; j++) {
+      const node = removedNodes[j];
+      if (node.tagName === 'XR-IFRAME' && node[observerSymbol]) {
+        _unbindXrIframe(node);
+      }
     }
+  }
+}).observe(window.document, {
+  childList: true,
+  subtree: true,
+});
+if (typeof XRIFrame === 'undefined') {
+  class XRIFrame extends HTMLElement {
     get src() {
       return this.getAttribute('src');
     }
