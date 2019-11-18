@@ -661,12 +661,20 @@ header > .login-form.phase-3 > .phaseless-content
     </div>
     <script type=module>
 import ew from 'https://web.exokit.org/ew.js';
+import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
+import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
+
+const channelsPromise = (async () => {
+  const res = await fetch('https://presence.exokit.org/channels');
+  if (res.status >= 200 && res.status < 300) {
+    return await res.json();
+  } else {
+    throw new Error(`invalid status code: ${res.status}`);
+  }
+})();
 
 const contentTabs = Array.from(document.querySelectorAll('.content-tab'));
-const sitesContentTab = document.getElementById('sites-content-tab');
-const detailsContentTab = document.getElementById('details-content-tab');
 const contents = Array.from(document.querySelectorAll('.content'));
-// const detailsContent = document.getElementById('details-content');
 for (let i = 0; i < contentTabs.length; i++) {
   const contentTab = contentTabs[i];
   contentTab.addEventListener('click', e => {
@@ -685,6 +693,39 @@ for (let i = 0; i < contentTabs.length; i++) {
   });
 }
 
+const siteUrlsContent = document.getElementById('site-urls-content');
+siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
+  return `<nav class=a-site draggable=true src="${encodeURI(url)}">
+    <div class=overlay>
+      <div class=multibutton>
+        <nav class="button first last add-button">Add</nav>
+      </div>
+    </div>
+    <img src="${icon}">
+    <div class=wrap>
+      <div class=label>${label}</div>
+      <div class=url>${encodeURI(url)}</div>
+    </div>
+  </nav>`;
+}).join('\n');
+
+const avatarModelsContent = document.getElementById('avatar-models-content');
+avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
+  return `<nav class=a-avatar draggable=true src="${encodeURI(`https://avatar-models.exokit.org/${url}`)}"">
+    <div class=overlay>
+      <div class=multibutton>
+        <nav class="button first add-button">Add</nav>
+        <nav class="button last wear-button">Wear</nav>
+      </div>
+    </div>
+    <img src="${icon}">
+    <div class=wrap>
+      <div class=label>${label}</div>
+    </div>
+  </nav>`;
+}).join('\n');
+
+const channelsContent = document.getElementById('channels-content');
 const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
 realityLayersSwitchWrap.addEventListener('click', async () => {
   realityLayersSwitchWrap.classList.toggle('on');
@@ -701,6 +742,14 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
   }
 });
 (async () => {
+  const channels = await channelsPromise;
+  channelsContent.innerHTML = channels.map(channel => {
+    return `<div class=a-channel name="${encodeURIComponent(channel)}">
+      <i class="fas fa-user-headset"></i>
+      <div class=label>${channel}</div>
+    </div>`;
+  }).join('\n');
+
   if (localStorage.getItem('realityLayers')) {
     realityLayersSwitchWrap.classList.add('on');
     await ew.register();
@@ -714,60 +763,72 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
     const iframeWrapper = document.getElementById('iframe-wrapper');
     document.body.appendChild(iframeWrapper);
 
-    [
-      'set-avatar-button',
-      'unset-avatar-button',
-      'screenshot-button',
-      'firstperson-button',
-      'thirdperson-button',
-      'enter-xr-button',
-      'enable-mic-button',
-      'disable-mic-button',
-      'connect-button',
-      'disconnect-button',
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      el.addEventListener('click', () => {
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el2.dispatchEvent(new MouseEvent('click'));
+    xrEngine.addEventListener('click', () => {
+      [
+        'set-avatar-button',
+        'unset-avatar-button',
+        'screenshot-button',
+        'firstperson-button',
+        'thirdperson-button',
+        'enter-xr-button',
+        'enable-mic-button',
+        'disable-mic-button',
+        'connect-button',
+        'disconnect-button',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('click', () => {
+          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+          el2.dispatchEvent(new MouseEvent('click'));
+        });
       });
-    });
 
-    [
-      'channel-input',
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      el.addEventListener('input', e => {
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el2.dispatchEvent(new CustomEvent('input'));
+      [
+        'channel-input',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', e => {
+          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+          el2.dispatchEvent(new CustomEvent('input'));
+        });
+        el.addEventListener('focus', e => {
+          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+          el2.dispatchEvent(new CustomEvent('focus'));
+        });
+        el.addEventListener('blur', e => {
+          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+          el2.dispatchEvent(new CustomEvent('blur'));
+        });
       });
-      el.addEventListener('focus', e => {
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el2.dispatchEvent(new CustomEvent('focus'));
-      });
-      el.addEventListener('blur', e => {
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el2.dispatchEvent(new CustomEvent('blur'));
-      });
-    });
 
-    [
-      'code',
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      el.addEventListener('change', e => {
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el2.dispatchEvent(new CustomEvent('change'));
+      [
+        'code',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('change', e => {
+          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+          el2.dispatchEvent(new CustomEvent('change'));
+        });
       });
-    });
 
-    [
-      'upload-file-button',
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      el.addEventListener('change', e => {
+      [
+        'upload-file-button',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('change', e => {
+          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+          el2.dispatchEvent(new CustomEvent('change'));
+        });
+      });
+
+      [
+        'site-urls-content',
+        'avatar-models-content',
+        'channels-content',
+      ].forEach(id => {
+        const el = document.getElementById(id);
         const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el2.dispatchEvent(new CustomEvent('change'));
+        el2.innerHTML = el.innerHTML;
       });
     });
   } else {

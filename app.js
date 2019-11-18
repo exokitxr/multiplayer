@@ -12,8 +12,6 @@ import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import screenshot from 'https://screenshots.exokit.org/screenshot.js';
-import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
-import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
@@ -1008,6 +1006,7 @@ const _mousemove = e => {
 renderer.domElement.addEventListener('mousemove', _mousemove);
 
 const selectedObjectDetails = document.getElementById('selected-object-details');
+const detailsContentTab = document.getElementById('details-content-tab');
 const _click = () => {
   console.log('select', hoveredBoundingBoxMesh);
   if (selectedBoundingBoxMesh) {
@@ -1289,15 +1288,73 @@ disableMicButton.addEventListener('click', async () => {
 });
 enableMicButton.style.display = null;
 
+const siteUrlsContent = document.getElementById('site-urls-content');
+const avatarModelsContent = document.getElementById('avatar-models-content');
+Promise.resolve().then(() => {
+  Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
+    const src = aSite.getAttribute('src');
+    aSite.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text', JSON.stringify({
+        type: 'site',
+        src,
+      }));
+    });
+
+    const addButton = aSite.querySelector('.add-button');
+    addButton.addEventListener('click', () => {
+      const dom = parseHtml(codeInput.value);
+      const xrSite = _findNodeWithTagName(dom, 'xr-site');
+      if (xrSite) {
+        const position = camera.position.clone()
+          .divide(container.scale)
+          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+        xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
+        codeInput.value = serializeHtml(dom);
+        codeInput.dispatchEvent(new CustomEvent('change'));
+      } else {
+        console.warn('no xr-site to add to');
+      }
+    });
+  });
+
+  Array.from(avatarModelsContent.querySelectorAll('.a-avatar')).forEach(aAvatar => {
+    const src = aAvatar.getAttribute('src');
+    aAvatar.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text', JSON.stringify({
+        type: 'avatar',
+        src,
+      }));
+    });
+
+    const addButton = aAvatar.querySelector('.add-button');
+    addButton.addEventListener('click', () => {
+      const dom = parseHtml(codeInput.value);
+      const xrSite = _findNodeWithTagName(dom, 'xr-model');
+      if (xrSite) {
+        const position = camera.position.clone()
+          .divide(container.scale)
+          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+        xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
+        codeInput.value = serializeHtml(dom);
+        codeInput.dispatchEvent(new CustomEvent('change'));
+      } else {
+        console.warn('no xr-site to add to');
+      }
+    });
+
+    const wearButton = aAvatar.querySelector('.wear-button');
+    wearButton.addEventListener('click', async () => {
+      console.log('wear avatar', src);
+      const model = await _loadModelUrl(src);
+      _setLocalModel(model);
+      modelUrl = src;
+    });
+  });
+});
+
 const channelsContent = document.getElementById('channels-content');
-let channels = [];
+const _getChannels = () => Array.from(channelsContent.querySelectorAll('.a-channel')).map(aChannel => aChannel.getAttribute('name'));
 const _updateChannelsContent = () => {
-  channelsContent.innerHTML = channels.map(channel => {
-    return `<div class=a-channel name="${encodeURIComponent(channel)}">
-      <i class="fas fa-user-headset"></i>
-      <div class=label>${channel}</div>
-    </div>`;
-  }).join('\n');
   Array.from(channelsContent.querySelectorAll('.a-channel')).forEach(aChannel => {
     const name = aChannel.getAttribute('name');
     aChannel.addEventListener('mousedown', () => {
@@ -1306,15 +1363,7 @@ const _updateChannelsContent = () => {
     });
   });
 };
-(async () => {
-  const res = await fetch('https://presence.exokit.org/channels');
-  if (res.status >= 200 && res.status < 300) {
-    channels = await res.json();
-    _updateChannelsContent();
-  } else {
-    throw new Error(`invalid status code: ${res.status}`);
-  }
-})();
+_updateChannelsContent();
 
 const channelInput = document.getElementById('channel-input');
 channelInput.addEventListener('input', () => {
@@ -1324,7 +1373,7 @@ channelInput.addEventListener('input', () => {
   } else {
     connectButton.setAttribute('disabled', '');
   }
-  connectButton.innerText = channels.includes(inputText) ? 'Connect' : 'Create channel';
+  connectButton.innerText = _getChannels().includes(inputText) ? 'Connect' : 'Create channel';
 });
 channelInput.addEventListener('focus', () => {
   channelsContent.style.display = null;
@@ -1581,8 +1630,11 @@ connectButton.addEventListener('click', () => {
     const uploadFileLabel = document.getElementById('upload-file-label');
     uploadFileLabel.style.display = null;
 
-    if (!channels.includes(channelName)) {
-      channels.unshift(channelName);
+    if (!_getChannels().includes(channelName)) {
+      channelsContent.innerHTML = `<div class=a-channel name="${encodeURIComponent(channelName)}">
+        <i class="fas fa-user-headset"></i>
+        <div class=label>${channelName}</div>
+      </div>` + channelsContent.innerHTML;
       _updateChannelsContent();
     }
   }
@@ -1787,100 +1839,6 @@ window.document.addEventListener('drop', async e => {
   }
 });
 
-
-const siteUrlsContent = document.getElementById('site-urls-content');
-siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
-  return `<nav class=a-site draggable=true src="${encodeURI(url)}">
-    <div class=overlay>
-      <div class=multibutton>
-        <nav class="button first last add-button">Add</nav>
-      </div>
-    </div>
-    <img src="${icon}">
-    <div class=wrap>
-      <div class=label>${label}</div>
-      <div class=url>${encodeURI(url)}</div>
-    </div>
-  </nav>`;
-}).join('\n');
-Promise.resolve().then(() => {
-  Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
-    const src = aSite.getAttribute('src');
-    aSite.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text', JSON.stringify({
-        type: 'site',
-        src,
-      }));
-    });
-
-    const addButton = aSite.querySelector('.add-button');
-    addButton.addEventListener('click', () => {
-      const dom = parseHtml(codeInput.value);
-      const xrSite = _findNodeWithTagName(dom, 'xr-site');
-      if (xrSite) {
-        const position = camera.position.clone()
-          .divide(container.scale)
-          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-        xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
-      } else {
-        console.warn('no xr-site to add to');
-      }
-    });
-  });
-});
-
-const avatarModelsContent = document.getElementById('avatar-models-content');
-avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
-  return `<nav class=a-avatar draggable=true src="${encodeURI(`https://avatar-models.exokit.org/${url}`)}"">
-    <div class=overlay>
-      <div class=multibutton>
-        <nav class="button first add-button">Add</nav>
-        <nav class="button last wear-button">Wear</nav>
-      </div>
-    </div>
-    <img src="${icon}">
-    <div class=wrap>
-      <div class=label>${label}</div>
-    </div>
-  </nav>`;
-}).join('\n');
-Promise.resolve().then(() => {
-  Array.from(avatarModelsContent.querySelectorAll('.a-avatar')).forEach(aAvatar => {
-    const src = aAvatar.getAttribute('src');
-    aAvatar.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text', JSON.stringify({
-        type: 'avatar',
-        src,
-      }));
-    });
-
-    const addButton = aAvatar.querySelector('.add-button');
-    addButton.addEventListener('click', () => {
-      const dom = parseHtml(codeInput.value);
-      const xrSite = _findNodeWithTagName(dom, 'xr-model');
-      if (xrSite) {
-        const position = camera.position.clone()
-          .divide(container.scale)
-          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-        xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
-      } else {
-        console.warn('no xr-site to add to');
-      }
-    });
-
-    const wearButton = aAvatar.querySelector('.wear-button');
-    wearButton.addEventListener('click', async () => {
-      console.log('wear avatar', src);
-      const model = await _loadModelUrl(src);
-      _setLocalModel(model);
-      modelUrl = src;
-    });
-  });
-});
 
 _setLocalModel(null);
 modelUrl = null;
