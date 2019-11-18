@@ -779,8 +779,8 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
         'disconnect-button',
       ].forEach(id => {
         const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el.addEventListener('click', () => {
-          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
           el2.dispatchEvent(new MouseEvent('click'));
         });
       });
@@ -789,16 +789,14 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
         'channel-input',
       ].forEach(id => {
         const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el.addEventListener('input', e => {
-          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
           el2.dispatchEvent(new CustomEvent('input'));
         });
         el.addEventListener('focus', e => {
-          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
           el2.dispatchEvent(new CustomEvent('focus'));
         });
         el.addEventListener('blur', e => {
-          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
           el2.dispatchEvent(new CustomEvent('blur'));
         });
       });
@@ -807,8 +805,8 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
         'code',
       ].forEach(id => {
         const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el.addEventListener('change', e => {
-          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
           el2.dispatchEvent(new CustomEvent('change'));
         });
       });
@@ -817,8 +815,8 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
         'upload-file-button',
       ].forEach(id => {
         const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el.addEventListener('change', e => {
-          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
           el2.dispatchEvent(new CustomEvent('change'));
         });
       });
