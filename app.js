@@ -1874,11 +1874,11 @@ window.document.addEventListener('drop', async e => {
 
 
 _setLocalModel(null);
-modelUrl = null;
+/* modelUrl = null;
 _sendAllPeerConnections(JSON.stringify({
   method: 'model',
   url: modelUrl,
-}));
+})); */
 
 window.addEventListener('resize', e => {
   camera.aspect = window.innerWidth / window.innerHeight;
