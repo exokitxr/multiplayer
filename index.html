@@ -667,6 +667,7 @@ header > .login-form.phase-3 > .phaseless-content
     <script type=module>
 import './webxr-polyfill.module.js';
 import './HelioWebXRPolyfill.js';
+import ew from 'https://web.exokit.org/ew.js';
 import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
 import {HTMLServer} from 'https://sync.exokit.org/sync-server.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
@@ -1659,36 +1660,6 @@ const _keydown = e => {
 };
 window.addEventListener('keydown', _keydown);
 
-const _loadEw = async () => {
-  await import(`https://web.exokit.org/ew.js`);
-  console.log('loaded ew');
-};
-const _unloadEw = async () => {
-  const registrations = await navigator.serviceWorker.getRegistrations();
-  for (let i = 0; i < registrations.length; i++) {
-    registrations[i].unregister();
-  }
-  console.log('unloaded ew');
-};
-const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
-realityLayersSwitchWrap.addEventListener('click', () => {
-  realityLayersSwitchWrap.classList.toggle('on');
-
-  const enabled = realityLayersSwitchWrap.classList.contains('on');
-  if (enabled) {
-    localStorage.setItem('realityLayers', true);
-    _loadEw();
-  } else {
-    localStorage.removeItem('realityLayers');
-    _unloadEw();
-  }
-});
-if (localStorage.getItem('realityLayers')) {
-  realityLayersSwitchWrap.classList.add('on');
-
-  _loadEw();
-}
-
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
 const _mousemove = e => {
@@ -2601,6 +2572,33 @@ _sendAllPeerConnections(JSON.stringify({
   method: 'model',
   url: modelUrl,
 }));
+
+const _loadEw = async () => {
+  await ew.register();
+  console.log('loaded ew');
+};
+const _unloadEw = async () => {
+  await ew.unregister();
+  console.log('unloaded ew');
+};
+const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
+realityLayersSwitchWrap.addEventListener('click', () => {
+  realityLayersSwitchWrap.classList.toggle('on');
+
+  const enabled = realityLayersSwitchWrap.classList.contains('on');
+  if (enabled) {
+    localStorage.setItem('realityLayers', true);
+    _loadEw();
+  } else {
+    localStorage.removeItem('realityLayers');
+    _unloadEw();
+  }
+});
+if (localStorage.getItem('realityLayers')) {
+  realityLayersSwitchWrap.classList.add('on');
+
+  _loadEw();
+}
 
 (async () => {
   let result;
