@@ -713,6 +713,21 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
     }); */
     const iframeWrapper = document.getElementById('iframe-wrapper');
     document.body.appendChild(iframeWrapper);
+
+    [
+      'set-avatar-button',
+      'unset-avatar-button',
+      'screenshot-button',
+      'firstperson-button',
+      'thirdperson-button',
+      'enter-xr-button',
+      'enable-mic-button',
+      'disable-mic-button',
+    ].forEach(id => {
+      document.getElementById(id).addEventListener('click', () => {
+        xrEngine.contentWindow.iframe.contentDocument.getElementById(id).dispatchEvent(new MouseEvent('click'));
+      });
+    });
   } else {
     await import('./app.js');
   }
