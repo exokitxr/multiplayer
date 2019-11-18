@@ -192,148 +192,151 @@ orbitControls.screenSpacePanning = true;
 orbitControls.enableMiddleZoom = false;
 orbitControls.update();
 
-class XRIFrame extends HTMLElement {
-  constructor() {
-    super();
+if (typeof XRIFrame === 'undefined') {
+  class XRIFrame extends HTMLElement {
+    constructor() {
+      super();
 
-    this.object = null;
-    this.control = null;
-  }
-  async attributeChangedCallback(name, oldValue, newValue) {
-    if (this.control) {
-      if (name === 'src') {
-        let url = this.getAttribute('src');
-        console.log('set url', url);
-      } else if (name === 'position') {
-        let position = (newValue || '0 0 0').split(' ');
-        if (position.length === 3) {
-          position = position.map(s => parseFloat(s));
-          if (position.every(n => isFinite(n))) {
-            this.control.object.position.fromArray(position);
+      this.object = null;
+      this.control = null;
+    }
+    async attributeChangedCallback(name, oldValue, newValue) {
+      if (this.control) {
+        if (name === 'src') {
+          let url = this.getAttribute('src');
+          console.log('set url', url);
+        } else if (name === 'position') {
+          let position = (newValue || '0 0 0').split(' ');
+          if (position.length === 3) {
+            position = position.map(s => parseFloat(s));
+            if (position.every(n => isFinite(n))) {
+              this.control.object.position.fromArray(position);
+            }
+          }
+        } else if (name === 'orientation') {
+          let orientation = (newValue || '0 0 0 1').split(' ');
+          if (orientation.length === 4) {
+            orientation = orientation.map(s => parseFloat(s));
+            if (orientation.every(n => isFinite(n))) {
+              this.control.object.quaternion.fromArray(orientation);
+            }
+          }
+        } else if (name === 'scale') {
+          let scale = (newValue || '1 1 1').split(' ');
+          if (scale.length === 3) {
+            scale = scale.map(s => parseFloat(s));
+            if (scale.every(n => isFinite(n))) {
+              this.control.object.scale.fromArray(scale);
+            }
           }
         }
-      } else if (name === 'orientation') {
-        let orientation = (newValue || '0 0 0 1').split(' ');
-        if (orientation.length === 4) {
-          orientation = orientation.map(s => parseFloat(s));
-          if (orientation.every(n => isFinite(n))) {
-            this.control.object.quaternion.fromArray(orientation);
-          }
+      }
+    }
+    static get observedAttributes() {
+      return [
+        'src',
+        'position',
+        'orientation',
+        'scale',
+      ];
+    }
+    connectedCallback() {
+      console.log('connected', this);
+
+      this.object = new THREE.Object3D();
+      container.add(this.object);
+
+      const control = new THREE.TransformControls(camera, renderer.domElement);
+      control.setMode(transformMode);
+      control.size = 3;
+      control.addEventListener('dragging-changed', e => {
+        orbitControls.enabled = !e.value;
+      });
+      control.addEventListener('mouseEnter', () => {
+        control.draggable = true;
+      });
+      control.addEventListener('mouseLeave', () => {
+        control.draggable = false;
+      });
+      scene.add(control);
+      control.attach(this.object);
+      this.control = control;
+
+      this.attributeChangedCallback('src', null, this.getAttribute('src'));
+      this.attributeChangedCallback('position', null, this.getAttribute('position'));
+      this.attributeChangedCallback('orientation', null, this.getAttribute('orientation'));
+      this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
+
+      control.addEventListener('change', e => {
+        this.position = control.object.position.toArray();
+        this.orientation = control.object.quaternion.toArray();
+        this.scale = control.object.scale.toArray();
+      });
+    }
+    disconnectedCallback() {
+      console.log('disconnected', this);
+      container.remove(this.object);
+      scene.remove(this.control);
+      this.control.dispose();
+    }
+    get src() {
+      return this.getAttribute('src');
+    }
+    set src(src) {
+      this.setAttribute('src', src);
+    }
+
+    get position() {
+      const s = this.getAttribute('position');
+      return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0];
+    }
+    set position(position) {
+      if (!Array.isArray(position)) {
+        position = Array.from(position);
+      }
+      if (position.length === 3 && position.every(n => isFinite(n))) {
+        const oldPosition = this.position;
+        if (position.some((n, i) => n !== oldPosition[i])) {
+          this.setAttribute('position', position.join(' '));
         }
-      } else if (name === 'scale') {
-        let scale = (newValue || '1 1 1').split(' ');
-        if (scale.length === 3) {
-          scale = scale.map(s => parseFloat(s));
-          if (scale.every(n => isFinite(n))) {
-            this.control.object.scale.fromArray(scale);
-          }
+      }
+    }
+
+    get orientation() {
+      const s = this.getAttribute('orientation');
+      return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0, 1];
+    }
+    set orientation(orientation) {
+      if (!Array.isArray(orientation)) {
+        orientation = Array.from(orientation);
+      }
+      if (orientation.length === 4 && orientation.every(n => isFinite(n))) {
+        const oldOrientation = this.orientation;
+        if (orientation.some((n, i) => n !== oldOrientation[i])) {
+          this.setAttribute('orientation', orientation.join(' '));
+        }
+      }
+    }
+
+    get scale() {
+      const s = this.getAttribute('scale');
+      return s ? s.split(' ').map(s => parseFloat(s)) : [1, 1, 1];
+    }
+    set scale(scale) {
+      if (!Array.isArray(scale)) {
+        scale = Array.from(scale);
+      }
+      if (scale.length === 3 && scale.every(n => isFinite(n))) {
+        const oldScale = this.scale;
+        if (scale.some((n, i) => n !== oldScale[i])) {
+          this.setAttribute('scale', scale.join(' '));
         }
       }
     }
   }
-  static get observedAttributes() {
-    return [
-      'src',
-      'position',
-      'orientation',
-      'scale',
-    ];
-  }
-  connectedCallback() {
-    console.log('connected', this);
-
-    this.object = new THREE.Object3D();
-    container.add(this.object);
-
-    const control = new THREE.TransformControls(camera, renderer.domElement);
-    control.setMode(transformMode);
-    control.size = 3;
-    control.addEventListener('dragging-changed', e => {
-      orbitControls.enabled = !e.value;
-    });
-    control.addEventListener('mouseEnter', () => {
-      control.draggable = true;
-    });
-    control.addEventListener('mouseLeave', () => {
-      control.draggable = false;
-    });
-    scene.add(control);
-    control.attach(this.object);
-    this.control = control;
-
-    this.attributeChangedCallback('src', null, this.getAttribute('src'));
-    this.attributeChangedCallback('position', null, this.getAttribute('position'));
-    this.attributeChangedCallback('orientation', null, this.getAttribute('orientation'));
-    this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
-
-    control.addEventListener('change', e => {
-      this.position = control.object.position.toArray();
-      this.orientation = control.object.quaternion.toArray();
-      this.scale = control.object.scale.toArray();
-    });
-  }
-  disconnectedCallback() {
-    console.log('disconnected', this);
-    container.remove(this.object);
-    scene.remove(this.control);
-    this.control.dispose();
-  }
-  get src() {
-    return this.getAttribute('src');
-  }
-  set src(src) {
-    this.setAttribute('src', src);
-  }
-
-  get position() {
-    const s = this.getAttribute('position');
-    return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0];
-  }
-  set position(position) {
-    if (!Array.isArray(position)) {
-      position = Array.from(position);
-    }
-    if (position.length === 3 && position.every(n => isFinite(n))) {
-      const oldPosition = this.position;
-      if (position.some((n, i) => n !== oldPosition[i])) {
-        this.setAttribute('position', position.join(' '));
-      }
-    }
-  }
-
-  get orientation() {
-    const s = this.getAttribute('orientation');
-    return s ? s.split(' ').map(s => parseFloat(s)) : [0, 0, 0, 1];
-  }
-  set orientation(orientation) {
-    if (!Array.isArray(orientation)) {
-      orientation = Array.from(orientation);
-    }
-    if (orientation.length === 4 && orientation.every(n => isFinite(n))) {
-      const oldOrientation = this.orientation;
-      if (orientation.some((n, i) => n !== oldOrientation[i])) {
-        this.setAttribute('orientation', orientation.join(' '));
-      }
-    }
-  }
-
-  get scale() {
-    const s = this.getAttribute('scale');
-    return s ? s.split(' ').map(s => parseFloat(s)) : [1, 1, 1];
-  }
-  set scale(scale) {
-    if (!Array.isArray(scale)) {
-      scale = Array.from(scale);
-    }
-    if (scale.length === 3 && scale.every(n => isFinite(n))) {
-      const oldScale = this.scale;
-      if (scale.some((n, i) => n !== oldScale[i])) {
-        this.setAttribute('scale', scale.join(' '));
-      }
-    }
-  }
+  customElements.define('xr-iframe', XRIFrame);
+  window.XRIFrame = XRIFrame;
 }
-customElements.define('xr-iframe', XRIFrame);
 
 const boundingBoxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
 const _makeBoundingBoxMesh = target => {
