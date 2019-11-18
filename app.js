@@ -1880,11 +1880,60 @@ _sendAllPeerConnections(JSON.stringify({
   url: modelUrl,
 })); */
 
-window.addEventListener('message', e => {
+window.addEventListener('message', async e => {
   const {method} = e.data;
   switch (method) {
     case 'fakeXr': {
-      console.log('fake xr');
+      session = await navigator.xr.requestSession('immersive-vr', {
+        requiredFeatures: ['local-floor'],
+      });
+      /* if (model) {
+        meshDolly.visible = false;
+      } */
+      let referenceSpace;
+      let referenceSpaceType = '';
+      const _loadReferenceSpace = async () => {
+        const lastReferenceSpaceType = referenceSpaceType;
+        try {
+          referenceSpace = await session.requestReferenceSpace('local-floor');
+          referenceSpaceType = 'local-floor';
+        } catch (err) {
+          referenceSpace = await session.requestReferenceSpace('local');
+          referenceSpaceType = 'local';
+        }
+
+        if (referenceSpaceType !== lastReferenceSpaceType) {
+          console.log(`referenceSpace changed to ${referenceSpaceType}`);
+        }
+      };
+      await _loadReferenceSpace();
+      const loadReferenceSpaceInterval = setInterval(_loadReferenceSpace, 1000);
+
+      renderer.vr.setSession(session);
+
+      session.requestAnimationFrame((timestamp, frame) => {
+        const pose = frame.getViewerPose(referenceSpace);
+        const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
+        // const width = viewport.width;
+        const height = viewport.height;
+        const fullWidth = (() => {
+          let result = 0;
+          for (let i = 0; i < pose.views.length; i++) {
+            result += session.renderState.baseLayer.getViewport(pose.views[i]).width;
+          }
+          return result;
+        })();
+        renderer.setSize(fullWidth, height);
+        renderer.setPixelRatio(1);
+
+        renderer.setAnimationLoop(null);
+
+        renderer.vr.enabled = true;
+        renderer.vr.setSession(session);
+        renderer.vr.setAnimationLoop(animate);
+
+        console.log('loaded root in XR');
+      });
       break;
     }
     default: {
