@@ -872,24 +872,35 @@ let xrEngine = null;
       [
         'site-urls-content',
       ].forEach(id => {
-        const el = document.getElementById(id).querySelector('.add-button');
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id).querySelector('.add-button');
-        el.addEventListener('click', () => {
-          el2.dispatchEvent(new CustomEvent('click'));
+        const container = document.getElementById(id);
+        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        const className = '.add-button';
+        const els = Array.from(container.querySelectorAll(className));
+        const els2 = Array.from(container2.querySelectorAll(className));
+        els.forEach((el, i) => {
+          const el2 = els2[i];
+          el.addEventListener('click', () => {
+            el2.dispatchEvent(new CustomEvent('click'));
+          });
         });
       });
       [
         'avatar-models-content',
       ].forEach(id => {
+        const container = document.getElementById(id);
+        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         [
           'add-button',
           'wear-button',
         ].forEach(b => {
           const className = `.${b}`;
-          const el = document.getElementById(id).querySelector(className);
-          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id).querySelector(className);
-          el.addEventListener('click', () => {
-            el2.dispatchEvent(new CustomEvent('click'));
+          const els = Array.from(container.querySelectorAll(className));
+          const els2 = Array.from(container2.querySelectorAll(className));
+          els.forEach((el, i) => {
+            const el2 = els2[i];
+            el.addEventListener('click', () => {
+              el2.dispatchEvent(new CustomEvent('click'));
+            });
           });
         });
       });
