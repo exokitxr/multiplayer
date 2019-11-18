@@ -2595,6 +2595,13 @@ Promise.resolve().then(() => {
   });
 });
 
+_setLocalModel(null);
+modelUrl = null;
+_sendAllPeerConnections(JSON.stringify({
+  method: 'model',
+  url: modelUrl,
+}));
+
 (async () => {
   let result;
   if (navigator.xr) {
@@ -2615,13 +2622,6 @@ Promise.resolve().then(() => {
     console.log('no xr');
     noXrButton.style.display = null;
   }
-
-  _setLocalModel(null);
-  modelUrl = null;
-  _sendAllPeerConnections(JSON.stringify({
-    method: 'model',
-    url: modelUrl,
-  }));
 })();
 
 window.addEventListener('resize', e => {
