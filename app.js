@@ -246,10 +246,20 @@ const _bindXrIframe = xrIframe => {
       }
     }
   }
-  attributeChangedCallback.call(xrIframe, 'src', null, xrIframe.getAttribute('src'));
-  attributeChangedCallback.call(xrIframe, 'position', null, xrIframe.getAttribute('position'));
-  attributeChangedCallback.call(xrIframe, 'orientation', null, xrIframe.getAttribute('orientation'));
-  attributeChangedCallback.call(xrIframe, 'scale', null, xrIframe.getAttribute('scale'));
+  const observedAttributes = [
+    'src',
+    'position',
+    'orientation',
+    'scale',
+    'highlight',
+    'extents',
+    'load-distance',
+    'data',
+  ];
+  for (let i = 0; i < observedAttributes.length; i++) {
+    const attributeName = observedAttributes[i];
+    attributeChangedCallback.call(xrIframe, attributeName, null, xrIframe.getAttribute(attributeName));
+  }
 
   xrIframe[observerSymbol] = new MutationObserver(mutationRecords => {
     for (let i = 0; i < mutationRecords.length; i++) {
@@ -260,12 +270,7 @@ const _bindXrIframe = xrIframe => {
   }).observe(xrIframe, {
     attributes: true,
     attributeOldValue: true,
-    attributeFilter: [
-      'src',
-      'position',
-      'orientation',
-      'scale',
-    ],
+    attributeFilter: observedAttributes,
   });
 
   control.addEventListener('change', e => {
