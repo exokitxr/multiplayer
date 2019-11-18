@@ -936,6 +936,12 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
+  if (fakeXrDisplay) {
+    fakeXrDisplay.position.copy(camera.position);
+    fakeXrDisplay.quaternion.copy(camera.quaternion);
+    fakeXrDisplay.pushUpdate();
+  }
+
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
@@ -1883,6 +1889,7 @@ _sendAllPeerConnections(JSON.stringify({
   url: modelUrl,
 })); */
 
+let fakeXrDisplay = null;
 window.addEventListener('message', async e => {
   const {method} = e.data;
   switch (method) {
@@ -1934,6 +1941,8 @@ window.addEventListener('message', async e => {
         renderer.vr.enabled = true;
         renderer.vr.setSession(session);
         renderer.vr.setAnimationLoop(animate);
+
+        fakeXrDisplay = new FakeXRDisplay();
 
         console.log('loaded root in XR');
       });
