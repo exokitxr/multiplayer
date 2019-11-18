@@ -723,9 +723,51 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
       'enter-xr-button',
       'enable-mic-button',
       'disable-mic-button',
+      'connect-button',
+      'disconnect-button',
     ].forEach(id => {
-      document.getElementById(id).addEventListener('click', () => {
-        xrEngine.contentWindow.iframe.contentDocument.getElementById(id).dispatchEvent(new MouseEvent('click'));
+      const el = document.getElementById(id);
+      el.addEventListener('click', () => {
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el2.dispatchEvent(new MouseEvent('click'));
+      });
+    });
+
+    [
+      'channel-input',
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', e => {
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el2.dispatchEvent(new CustomEvent('input'));
+      });
+      el.addEventListener('focus', e => {
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el2.dispatchEvent(new CustomEvent('focus'));
+      });
+      el.addEventListener('blur', e => {
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el2.dispatchEvent(new CustomEvent('blur'));
+      });
+    });
+
+    [
+      'code',
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('change', e => {
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el2.dispatchEvent(new CustomEvent('change'));
+      });
+    });
+
+    [
+      'upload-file-button',
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('change', e => {
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el2.dispatchEvent(new CustomEvent('change'));
       });
     });
   } else {
