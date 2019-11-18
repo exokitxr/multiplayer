@@ -598,8 +598,9 @@ const startSceneMatrix = new THREE.Matrix4();
 let startModelScale = 1;
 const dateOffset = Math.floor(Math.random() * 60 * 1000);
 const realDateNow = (now => () => dateOffset + now())(Date.now);
+let possessRig = false;
 function animate(timestamp, frame, referenceSpace) {
-  if (renderer.vr.enabled) {
+  if (possessRig) {
     const vrCameras = renderer.vr.getCamera(camera).cameras;
     const vrCamera = vrCameras[0];
     const vrCamera2 = vrCameras[1];
@@ -1274,6 +1275,8 @@ enterXrButton.addEventListener('click', async () => {
     renderer.vr.enabled = true;
     renderer.vr.setSession(session);
     renderer.vr.setAnimationLoop(animate);
+
+    possessRig = true;
 
     console.log('loaded root in XR');
   });
