@@ -530,12 +530,6 @@ header > .login-form.phase-3 > .phaseless-content
 }
     </style>
     <script src="https://kit.fontawesome.com/0735724151.js" crossorigin="anonymous"></script>
-    <script src="three.js"></script>
-    <script src="OrbitControls.js"></script>
-    <script src="TransformControls.js"></script>
-    <script src="Reflector.js"></script>
-    <script src="bmfont.js"></script>
-    <script src="app.js" type=module></script>
   </head>
   <body>
     <div class=body>
@@ -665,5 +659,55 @@ header > .login-form.phase-3 > .phaseless-content
         </div>
       </div>
     </div>
+    <script type=module>
+import ew from 'https://web.exokit.org/ew.js';
+
+const contentTabs = Array.from(document.querySelectorAll('.content-tab'));
+const sitesContentTab = document.getElementById('sites-content-tab');
+const detailsContentTab = document.getElementById('details-content-tab');
+const contents = Array.from(document.querySelectorAll('.content'));
+// const detailsContent = document.getElementById('details-content');
+for (let i = 0; i < contentTabs.length; i++) {
+  const contentTab = contentTabs[i];
+  contentTab.addEventListener('click', e => {
+    for (let j = 0; j < contentTabs.length; j++) {
+      const contentTab = contentTabs[j];
+      contentTab.classList.remove('open');
+    }
+    contentTab.classList.add('open');
+
+    for (let j = 0; j < contents.length; j++) {
+      const content = contents[j];
+      content.classList.remove('open');
+    }
+    const content = contents[i];
+    content.classList.add('open');
+  });
+}
+
+const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
+realityLayersSwitchWrap.addEventListener('click', async () => {
+  realityLayersSwitchWrap.classList.toggle('on');
+
+  const enabled = realityLayersSwitchWrap.classList.contains('on');
+  if (enabled) {
+    localStorage.setItem('realityLayers', true);
+    await ew.register();
+    location.reload();
+  } else {
+    localStorage.removeItem('realityLayers');
+    await ew.unregister();
+    location.reload();
+  }
+});
+(async () => {
+  if (localStorage.getItem('realityLayers')) {
+    realityLayersSwitchWrap.classList.add('on');
+    await ew.register();
+  } else {
+    await import('./app.js');
+  }
+})();
+    </script>
   </body>
 </html>

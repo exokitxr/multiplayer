@@ -1,6 +1,9 @@
-import './webxr-polyfill.module.js';
-import './HelioWebXRPolyfill.js';
-import ew from './exokit-web/ew.js';
+import './three.js';
+import './OrbitControls.js';
+import './TransformControls.js';
+import './Reflector.js';
+import './bmfont.js';
+
 import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
 import {HTMLServer} from 'https://sync.exokit.org/sync-server.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
@@ -331,29 +334,6 @@ class XRIFrame extends HTMLElement {
   }
 }
 customElements.define('xr-iframe', XRIFrame);
-
-const contentTabs = Array.from(document.querySelectorAll('.content-tab'));
-const sitesContentTab = document.getElementById('sites-content-tab');
-const detailsContentTab = document.getElementById('details-content-tab');
-const contents = Array.from(document.querySelectorAll('.content'));
-// const detailsContent = document.getElementById('details-content');
-for (let i = 0; i < contentTabs.length; i++) {
-  const contentTab = contentTabs[i];
-  contentTab.addEventListener('click', e => {
-    for (let j = 0; j < contentTabs.length; j++) {
-      const contentTab = contentTabs[j];
-      contentTab.classList.remove('open');
-    }
-    contentTab.classList.add('open');
-
-    for (let j = 0; j < contents.length; j++) {
-      const content = contents[j];
-      content.classList.remove('open');
-    }
-    const content = contents[i];
-    content.classList.add('open');
-  });
-}
 
 const boundingBoxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
 const _makeBoundingBoxMesh = target => {
@@ -1905,33 +1885,6 @@ _sendAllPeerConnections(JSON.stringify({
   method: 'model',
   url: modelUrl,
 }));
-
-const _loadEw = async () => {
-  await ew.register();
-  console.log('loaded ew');
-};
-const _unloadEw = async () => {
-  await ew.unregister();
-  console.log('unloaded ew');
-};
-const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
-realityLayersSwitchWrap.addEventListener('click', () => {
-  realityLayersSwitchWrap.classList.toggle('on');
-
-  const enabled = realityLayersSwitchWrap.classList.contains('on');
-  if (enabled) {
-    localStorage.setItem('realityLayers', true);
-    _loadEw();
-  } else {
-    localStorage.removeItem('realityLayers');
-    _unloadEw();
-  }
-});
-if (localStorage.getItem('realityLayers')) {
-  realityLayersSwitchWrap.classList.add('on');
-
-  _loadEw();
-}
 
 (async () => {
   let result;
