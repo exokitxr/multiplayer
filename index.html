@@ -576,7 +576,7 @@ header > .login-form.phase-3 > .phaseless-content
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
       <div class="iframe-buttons multibutton">
-        <a class="button first" id="enable-mic-button" style="display: none;">Enable Mic</a>
+        <a class="button first" id="enable-mic-button">Enable Mic</a>
         <a class="button first" id="disable-mic-button" disabled style="display: none;">Disable Mic</a>
         <a class="button" id="firstperson-button">Firstperson</a>
         <a class="button" id="thirdperson-button">Thirdperson</a>
@@ -750,6 +750,28 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
     </div>`;
   }).join('\n');
 
+  const enterXrButton = document.getElementById('enter-xr-button');
+  const noXrButton = document.getElementById('no-xr-button');
+  let result;
+  if (navigator.xr) {
+    try {
+      await navigator.xr.supportsSession('immersive-vr');
+      result = true;
+    } catch (err) {
+      console.warn(err);
+      result = false;
+    }
+  } else {
+    result = false;
+  }
+  if (result) {
+    console.log('xr available');
+    enterXrButton.style.display = null;
+  } else {
+    console.log('no xr');
+    noXrButton.style.display = null;
+  }
+
   if (localStorage.getItem('realityLayers')) {
     realityLayersSwitchWrap.classList.add('on');
     await ew.register();
@@ -852,6 +874,25 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
           el.addEventListener('click', () => {
             el2.dispatchEvent(new CustomEvent('click'));
           });
+        });
+      });
+      [
+        'enable-mic-button',
+        'disable-mic-button',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el.addEventListener('click', () => {
+          el2.dispatchEvent(new CustomEvent('click'));
+        });
+      });
+      [
+        'enter-xr-button',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el.addEventListener('click', () => {
+          el2.dispatchEvent(new CustomEvent('click'));
         });
       });
     });

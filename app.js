@@ -1226,7 +1226,6 @@ thirdpersonButton.addEventListener('click', async () => {
 
 let session = null;
 const enterXrButton = document.getElementById('enter-xr-button');
-const noXrButton = document.getElementById('no-xr-button');
 enterXrButton.addEventListener('click', async () => {
   session = await navigator.xr.requestSession('immersive-vr', {
     requiredFeatures: ['local-floor'],
@@ -1321,7 +1320,6 @@ disableMicButton.addEventListener('click', async () => {
     console.warn(err);
   } */
 });
-enableMicButton.style.display = null;
 
 const siteUrlsContent = document.getElementById('site-urls-content');
 const avatarModelsContent = document.getElementById('avatar-models-content');
@@ -1881,28 +1879,6 @@ _sendAllPeerConnections(JSON.stringify({
   method: 'model',
   url: modelUrl,
 }));
-
-(async () => {
-  let result;
-  if (navigator.xr) {
-    try {
-      await navigator.xr.supportsSession('immersive-vr');
-      result = true;
-    } catch (err) {
-      console.warn(err);
-      result = false;
-    }
-  } else {
-    result = false;
-  }
-  if (result) {
-    console.log('xr available');
-    enterXrButton.style.display = null;
-  } else {
-    console.log('no xr');
-    noXrButton.style.display = null;
-  }
-})();
 
 window.addEventListener('resize', e => {
   camera.aspect = window.innerWidth / window.innerHeight;
