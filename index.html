@@ -761,9 +761,11 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
       const {method} = data;
     }); */
     const iframeWrapper = document.getElementById('iframe-wrapper');
-    document.body.appendChild(iframeWrapper);
+    iframeWrapper.appendChild(xrEngine);
 
-    xrEngine.addEventListener('click', () => {
+    xrEngine.addEventListener('canvas', e => {
+      // const canvas = e.data;
+
       [
         'set-avatar-button',
         'unset-avatar-button',
