@@ -1880,6 +1880,20 @@ _sendAllPeerConnections(JSON.stringify({
   url: modelUrl,
 })); */
 
+window.addEventListener('message', e => {
+  const {method} = e.data;
+  switch (method) {
+    case 'fakeXr': {
+      console.log('fake xr');
+      break;
+    }
+    default: {
+      console.warn(`unknown window method: ${method}`);
+      break;
+    }
+  }
+});
+
 window.addEventListener('resize', e => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
