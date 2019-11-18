@@ -830,6 +830,30 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
         const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el2.innerHTML = el.innerHTML;
       });
+      [
+        'site-urls-content',
+      ].forEach(id => {
+        const el = document.getElementById(id).querySelector('.add-button');
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id).querySelector('.add-button');
+        el.addEventListener('click', () => {
+          el2.dispatchEvent(new CustomEvent('click'));
+        });
+      });
+      [
+        'avatar-models-content',
+      ].forEach(id => {
+        [
+          'add-button',
+          'wear-button',
+        ].forEach(b => {
+          const className = `.${b}`;
+          const el = document.getElementById(id).querySelector(className);
+          const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id).querySelector(className);
+          el.addEventListener('click', () => {
+            el2.dispatchEvent(new CustomEvent('click'));
+          });
+        });
+      });
     });
   } else {
     await import('./app.js');
