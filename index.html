@@ -845,6 +845,19 @@ let xrEngine = null;
       });
 
       [
+        'channels-content',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        new MutationObserver(() => {
+          el.setAttribute('style', el2.getAttribute('style'));
+        }).observe(el2, {
+          attributes: true,
+          attributeFilter: ['style'],
+        });
+      });
+
+      [
         'code',
       ].forEach(id => {
         const el = document.getElementById(id);
