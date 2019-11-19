@@ -1705,6 +1705,7 @@ const htmlClient = new HTMLClient(codeInput.value);
 htmlClient.addEventListener('localUpdate', e => {
   // console.log('local update', i, e.detail, new Error().stack);
   codeInput.value = e.detail;
+  codeInput.dispatchEvent(new CustomEvent('input'));
 });
 htmlClient.addEventListener('message', e => {
   if (channelConnection) {

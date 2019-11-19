@@ -862,8 +862,16 @@ let xrEngine = null;
       ].forEach(id => {
         const el = document.getElementById(id);
         const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el.addEventListener('change', e => {
+        el.value = el2.value;
+        el.addEventListener('change', () => {
+          el2.value = el.value;
           el2.dispatchEvent(new CustomEvent('change'));
+        });
+        el2.addEventListener('change', () => {
+          el.value = el2.value;
+        });
+        el2.addEventListener('input', () => {
+          el.value = el2.value;
         });
       });
 
