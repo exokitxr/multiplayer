@@ -1839,10 +1839,10 @@ window.document.addEventListener('drop', async e => {
                 .divide(container.scale)
                 .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
             };
-            if (e.target === renderer.domElement) {
-              const rect = renderer.domElement.getBoundingClientRect();
-              const xFactor = (e.clientX - rect.left) / rect.width;
-              const yFactor = -(e.clientY - rect.top) / rect.height;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const xFactor = (e.clientX - rect.left) / rect.width;
+            const yFactor = -(e.clientY - rect.top) / rect.height;
+            if (xFactor >= 0 && xFactor <= 1 && -yFactor >= 0 && -yFactor <= 1) {
               const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
                 new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion),
                 camera.position.clone()
