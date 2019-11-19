@@ -1020,7 +1020,8 @@ let xrEngine = null;
       ].forEach(id => {
         const el = document.getElementById(id);
         const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el.addEventListener('click', () => {
+        el.addEventListener('click', async () => {
+          await xrEngine.enterXr();
           el2.dispatchEvent(new CustomEvent('click'));
         });
       });
