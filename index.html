@@ -916,6 +916,27 @@ let xrEngine = null;
         });
       });
       [
+        'connect-button',
+        'disconnect-button',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+
+        new MutationObserver(() => {
+          el.setAttribute('style', el2.getAttribute('style'));
+          const disabled = el2.getAttribute('disabled');
+          if (disabled !== null) {
+            el.setAttribute('disabled', disabled);
+          } else {
+            el.removeAttribute('disabled');
+          }
+          el.innerText = el2.innerText;
+        }).observe(el2, {
+          attributes: true,
+          childList: true,
+        });
+      });
+      [
         'site-urls-content',
       ].forEach(id => {
         const container = document.getElementById(id);
