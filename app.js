@@ -1834,11 +1834,6 @@ window.document.addEventListener('drop', async e => {
           const xrSite = _findNodeWithTagName(dom, 'xr-site');
           if (xrSite) {
             const position = new THREE.Vector3();
-            const _defaultPosition = () => {
-              position.copy(camera.position)
-                .divide(container.scale)
-                .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-            };
             const rect = renderer.domElement.getBoundingClientRect();
             const xFactor = (e.clientX - rect.left) / rect.width;
             const yFactor = -(e.clientY - rect.top) / rect.height;
@@ -1854,14 +1849,15 @@ window.document.addEventListener('drop', async e => {
                 intersection.divide(container.scale);
                 position.copy(intersection);
               } else {
-                _defaultPosition();
+                position.copy(camera.position)
+                  .divide(container.scale)
+                  .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
               }
-            } else {
-              _defaultPosition();
+
+              xrSite.childNodes.push(parseHtml(`<${tagName} src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></${tagName}>`).childNodes[0]);
+              codeInput.value = serializeHtml(dom);
+              codeInput.dispatchEvent(new CustomEvent('change'));
             }
-            xrSite.childNodes.push(parseHtml(`<${tagName} src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></${tagName}>`).childNodes[0]);
-            codeInput.value = serializeHtml(dom);
-            codeInput.dispatchEvent(new CustomEvent('change'));
           } else {
             console.warn('no xr-site to add to');
           }
