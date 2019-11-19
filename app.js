@@ -155,13 +155,11 @@ const mirrorMesh = (() => {
   mesh.onBeforeRender2 = () => {
     if (rig) {
       rig.undecapitate();
-      // meshDolly.visible = true;
     }
   };
   mesh.onAfterRender2 = () => {
     if (rig && session) {
       rig.decapitate();
-      // meshDolly.visible = false;
     }
   };
 
@@ -1223,9 +1221,6 @@ enterXrButton.addEventListener('click', async () => {
   session = await navigator.xr.requestSession('immersive-vr', {
     requiredFeatures: ['local-floor'],
   });
-  /* if (model) {
-    meshDolly.visible = false;
-  } */
   let referenceSpace;
   let referenceSpaceType = '';
   const _loadReferenceSpace = async () => {
@@ -1880,9 +1875,6 @@ window.addEventListener('message', async e => {
       session = await navigator.xr.requestSession('immersive-vr', {
         requiredFeatures: ['local-floor'],
       });
-      /* if (model) {
-        meshDolly.visible = false;
-      } */
       let referenceSpace;
       let referenceSpaceType = '';
       const _loadReferenceSpace = async () => {
