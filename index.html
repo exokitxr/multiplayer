@@ -878,21 +878,55 @@ let xrEngine = null;
       ].forEach(id => {
         const container = document.getElementById(id);
         const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        const className = '.add-button';
-        const els = Array.from(container.querySelectorAll(className));
-        const els2 = Array.from(container2.querySelectorAll(className));
-        els.forEach((el, i) => {
-          const el2 = els2[i];
-          el.addEventListener('click', () => {
-            el2.dispatchEvent(new CustomEvent('click'));
+
+        {
+          const className = '.a-site';
+          const els = Array.from(container.querySelectorAll(className));
+          const els2 = Array.from(container2.querySelectorAll(className));
+          els.forEach((el, i) => {
+            const el2 = els2[i];
+            el.addEventListener('dragstart', e => {
+              const {dataTransfer} = e;
+              el2.dispatchEvent(new DragEvent('dragstart', {
+                dataTransfer,
+              }));
+            });
           });
-        });
+        }
+
+        {
+          const className = '.add-button';
+          const els = Array.from(container.querySelectorAll(className));
+          const els2 = Array.from(container2.querySelectorAll(className));
+          els.forEach((el, i) => {
+            const el2 = els2[i];
+            el.addEventListener('click', () => {
+              el2.dispatchEvent(new CustomEvent('click'));
+            });
+          });
+        }
       });
       [
         'avatar-models-content',
       ].forEach(id => {
         const container = document.getElementById(id);
         const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+
+        {
+          const className = '.a-avatar';
+          const els = Array.from(container.querySelectorAll(className));
+          const els2 = Array.from(container2.querySelectorAll(className));
+          els.forEach((el, i) => {
+            const el2 = els2[i];
+            el.addEventListener('dragstart', e => {
+              const {dataTransfer} = e;
+              el2.dispatchEvent(new DragEvent('dragstart', {
+                dataTransfer,
+              }));
+            });
+          });
+        }
+
         [
           'add-button',
           'wear-button',
