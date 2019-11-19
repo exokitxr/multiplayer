@@ -1810,9 +1810,6 @@ const _bindUploadFileButton = inputFileEl => {
   });
 };
 _bindUploadFileButton(document.getElementById('upload-file-button'));
-window.document.addEventListener('dragover', e => {
-  e.preventDefault();
-});
 window.document.addEventListener('drop', async e => {
   e.preventDefault();
 

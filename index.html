@@ -746,6 +746,10 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
   }
 });
 
+window.document.addEventListener('dragover', e => {
+  e.preventDefault();
+});
+
 const fakeXrSwitchWrap = document.getElementById('fake-xr-switch-wrap');
 fakeXrSwitchWrap.addEventListener('click', () => {
   if (xrEngine) {
