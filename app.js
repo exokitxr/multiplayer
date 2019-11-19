@@ -1943,6 +1943,7 @@ window.addEventListener('message', async e => {
         renderer.vr.setAnimationLoop(animate);
 
         fakeXrDisplay = new FakeXRDisplay();
+        camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
 
         console.log('loaded root in XR');
       });
