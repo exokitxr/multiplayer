@@ -190,13 +190,10 @@ orbitControls.screenSpacePanning = true;
 orbitControls.enableMiddleZoom = false;
 orbitControls.update();
 
-const objectSymbol = Symbol('object');
-const controlSymbol = Symbol('control');
-const observerSymbol = Symbol('observed');
 const _bindXrIframe = xrIframe => {
   const object = new THREE.Object3D();
   container.add(object);
-  xrIframe[objectSymbol] = object;
+
 
   const control = new THREE.TransformControls(camera, renderer.domElement);
   control.setMode(transformMode);
@@ -212,10 +209,22 @@ const _bindXrIframe = xrIframe => {
   });
   scene.add(control);
   control.attach(object);
-  xrIframe[controlSymbol] = control;
+
+  const observer = new MutationObserver(mutationRecords => {
+    for (let i = 0; i < mutationRecords.length; i++) {
+      const {target, attributeName, oldValue} = mutationRecords[i];
+      const attributeValue = target.getAttribute(attributeName);
+      attributeChangedCallback.call(xrIframe, attributeName, oldValue, attributeValue);
+    }
+  });
+  xrIframe.bindState = {
+    object,
+    control,
+    observer,
+  };
 
   function attributeChangedCallback(name, oldValue, newValue) {
-    if (this[controlSymbol]) {
+    if (this.bindState) {
       if (name === 'src') {
         let url = this.getAttribute('src');
         console.log('set url', url);
@@ -224,7 +233,7 @@ const _bindXrIframe = xrIframe => {
         if (position.length === 3) {
           position = position.map(s => parseFloat(s));
           if (position.every(n => isFinite(n))) {
-            this[controlSymbol].object.position.fromArray(position);
+            this.bindState.control.object.position.fromArray(position);
           }
         }
       } else if (name === 'orientation') {
@@ -232,7 +241,7 @@ const _bindXrIframe = xrIframe => {
         if (orientation.length === 4) {
           orientation = orientation.map(s => parseFloat(s));
           if (orientation.every(n => isFinite(n))) {
-            this[controlSymbol].object.quaternion.fromArray(orientation);
+            this.bindState.control.object.quaternion.fromArray(orientation);
           }
         }
       } else if (name === 'scale') {
@@ -240,7 +249,7 @@ const _bindXrIframe = xrIframe => {
         if (scale.length === 3) {
           scale = scale.map(s => parseFloat(s));
           if (scale.every(n => isFinite(n))) {
-            this[controlSymbol].object.scale.fromArray(scale);
+            this.bindState.control.object.scale.fromArray(scale);
           }
         }
       }
@@ -260,14 +269,8 @@ const _bindXrIframe = xrIframe => {
     const attributeName = observedAttributes[i];
     attributeChangedCallback.call(xrIframe, attributeName, null, xrIframe.getAttribute(attributeName));
   }
-
-  xrIframe[observerSymbol] = new MutationObserver(mutationRecords => {
-    for (let i = 0; i < mutationRecords.length; i++) {
-      const {target, attributeName, oldValue} = mutationRecords[i];
-      const attributeValue = target.getAttribute(attributeName);
-      attributeChangedCallback.call(xrIframe, attributeName, oldValue, attributeValue);
-    }
-  }).observe(xrIframe, {
+  
+  observer.observe(xrIframe, {
     attributes: true,
     attributeOldValue: true,
     attributeFilter: observedAttributes,
@@ -280,14 +283,13 @@ const _bindXrIframe = xrIframe => {
   });
 };
 const _unbindXrIframe = xrIframe => {
-  container.remove(xrIframe[objectSymbol]);
-  scene.remove(xrIframe[controlSymbol]);
-  xrIframe[controlSymbol].dispose();
-  xrIframe[observerSymbol].disconnect();
+  const {object, control, observer} = xrIframe.bindState;
+  container.remove(object);
+  scene.remove(control);
+  control.dispose();
+  observer.disconnect();
 
-  xrIframe[objectSymbol] = null;
-  xrIframe[controlSymbol] = null;
-  xrIframe[observerSymbol] = null;
+  xrIframe.bindState = null;
 };
 new MutationObserver(mutationRecords => {
   for (let i = 0; i < mutationRecords.length; i++) {
@@ -295,13 +297,13 @@ new MutationObserver(mutationRecords => {
 
     for (let j = 0; j < addedNodes.length; j++) {
       const node = addedNodes[j];
-      if (node.tagName === 'XR-IFRAME' && !node[observerSymbol]) {
+      if (node.tagName === 'XR-IFRAME' && !node.bindState) {
         _bindXrIframe(node);
       }
     }
     for (let j = 0; j < removedNodes.length; j++) {
       const node = removedNodes[j];
-      if (node.tagName === 'XR-IFRAME' && node[observerSymbol]) {
+      if (node.tagName === 'XR-IFRAME' && node.bindState) {
         _unbindXrIframe(node);
       }
     }
