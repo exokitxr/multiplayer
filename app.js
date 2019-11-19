@@ -1402,6 +1402,7 @@ const _updateChannelsContent = () => {
     aChannel.addEventListener('mousedown', () => {
       channelInput.value = name;
       channelInput.dispatchEvent(new CustomEvent('input'));
+      channelInput.dispatchEvent(new CustomEvent('change'));
     });
   });
 };

@@ -842,18 +842,8 @@ let xrEngine = null;
         el.addEventListener('blur', e => {
           el2.dispatchEvent(new CustomEvent('blur'));
         });
-      });
-
-      [
-        'channels-content',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        new MutationObserver(() => {
-          el.setAttribute('style', el2.getAttribute('style'));
-        }).observe(el2, {
-          attributes: true,
-          attributeFilter: ['style'],
+        el2.addEventListener('change', () => {
+          el.value = el2.value;
         });
       });
 
@@ -893,6 +883,37 @@ let xrEngine = null;
         const el = document.getElementById(id);
         const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el2.innerHTML = el.innerHTML;
+      });
+      [
+        'channels-content',
+      ].forEach(id => {
+        const container = document.getElementById(id);
+        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+
+        const _bindChannels = () => {
+          const className = '.a-channel';
+          const els = Array.from(container.querySelectorAll(className));
+          const els2 = Array.from(container2.querySelectorAll(className));
+          els.forEach((el, i) => {
+            const el2 = els2[i];
+            el.addEventListener('mousedown', e => {
+              el2.dispatchEvent(new CustomEvent('mousedown'));
+            });
+          });
+        };
+        _bindChannels();
+
+        new MutationObserver(() => {
+          container.setAttribute('style', container2.getAttribute('style'));
+          container.innerHTML = container2.innerHTML;
+
+          _bindChannels();
+        }).observe(container2, {
+          attributes: true,
+          // attributeFilter: ['style'],
+          childList: true,
+          subtree: true,
+        });
       });
       [
         'site-urls-content',
