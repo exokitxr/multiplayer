@@ -886,36 +886,6 @@ let xrEngine = null;
         el2.innerHTML = el.innerHTML;
       });
       [
-        'channels-content',
-      ].forEach(id => {
-        const container = document.getElementById(id);
-        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-
-        const _bindChannels = () => {
-          const className = '.a-channel';
-          const els = Array.from(container.querySelectorAll(className));
-          const els2 = Array.from(container2.querySelectorAll(className));
-          els.forEach((el, i) => {
-            const el2 = els2[i];
-            el.addEventListener('mousedown', e => {
-              el2.dispatchEvent(new CustomEvent('mousedown'));
-            });
-          });
-        };
-        _bindChannels();
-
-        new MutationObserver(() => {
-          container.setAttribute('style', container2.getAttribute('style'));
-          container.innerHTML = container2.innerHTML;
-
-          _bindChannels();
-        }).observe(container2, {
-          attributes: true,
-          childList: true,
-          subtree: true,
-        });
-      });
-      [
         'connect-button',
         'disconnect-button',
       ].forEach(id => {
@@ -1003,6 +973,36 @@ let xrEngine = null;
               el2.dispatchEvent(new CustomEvent('click'));
             });
           });
+        });
+      });
+      [
+        'channels-content',
+      ].forEach(id => {
+        const container = document.getElementById(id);
+        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+
+        const _bindChannels = () => {
+          const className = '.a-channel';
+          const els = Array.from(container.querySelectorAll(className));
+          const els2 = Array.from(container2.querySelectorAll(className));
+          els.forEach((el, i) => {
+            const el2 = els2[i];
+            el.addEventListener('mousedown', e => {
+              el2.dispatchEvent(new CustomEvent('mousedown'));
+            });
+          });
+        };
+        _bindChannels();
+
+        new MutationObserver(() => {
+          container.setAttribute('style', container2.getAttribute('style'));
+          container.innerHTML = container2.innerHTML;
+
+          _bindChannels();
+        }).observe(container2, {
+          attributes: true,
+          childList: true,
+          subtree: true,
         });
       });
       [
