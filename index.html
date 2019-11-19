@@ -834,6 +834,7 @@ let xrEngine = null;
         const el = document.getElementById(id);
         const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el.addEventListener('input', e => {
+          el2.value = el.value;
           el2.dispatchEvent(new CustomEvent('input'));
         });
         el.addEventListener('focus', e => {
