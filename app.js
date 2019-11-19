@@ -696,7 +696,7 @@ function animate(timestamp, frame, referenceSpace) {
         return null;
       }
     };
-    const _updateTeleportMesh = (i, pad, lastPad, position, quaternion, padX, padY, stick) => {
+    /* const _updateTeleportMesh = (i, pad, lastPad, position, quaternion, padX, padY, stick) => {
       const teleportMesh = teleportMeshes[i];
       teleportMesh.visible = false;
 
@@ -734,12 +734,11 @@ function animate(timestamp, frame, referenceSpace) {
         localEuler.z = 0;
         container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
       }
-    };
+    }; */
 
     const wasLastBd = lastBs[0] && lastBs[1];
 
     const lg = _getGamepad(1);
-    let li = -1;
     if (lg) {
       const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, b} = lg;
       rig.inputs.leftGamepad.quaternion.copy(quaternion);
@@ -747,14 +746,7 @@ function animate(timestamp, frame, referenceSpace) {
       rig.inputs.leftGamepad.pointer = pointer;
       rig.inputs.leftGamepad.grip = grip;
 
-      li = mirrorMesh.getButtonIntersectionIndex(position);
-      if (pressed && !lastPressed) {
-        if (li !== -1) {
-          aAvatars[li].click();
-        }
-      }
-
-      _updateTeleportMesh(0, pad, lastPads[0], position, quaternion, 0, 0, false);
+      // _updateTeleportMesh(0, pad, lastPads[0], position, quaternion, 0, 0, false);
 
       lastPresseds[0] = pressed;
       lastPads[0] = pad;
@@ -762,7 +754,6 @@ function animate(timestamp, frame, referenceSpace) {
       lastPositions[0].copy(rawPosition);
     }
     const rg = _getGamepad(0);
-    let ri = -1;
     if (rg) {
       const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, padX, padY, stick, b} = rg;
       rig.inputs.rightGamepad.quaternion.copy(quaternion);
@@ -770,14 +761,7 @@ function animate(timestamp, frame, referenceSpace) {
       rig.inputs.rightGamepad.pointer = pointer;
       rig.inputs.rightGamepad.grip = grip;
 
-      ri = mirrorMesh.getButtonIntersectionIndex(position);
-      if (pressed && !lastPressed) {
-        if (ri !== -1) {
-          aAvatars[ri].click();
-        }
-      }
-
-      _updateTeleportMesh(1, false, false, position, quaternion, padX, padY, stick);
+      // _updateTeleportMesh(1, false, false, position, quaternion, padX, padY, stick);
 
       lastPresseds[1] = pressed;
       lastPads[1] = pad;
