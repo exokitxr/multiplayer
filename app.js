@@ -137,7 +137,6 @@ const mirrorMesh = (() => {
     textureWidth: 1024 * window.devicePixelRatio,
     textureHeight: 2048 * window.devicePixelRatio,
     color: 0x889999,
-    addColor: 0x300000,
     recursion: 1,
     transparent: true,
   });
