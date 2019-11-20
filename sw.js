@@ -1,1 +1,1 @@
-importScripts('https://web.exokit.org/sw.js');
+importScripts('https://web2.exokit.org/sw.js');
