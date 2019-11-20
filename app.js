@@ -294,7 +294,9 @@ new MutationObserver(mutationRecords => {
 
     for (let j = 0; j < addedNodes.length; j++) {
       const node = addedNodes[j];
-      if (node.tagName === 'XR-IFRAME' && !node.bindState) {
+      if (node.tagName === 'XR-SITE' && node.requestSession && !session) {
+        node.requestSession().then(_setSession);
+      } else if (node.tagName === 'XR-IFRAME' && !node.bindState) {
         _bindXrIframe(node);
       }
     }
@@ -919,7 +921,7 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
-  if (fakeXrDisplay) {
+  if (fakeXrDisplay && !possessRig) {
     fakeXrDisplay.position.copy(camera.position);
     fakeXrDisplay.quaternion.copy(camera.quaternion);
     fakeXrDisplay.pushUpdate();
@@ -1216,10 +1218,9 @@ thirdpersonButton.addEventListener('click', async () => {
 
 let session = null;
 const enterXrButton = document.getElementById('enter-xr-button');
-enterXrButton.addEventListener('click', async () => {
-  session = await navigator.xr.requestSession('immersive-vr', {
-    requiredFeatures: ['local-floor'],
-  });
+const _setSession = async newSession => {
+  session = newSession;
+
   let referenceSpace;
   let referenceSpaceType = '';
   const _loadReferenceSpace = async () => {
@@ -1239,9 +1240,12 @@ enterXrButton.addEventListener('click', async () => {
   await _loadReferenceSpace();
   const loadReferenceSpaceInterval = setInterval(_loadReferenceSpace, 1000);
 
-  renderer.vr.setSession(session);
-
   session.requestAnimationFrame((timestamp, frame) => {
+    renderer.vr.setSession(session);
+    renderer.vr.enabled = true;
+    renderer.setAnimationLoop(null);
+    renderer.vr.setAnimationLoop(animate);
+
     const pose = frame.getViewerPose(referenceSpace);
     const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
     // const width = viewport.width;
@@ -1256,16 +1260,21 @@ enterXrButton.addEventListener('click', async () => {
     renderer.setSize(fullWidth, height);
     renderer.setPixelRatio(1);
 
-    renderer.setAnimationLoop(null);
-
-    renderer.vr.enabled = true;
-    renderer.vr.setSession(session);
-    renderer.vr.setAnimationLoop(animate);
-
-    possessRig = true;
+    fakeXrDisplay = new FakeXRDisplay();
+    camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
 
     console.log('loaded root in XR');
   });
+};
+enterXrButton.addEventListener('click', async () => {
+  if (!session) {
+    const newSession = await navigator.xr.requestSession('immersive-vr', {
+      requiredFeatures: ['local-floor'],
+    });
+    await _setSession(newSession);
+  }
+
+  possessRig = true;
 });
 
 let microphoneMediaStream = null;
@@ -1894,8 +1903,13 @@ window.addEventListener('message', async e => {
       const loadReferenceSpaceInterval = setInterval(_loadReferenceSpace, 1000);
 
       renderer.vr.setSession(session);
+      renderer.vr.enabled = true;
 
-      session.requestAnimationFrame((timestamp, frame) => {
+      fakeXrDisplay = new FakeXRDisplay();
+      camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
+
+      /* session.requestAnimationFrame((timestamp, frame) => {
+        console.log('renderer enabled', renderer.vr.enabled);
         const pose = frame.getViewerPose(referenceSpace);
         const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
         // const width = viewport.width;
@@ -1920,7 +1934,7 @@ window.addEventListener('message', async e => {
         camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
 
         console.log('loaded root in XR');
-      });
+      }); */
       break;
     }
     default: {
