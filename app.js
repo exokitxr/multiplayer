@@ -1886,7 +1886,7 @@ _sendAllPeerConnections(JSON.stringify({
   url: modelUrl,
 })); */
 
-window.addEventListener('message', async e => {
+/* window.addEventListener('message', async e => {
   const {method} = e.data;
   switch (method) {
     default: {
@@ -1894,7 +1894,7 @@ window.addEventListener('message', async e => {
       break;
     }
   }
-});
+}); */
 
 window.addEventListener('resize', e => {
   camera.aspect = window.innerWidth / window.innerHeight;
