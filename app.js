@@ -127,7 +127,7 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   return mesh;
 };
 
-const mirrorMesh = (() => {
+/* const mirrorMesh = (() => {
   const mirrorWidth = 3;
   const mirrorHeight = 2;
   const geometry = new THREE.PlaneBufferGeometry(mirrorWidth, mirrorHeight)
@@ -164,7 +164,7 @@ const mirrorMesh = (() => {
 
   return mesh;
 })();
-container.add(mirrorMesh);
+container.add(mirrorMesh); */
 
 const renderer = new THREE.WebGLRenderer({
   // canvas: document.getElementById('canvas'),
