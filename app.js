@@ -157,7 +157,7 @@ const mirrorMesh = (() => {
     }
   };
   mesh.onAfterRender2 = () => {
-    if (rig && session) {
+    if (rig && possessRig) {
       rig.decapitate();
     }
   };
