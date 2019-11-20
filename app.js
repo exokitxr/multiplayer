@@ -815,7 +815,48 @@ function animate(timestamp, frame, referenceSpace) {
     /* for (let i = 0; i < mirrorMesh.buttonMeshes.length; i++) {
       mirrorMesh.buttonMeshes[i].material.color.setHex((i === li || i === ri) ? colors.highlight : colors.normal);
     } */
+
+    rig.update();
   } else if (controlsBound) {
+    // defer
+  } else {
+    const positionOffset = Math.sin((realDateNow()%10000)/10000*Math.PI*2)*2;
+    const positionOffset2 = -Math.sin((realDateNow()%5000)/5000*Math.PI*2)*1;
+    const standFactor = rig.height - 0.1*rig.height + Math.sin((realDateNow()%2000)/2000*Math.PI*2)*0.2*rig.height;
+    const rotationAngle = (realDateNow()%5000)/5000*Math.PI*2;
+
+    // rig.inputs.hmd.position.set(positionOffset, 0.6 + standFactor, 0);
+    rig.inputs.hmd.position.set(positionOffset, standFactor, positionOffset2);
+    rig.inputs.hmd.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle)
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.sin((realDateNow()%2000)/2000*Math.PI*2)*Math.PI*0.2))
+      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.sin((realDateNow()%2000)/2000*Math.PI*2)*Math.PI*0.25));
+
+    rig.inputs.rightGamepad.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle)
+      // .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.sin((realDateNow()%5000)/5000*Math.PI*2)*Math.PI*0.6));
+    rig.inputs.rightGamepad.position.set(positionOffset, rig.height*0.7 + Math.sin((realDateNow()%2000)/2000*Math.PI*2)*0.1, positionOffset2).add(
+      new THREE.Vector3(-rig.shoulderWidth/2, 0, -0.2).applyQuaternion(rig.inputs.rightGamepad.quaternion)
+    )/*.add(
+      new THREE.Vector3(-0.1, 0, -1).normalize().multiplyScalar(rig.rightArmLength*0.4).applyQuaternion(rig.inputs.rightGamepad.quaternion)
+    ); */
+    rig.inputs.leftGamepad.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle);
+    rig.inputs.leftGamepad.position.set(positionOffset, rig.height*0.7, positionOffset2).add(
+      new THREE.Vector3(rig.shoulderWidth/2, 0, -0.2).applyQuaternion(rig.inputs.leftGamepad.quaternion)
+    )/*.add(
+      new THREE.Vector3(0.1, 0, -1).normalize().multiplyScalar(rig.leftArmLength*0.4).applyQuaternion(rig.inputs.leftGamepad.quaternion)
+    );*/
+
+    rig.inputs.leftGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+    rig.inputs.leftGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+
+    rig.inputs.rightGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+    rig.inputs.rightGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+
+    rig.update();
+  }
+
+  renderer.render(scene, camera);
+
+  if (controlsBound) {
     localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
     localEuler.x = Math.min(Math.max(localEuler.x - mouse.movementY * 0.01, -Math.PI/2), Math.PI/2);
     localEuler.y -= mouse.movementX * 0.01
@@ -867,53 +908,13 @@ function animate(timestamp, frame, referenceSpace) {
       .multiply(localQuaternion2.setFromAxisAngle(localVector.set(1, 0, 0), Math.PI*0.5))
 
     if (controlsBound === 'firstperson') {
-      rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
-      camera.position.divideScalar(heightFactor).add(container.position);
-      camera.quaternion.multiply(z180Quaternion);
       rig.decapitate();
-    } else if (controlsBound === 'thirdperson') {
-      rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
-      camera.position.divideScalar(heightFactor).add(container.position);
-      camera.quaternion.multiply(z180Quaternion);
-      camera.position.add(localVector.set(0, 0.5, 2).applyQuaternion(camera.quaternion));
-      rig.undecapitate();
     } else {
       rig.undecapitate();
     }
-  } else {
-    const positionOffset = Math.sin((realDateNow()%10000)/10000*Math.PI*2)*2;
-    const positionOffset2 = -Math.sin((realDateNow()%5000)/5000*Math.PI*2)*1;
-    const standFactor = rig.height - 0.1*rig.height + Math.sin((realDateNow()%2000)/2000*Math.PI*2)*0.2*rig.height;
-    const rotationAngle = (realDateNow()%5000)/5000*Math.PI*2;
 
-    // rig.inputs.hmd.position.set(positionOffset, 0.6 + standFactor, 0);
-    rig.inputs.hmd.position.set(positionOffset, standFactor, positionOffset2);
-    rig.inputs.hmd.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle)
-      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.sin((realDateNow()%2000)/2000*Math.PI*2)*Math.PI*0.2))
-      .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.sin((realDateNow()%2000)/2000*Math.PI*2)*Math.PI*0.25));
-
-    rig.inputs.rightGamepad.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle)
-      // .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.sin((realDateNow()%5000)/5000*Math.PI*2)*Math.PI*0.6));
-    rig.inputs.rightGamepad.position.set(positionOffset, rig.height*0.7 + Math.sin((realDateNow()%2000)/2000*Math.PI*2)*0.1, positionOffset2).add(
-      new THREE.Vector3(-rig.shoulderWidth/2, 0, -0.2).applyQuaternion(rig.inputs.rightGamepad.quaternion)
-    )/*.add(
-      new THREE.Vector3(-0.1, 0, -1).normalize().multiplyScalar(rig.rightArmLength*0.4).applyQuaternion(rig.inputs.rightGamepad.quaternion)
-    ); */
-    rig.inputs.leftGamepad.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rotationAngle);
-    rig.inputs.leftGamepad.position.set(positionOffset, rig.height*0.7, positionOffset2).add(
-      new THREE.Vector3(rig.shoulderWidth/2, 0, -0.2).applyQuaternion(rig.inputs.leftGamepad.quaternion)
-    )/*.add(
-      new THREE.Vector3(0.1, 0, -1).normalize().multiplyScalar(rig.leftArmLength*0.4).applyQuaternion(rig.inputs.leftGamepad.quaternion)
-    );*/
-
-    rig.inputs.leftGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
-    rig.inputs.leftGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
-
-    rig.inputs.rightGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
-    rig.inputs.rightGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+    rig.update();
   }
-
-  rig.update();
 
   for (let i = 0; i < peerConnections.length; i++) {
     const peerConnection = peerConnections[i];
@@ -922,13 +923,22 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
+  if (controlsBound === 'firstperson') {
+    rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
+    camera.position.divideScalar(heightFactor).add(container.position);
+    camera.quaternion.multiply(z180Quaternion);
+  } else if (controlsBound === 'thirdperson') {
+    rig.outputs.eyes.matrixWorld.decompose(camera.position, camera.quaternion, localVector);
+    camera.position.divideScalar(heightFactor).add(container.position);
+    camera.quaternion.multiply(z180Quaternion);
+    camera.position.add(localVector.set(0, 0.5, 2).applyQuaternion(camera.quaternion));
+  }
+
   if (fakeXrDisplay && !possessRig) {
     fakeXrDisplay.position.copy(camera.position);
     fakeXrDisplay.quaternion.copy(camera.quaternion);
     fakeXrDisplay.pushUpdate();
   }
-
-  renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
 
