@@ -599,6 +599,7 @@ const startSceneMatrix = new THREE.Matrix4();
 let startModelScale = 1;
 const dateOffset = Math.floor(Math.random() * 60 * 1000);
 const realDateNow = (now => () => dateOffset + now())(Date.now);
+let fakeXrDisplay = null;
 let possessRig = false;
 function animate(timestamp, frame, referenceSpace) {
   if (possessRig) {
@@ -1875,68 +1876,9 @@ _sendAllPeerConnections(JSON.stringify({
   url: modelUrl,
 })); */
 
-let fakeXrDisplay = null;
 window.addEventListener('message', async e => {
   const {method} = e.data;
   switch (method) {
-    case 'fakeXr': {
-      session = await navigator.xr.requestSession('immersive-vr', {
-        requiredFeatures: ['local-floor'],
-      });
-      let referenceSpace;
-      let referenceSpaceType = '';
-      const _loadReferenceSpace = async () => {
-        const lastReferenceSpaceType = referenceSpaceType;
-        try {
-          referenceSpace = await session.requestReferenceSpace('local-floor');
-          referenceSpaceType = 'local-floor';
-        } catch (err) {
-          referenceSpace = await session.requestReferenceSpace('local');
-          referenceSpaceType = 'local';
-        }
-
-        if (referenceSpaceType !== lastReferenceSpaceType) {
-          console.log(`referenceSpace changed to ${referenceSpaceType}`);
-        }
-      };
-      await _loadReferenceSpace();
-      const loadReferenceSpaceInterval = setInterval(_loadReferenceSpace, 1000);
-
-      renderer.vr.setSession(session);
-      renderer.vr.enabled = true;
-
-      fakeXrDisplay = new FakeXRDisplay();
-      camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
-
-      /* session.requestAnimationFrame((timestamp, frame) => {
-        console.log('renderer enabled', renderer.vr.enabled);
-        const pose = frame.getViewerPose(referenceSpace);
-        const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
-        // const width = viewport.width;
-        const height = viewport.height;
-        const fullWidth = (() => {
-          let result = 0;
-          for (let i = 0; i < pose.views.length; i++) {
-            result += session.renderState.baseLayer.getViewport(pose.views[i]).width;
-          }
-          return result;
-        })();
-        renderer.setSize(fullWidth, height);
-        renderer.setPixelRatio(1);
-
-        renderer.setAnimationLoop(null);
-
-        renderer.vr.enabled = true;
-        renderer.vr.setSession(session);
-        renderer.vr.setAnimationLoop(animate);
-
-        fakeXrDisplay = new FakeXRDisplay();
-        camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
-
-        console.log('loaded root in XR');
-      }); */
-      break;
-    }
     default: {
       console.warn(`unknown window method: ${method}`);
       break;

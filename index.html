@@ -635,10 +635,6 @@ header > .login-form.phase-3 > .phaseless-content
             <div class=switch id=reality-layers-switch></div>
             Reality layers
           </label>
-          <label class=switch-wrap id=fake-xr-switch-wrap>
-            <div class=switch id=fake-xr-switch></div>
-            Fake XR
-          </label>
         </div>
         <div class="content details-content">
           <div class=selected-object-details id=selected-object-details>
@@ -748,17 +744,6 @@ realityLayersSwitchWrap.addEventListener('click', async () => {
 
 window.document.addEventListener('dragover', e => {
   e.preventDefault();
-});
-
-const fakeXrSwitchWrap = document.getElementById('fake-xr-switch-wrap');
-fakeXrSwitchWrap.addEventListener('click', () => {
-  if (xrEngine) {
-    fakeXrSwitchWrap.classList.toggle('on');
-    xrEngine.postMessage({
-      method: 'fakeXr',
-      enabled: fakeXrSwitchWrap.classList.contains('on'),
-    });
-  }
 });
 
 let xrEngine = null;
