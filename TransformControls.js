@@ -4,9 +4,14 @@
 
 THREE.TransformControls = function ( camera, domElement ) {
 
-	THREE.Object3D.call( this );
+	if ( domElement === undefined ) {
 
-	domElement = ( domElement !== undefined ) ? domElement : document;
+		console.warn( 'THREE.TransformControls: The second parameter "domElement" is now mandatory.' );
+		domElement = document;
+
+	}
+
+	THREE.Object3D.call( this );
 
 	this.visible = false;
 
@@ -25,7 +30,6 @@ THREE.TransformControls = function ( camera, domElement ) {
 	defineProperty( "camera", camera );
 	defineProperty( "object", undefined );
 	defineProperty( "enabled", true );
-	defineProperty( "draggable", true );
 	defineProperty( "axis", null );
 	defineProperty( "mode", "translate" );
 	defineProperty( "translationSnap", null );
@@ -36,15 +40,10 @@ THREE.TransformControls = function ( camera, domElement ) {
 	defineProperty( "showX", true );
 	defineProperty( "showY", true );
 	defineProperty( "showZ", true );
-	defineProperty( "translationScale", 1 );
-	defineProperty( "rotationScale", 1 );
-	defineProperty( "scaleScale", 1 );
 
 	var changeEvent = { type: "change" };
 	var mouseDownEvent = { type: "mouseDown" };
 	var mouseUpEvent = { type: "mouseUp", mode: scope.mode };
-	var mouseEnterEvent = { type: "mouseEnter" };
-	var mouseLeaveEvent = { type: "mouseLeave" };
 	var objectChangeEvent = { type: "objectChange" };
 
 	// Reusable utility variables
@@ -234,13 +233,9 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 			this.axis = intersect.object.name;
 
-			this.dispatchEvent( mouseEnterEvent );
-
 		} else {
 
 			this.axis = null;
-
-			this.dispatchEvent( mouseLeaveEvent );
 
 		}
 
@@ -354,8 +349,6 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 			}
 
-      offset.multiplyScalar(this.translationScale);
-
 			object.position.copy( offset ).add( positionStart );
 
 			// Apply translation snap
@@ -462,8 +455,6 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 			}
 
-      _tempVector2.multiplyScalar(this.scaleScale);
-
 			// Apply scale
 
 			object.scale.copy( scaleStart ).multiply( _tempVector2 );
@@ -509,8 +500,6 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 			if ( this.rotationSnap ) rotationAngle = Math.round( rotationAngle / this.rotationSnap ) * this.rotationSnap;
 
-      rotationAngle *= this.rotationScale;
-
 			this.rotationAngle = rotationAngle;
 
 			// Apply rotate
@@ -555,15 +544,27 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 	function getPointer( event ) {
 
-		var pointer = event.changedTouches ? event.changedTouches[ 0 ] : event;
+		if ( document.pointerLockElement ) {
 
-		var rect = domElement.getBoundingClientRect();
+			return {
+				x: 0,
+				y: 0,
+				button: event.button
+			};
 
-		return {
-			x: ( pointer.clientX - rect.left ) / rect.width * 2 - 1,
-			y: - ( pointer.clientY - rect.top ) / rect.height * 2 + 1,
-			button: event.button
-		};
+		} else {
+
+			var pointer = event.changedTouches ? event.changedTouches[ 0 ] : event;
+
+			var rect = domElement.getBoundingClientRect();
+
+			return {
+				x: ( pointer.clientX - rect.left ) / rect.width * 2 - 1,
+				y: - ( pointer.clientY - rect.top ) / rect.height * 2 + 1,
+				button: event.button
+			};
+
+		}
 
 	}
 
@@ -579,7 +580,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 	function onPointerDown( event ) {
 
-		if ( ! scope.enabled || ! scope.draggable ) return;
+		if ( ! scope.enabled ) return;
 
 		document.addEventListener( "mousemove", onPointerMove, false );
 
@@ -590,7 +591,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 	function onPointerMove( event ) {
 
-		if ( ! scope.enabled || ! scope.draggable ) return;
+		if ( ! scope.enabled ) return;
 
 		scope.pointerMove( getPointer( event ) );
 
@@ -598,7 +599,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 	function onPointerUp( event ) {
 
-		if ( ! scope.enabled || ! scope.draggable ) return;
+		if ( ! scope.enabled ) return;
 
 		document.removeEventListener( "mousemove", onPointerMove, false );
 
@@ -750,7 +751,7 @@ THREE.TransformControlsGizmo = function () {
 	var scaleHandleGeometry = new THREE.BoxBufferGeometry( 0.125, 0.125, 0.125 );
 
 	var lineGeometry = new THREE.BufferGeometry( );
-	lineGeometry.addAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
+	lineGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0,	1, 0, 0 ], 3 ) );
 
 	var CircleGeometry = function ( radius, arc ) {
 
@@ -763,7 +764,7 @@ THREE.TransformControlsGizmo = function () {
 
 		}
 
-		geometry.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
 
 		return geometry;
 
@@ -775,7 +776,7 @@ THREE.TransformControlsGizmo = function () {
 
 		var geometry = new THREE.BufferGeometry();
 
-		geometry.addAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 1, 1, 1 ], 3 ) );
+		geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( [ 0, 0, 0, 1, 1, 1 ], 3 ) );
 
 		return geometry;
 
