@@ -1291,8 +1291,10 @@ const _setSession = async newSession => {
     renderer.setSize(fullWidth, height);
     renderer.setPixelRatio(1);
 
-    fakeXrDisplay = new FakeXRDisplay();
-    camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
+    if (typeof FakeXRDisplay !== 'undefined') {
+      fakeXrDisplay = new FakeXRDisplay();
+      camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
+    }
 
     console.log('loaded root in XR');
   });
