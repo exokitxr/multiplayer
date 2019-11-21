@@ -187,6 +187,28 @@ orbitControls.screenSpacePanning = true;
 orbitControls.enableMiddleZoom = false;
 orbitControls.update();
 
+const teleportGeometry = new THREE.TorusBufferGeometry(0.5, 0.15, 3, 5)
+  .applyMatrix(new THREE.Matrix4().makeRotationX(-(Math.PI / 2)))
+  .applyMatrix(new THREE.Matrix4().makeRotationY((1 / 20) * (Math.PI * 2)));
+const teleportMaterial = new THREE.MeshBasicMaterial({
+  color: 0x44c2ff,
+});
+const _makeTeleportMesh = () => {
+  const geometry = teleportGeometry;
+  const material = teleportMaterial;
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.visible = false;
+  mesh.frustumCulled = false;
+  return mesh;
+};
+const teleportMeshes = [
+  _makeTeleportMesh(),
+  _makeTeleportMesh(),
+];
+container.add(teleportMeshes[0]);
+container.add(teleportMeshes[1]);
+
 const _bindXrIframe = xrIframe => {
   const object = new THREE.Object3D();
   container.add(object);
@@ -660,7 +682,7 @@ function animate(timestamp, frame, referenceSpace) {
           return null;
         }
       };
-      /* const _updateTeleportMesh = (i, pad, lastPad, position, quaternion, padX, padY, stick) => {
+      const _updateTeleportMesh = (i, pad, lastPad, position, quaternion, padX, padY, stick) => {
         const teleportMesh = teleportMeshes[i];
         teleportMesh.visible = false;
 
@@ -698,7 +720,7 @@ function animate(timestamp, frame, referenceSpace) {
           localEuler.z = 0;
           container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
         }
-      }; */
+      };
 
       const wasLastBd = lastBs[0] && lastBs[1];
 
@@ -710,7 +732,7 @@ function animate(timestamp, frame, referenceSpace) {
         rig.inputs.leftGamepad.pointer = pointer;
         rig.inputs.leftGamepad.grip = grip;
 
-        // _updateTeleportMesh(0, pad, lastPads[0], position, quaternion, 0, 0, false);
+        _updateTeleportMesh(0, pad, lastPads[0], position, quaternion, 0, 0, false);
 
         lastPresseds[0] = pressed;
         lastPads[0] = pad;
@@ -725,7 +747,7 @@ function animate(timestamp, frame, referenceSpace) {
         rig.inputs.rightGamepad.pointer = pointer;
         rig.inputs.rightGamepad.grip = grip;
 
-        // _updateTeleportMesh(1, false, false, position, quaternion, padX, padY, stick);
+        _updateTeleportMesh(1, false, false, position, quaternion, padX, padY, stick);
 
         lastPresseds[1] = pressed;
         lastPads[1] = pad;
