@@ -1535,6 +1535,7 @@ const _discordSendAttachment = (data, filename) => {
 };
 window._discordSendMessage = _discordSendMessage;
 window._discordSendAttachment = _discordSendAttachment;
+// src = 'https://dev.exokit.org/exobot.png'; fetch(src).then(res => res.blob()).then(b => { _discordSendAttachment(b, src); });
 
 const connectButton = document.getElementById('connect-button');
 connectButton.addEventListener('click', () => {
