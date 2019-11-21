@@ -1907,4 +1907,7 @@ window.document.addEventListener('drop', async e => {
 window.addEventListener('resize', e => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+  if (fakeXrDisplay) {
+    camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
+  }
 });
