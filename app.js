@@ -210,9 +210,13 @@ container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
 const _bindXrIframe = xrIframe => {
-  const object = new THREE.Object3D();
-  container.add(object);
+  const model = new THREE.Object3D();
+  container.add(model);
 
+  const boundingBox = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1));
+  model.boundingBoxMesh = _makeBoundingBoxMesh(model, boundingBox);
+  model.add(model.boundingBoxMesh);
+  model.element = xrIframe;
 
   const control = new THREE.TransformControls(camera, renderer.domElement);
   control.setMode(transformMode);
@@ -227,7 +231,7 @@ const _bindXrIframe = xrIframe => {
     control.draggable = false;
   });
   scene.add(control);
-  control.attach(object);
+  control.attach(model);
 
   const observer = new MutationObserver(mutationRecords => {
     for (let i = 0; i < mutationRecords.length; i++) {
@@ -237,7 +241,7 @@ const _bindXrIframe = xrIframe => {
     }
   });
   xrIframe.bindState = {
-    object,
+    model,
     control,
     observer,
   };
@@ -302,8 +306,8 @@ const _bindXrIframe = xrIframe => {
   });
 };
 const _unbindXrIframe = xrIframe => {
-  const {object, control, observer} = xrIframe.bindState;
-  container.remove(object);
+  const {model, control, observer} = xrIframe.bindState;
+  container.remove(model);
   scene.remove(control);
   control.dispose();
   observer.disconnect();
@@ -395,8 +399,7 @@ if (typeof XRIFrame === 'undefined') {
 }
 
 const boundingBoxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-const _makeBoundingBoxMesh = target => {
-  const boundingBox = new THREE.Box3().setFromObject(target);
+const _makeBoundingBoxMesh = (target, boundingBox = new THREE.Box3().setFromObject(target)) => {
   const material = new THREE.MeshPhongMaterial({
     color: colors.normal,
     transparent: true,
@@ -1040,7 +1043,7 @@ const _mousemove = e => {
   const yFactor = -(e.clientY - rect.top) / rect.height;
   localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
 
-  const intersectionCandidates = Array.from(document.querySelectorAll('xr-model'))
+  const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
     .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
     .filter(boundingBoxMesh => boundingBoxMesh);
   if (intersectionCandidates.length > 0) {
