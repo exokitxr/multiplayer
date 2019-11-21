@@ -39,8 +39,8 @@ THREE.Reflector = function ( geometry, options ) {
 	var parameters = {
 		minFilter: THREE.LinearFilter,
 		magFilter: THREE.LinearFilter,
-		format: THREE.RGBFormat,
-		stencilBuffer: false
+		format: THREE.RGBAFormat,
+		// stencilBuffer: false,
 	};
 
 	var renderTarget = new THREE.WebGLRenderTarget( textureWidth, textureHeight, parameters );
@@ -249,6 +249,7 @@ THREE.Reflector.ReflectorShader = {
 		'void main() {',
 
 		'	vec4 base = texture2DProj( tDiffuse, vUv );',
+		' if (base.a < 0.5) discard;',
 		'	gl_FragColor = vec4( blendOverlay( base.rgb, color ), 1.0 );',
 
 		'}'
