@@ -1437,7 +1437,7 @@ channelInput.addEventListener('input', () => {
   } else {
     connectButton.setAttribute('disabled', '');
   }
-  connectButton.innerText = _getChannels().includes(inputText) ? 'Connect' : 'Create channel';
+  connectButton.innerText = _getChannels().includes(inputText) ? 'Connect' : 'Create';
 });
 channelInput.addEventListener('focus', () => {
   channelsContent.style.display = null;
