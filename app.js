@@ -46,7 +46,6 @@ const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerH
 camera.position.y = 1.5;
 camera.position.z = 2;
 // camera.rotation.y = Math.PI;
-scene.add(camera);
 
 const ambientLight = new THREE.AmbientLight(0x808080);
 scene.add(ambientLight);
