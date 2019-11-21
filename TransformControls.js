@@ -30,6 +30,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 	defineProperty( "camera", camera );
 	defineProperty( "object", undefined );
 	defineProperty( "enabled", true );
+	defineProperty( "draggable", true );
 	defineProperty( "axis", null );
 	defineProperty( "mode", "translate" );
 	defineProperty( "translationSnap", null );
@@ -40,10 +41,15 @@ THREE.TransformControls = function ( camera, domElement ) {
 	defineProperty( "showX", true );
 	defineProperty( "showY", true );
 	defineProperty( "showZ", true );
+	defineProperty( "translationScale", 1 );
+	defineProperty( "rotationScale", 1 );
+	defineProperty( "scaleScale", 1 );
 
 	var changeEvent = { type: "change" };
 	var mouseDownEvent = { type: "mouseDown" };
 	var mouseUpEvent = { type: "mouseUp", mode: scope.mode };
+	var mouseEnterEvent = { type: "mouseEnter" };
+	var mouseLeaveEvent = { type: "mouseLeave" };
 	var objectChangeEvent = { type: "objectChange" };
 
 	// Reusable utility variables
@@ -233,9 +239,13 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 			this.axis = intersect.object.name;
 
+			this.dispatchEvent( mouseEnterEvent );
+
 		} else {
 
 			this.axis = null;
+
+			this.dispatchEvent( mouseLeaveEvent );
 
 		}
 
@@ -349,6 +359,8 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 			}
 
+      offset.multiplyScalar(this.translationScale);
+
 			object.position.copy( offset ).add( positionStart );
 
 			// Apply translation snap
@@ -455,6 +467,8 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 			}
 
+      _tempVector2.multiplyScalar(this.scaleScale);
+
 			// Apply scale
 
 			object.scale.copy( scaleStart ).multiply( _tempVector2 );
@@ -499,6 +513,8 @@ THREE.TransformControls = function ( camera, domElement ) {
 			// Apply rotation snap
 
 			if ( this.rotationSnap ) rotationAngle = Math.round( rotationAngle / this.rotationSnap ) * this.rotationSnap;
+
+      rotationAngle *= this.rotationScale;
 
 			this.rotationAngle = rotationAngle;
 
@@ -580,7 +596,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 	function onPointerDown( event ) {
 
-		if ( ! scope.enabled ) return;
+		if ( ! scope.enabled || ! scope.draggable ) return;
 
 		document.addEventListener( "mousemove", onPointerMove, false );
 
@@ -591,7 +607,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 	function onPointerMove( event ) {
 
-		if ( ! scope.enabled ) return;
+		if ( ! scope.enabled || ! scope.draggable ) return;
 
 		scope.pointerMove( getPointer( event ) );
 
@@ -599,7 +615,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 
 	function onPointerUp( event ) {
 
-		if ( ! scope.enabled ) return;
+		if ( ! scope.enabled || ! scope.draggable ) return;
 
 		document.removeEventListener( "mousemove", onPointerMove, false );
 
