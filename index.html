@@ -793,7 +793,7 @@ let xrEngine = null;
   let result;
   if (navigator.xr) {
     try {
-      await navigator.xr.supportsSession('immersive-vr');
+      await navigator.xr.isSessionSupported('immersive-vr');
       result = true;
     } catch (err) {
       console.warn(err);
