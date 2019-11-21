@@ -653,42 +653,6 @@ function animate(timestamp, frame, referenceSpace) {
               b,
               lastB,
             };
-          } else if (matrix) { // old WebXR api
-            const rawP = localVector;
-            const p = localVector2;
-            const q = localQuaternion;
-            const s = localVector3;
-            localMatrix
-              .fromArray(transform.matrix)
-              .decompose(rawP, q, s);
-            p.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
-            const pressed = gamepad.buttons[0].pressed;
-            const lastPressed = lastPresseds[i];
-            const pointer = gamepad.buttons[0].value;
-            const grip = gamepad.buttons[1].value;
-            const pad = gamepad.axes[1] <= -0.5 || gamepad.axes[3] <= -0.5;
-            const padX = gamepad.axes[0] !== 0 ? gamepad.axes[0] : gamepad.axes[2];
-            const padY = gamepad.axes[1] !== 0 ? gamepad.axes[1] : gamepad.axes[3];
-            const stick = !!gamepad.buttons[3] && gamepad.buttons[3].pressed;
-            const a = !!gamepad.buttons[4] && gamepad.buttons[4].pressed;
-            const b = !!gamepad.buttons[5] && gamepad.buttons[5].pressed;
-            const lastB = lastBs[i];
-            return {
-              rawPosition: rawP,
-              position: p,
-              quaternion: q,
-              pressed,
-              lastPressed,
-              pointer,
-              grip,
-              pad,
-              padX,
-              padY,
-              stick,
-              a,
-              b,
-              lastB,
-            };
           } else {
             return null;
           }
