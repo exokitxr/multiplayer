@@ -1512,6 +1512,30 @@ const _sendAllPeerConnections = s => {
     peerConnections[i].send(s);
   }
 };
+
+const discordToken = '';
+const _discordSendMessage = text => {
+  channelConnection.send(JSON.stringify({
+    method: 'message',
+    provider: 'discord',
+    token: discordToken,
+    channel: 'development',
+    text,
+  }));
+};
+const _discordSendAttachment = (data, filename) => {
+  channelConnection.send(JSON.stringify({
+    method: 'message',
+    provider: 'discord',
+    token: discordToken,
+    channel: 'development',
+    attachment: filename,
+  }));
+  channelConnection.send(data);
+};
+window._discordSendMessage = _discordSendMessage;
+window._discordSendAttachment = _discordSendAttachment;
+
 const connectButton = document.getElementById('connect-button');
 connectButton.addEventListener('click', () => {
   const channelName = channelInput.value;
