@@ -578,7 +578,7 @@ const _setLocalModel = newModel => {
     fingers: true,
     hair: true,
     visemes: true,
-    // decapitate: true,
+    decapitate: possessRig,
     microphoneMediaStream,
     debug: !newModel,
   });
@@ -1290,6 +1290,9 @@ enterXrButton.addEventListener('click', async () => {
   }
 
   possessRig = true;
+  if (rig) {
+    rig.decapitate();
+  }
 });
 
 let microphoneMediaStream = null;
