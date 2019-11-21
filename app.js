@@ -1056,7 +1056,9 @@ const _keydown = e => {
       }
       case 13: { // enter
         chatInput.classList.toggle('open');
-        if (!chatInput.classList.contains('open')) {
+        if (chatInput.classList.contains('open')) {
+          chatInput.focus();
+        } else {
           if (chatInput.value) {
             const messageEl = document.createElement('message');
             messageEl.classList.add('message');
