@@ -979,6 +979,8 @@ window.document.addEventListener('pointerlockchange', () => {
   }
 });
 
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
 let transformMode = 'translate';
 const _keydown = e => {
   if (!controlsBound) {
@@ -990,23 +992,50 @@ const _keydown = e => {
     };
     switch (e.which) {
       case 87: { // W
-        _setMode('translate');
+        if (!chatInput.classList.contains('open')) {
+          _setMode('translate');
+        }
         break;
       }
       case 69: { // E
-        _setMode('rotate');
+        if (!chatInput.classList.contains('open')) {
+          _setMode('rotate');
+        }
         break;
       }
       case 82: { // R
-        _setMode('scale');
+        if (!chatInput.classList.contains('open')) {
+          _setMode('scale');
+        }
         break;
       }
       case 46: { // del
-        if (selectedBoundingBoxMesh) {
+        if (!chatInput.classList.contains('open') && selectedBoundingBoxMesh) {
           const {target} = selectedBoundingBoxMesh;
           const {element} = target;
           element.parentNode.removeChild(element);
           selectedBoundingBoxMesh = null;
+        }
+        break;
+      }
+      case 13: { // enter
+        chatInput.classList.toggle('open');
+        if (!chatInput.classList.contains('open')) {
+          if (chatInput.value) {
+            const messageEl = document.createElement('message');
+            messageEl.classList.add('message');
+            messageEl.innerHTML = `<div class=message><b>you</b>: <span class=text></span></div>`;
+            const textEl = messageEl.querySelector('.text');
+            textEl.innerText = chatInput.value;
+            chatMessages.appendChild(messageEl);
+
+            chatInput.value = '';
+            chatInput.dispatchEvent(new CustomEvent('change'));
+
+            setTimeout(() => {
+              chatMessages.removeChild(messageEl);
+            }, 10000);
+          }
         }
         break;
       }

@@ -173,6 +173,34 @@ a:hover {
 a:active {
   color: #1976d2;
 }
+.chat {
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+}
+.chat > .messages {
+  display: flex;
+  flex-direction: column;
+  padding: 7px 14px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  color: #FFF;
+}
+.chat > .messages:empty {
+  display: none;
+}
+.chat > .input {
+  width: 100%;
+  /* background-color: transparent; */
+  background-color: rgba(50, 50, 50, 0.5);
+  color: #FFF;
+}
+.chat > .input:not(.open) {
+  visibility: hidden;
+}
 .iframe-buttons {
   position: absolute;
   right: 330px;
@@ -575,6 +603,10 @@ header > .login-form.phase-3 > .phaseless-content
       </header>
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
+      <div class=chat>
+        <div class=messages id=chat-messages></div>
+        <input type=text class=input id=chat-input>
+      </div>
       <div class="iframe-buttons multibutton">
         <a class="button first" id="enable-mic-button">Enable Mic</a>
         <a class="button first" id="disable-mic-button" disabled style="display: none;">Disable Mic</a>
@@ -990,6 +1022,44 @@ let xrEngine = null;
           subtree: true,
         });
       });
+
+      [
+        'chat-messages',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+
+        new MutationObserver(() => {
+          el.innerHTML = el2.innerHTML;
+        }).observe(el2, {
+          childList: true,
+          subtree: true,
+        });
+      });
+      [
+        'chat-input',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+
+        el.addEventListener('input', () => {
+          el2.value = el.value;
+          el2.dispatchEvent(new CustomEvent('input'));
+        });
+        el2.addEventListener('change', () => {
+          el.value = el2.value;
+        });
+
+        new MutationObserver(() => {
+          el.setAttribute('class', el2.getAttribute('class'));
+          if (el.classList.contains('open')) {
+            el.focus();
+          }
+        }).observe(el2, {
+          attributes: true,
+        });
+      });
+
       [
         'enable-mic-button',
         'disable-mic-button',
