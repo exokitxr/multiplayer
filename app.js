@@ -165,6 +165,17 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
 })();
 container.add(mirrorMesh); */
 
+const wristUi = (() => {
+  const geometry = new THREE.PlaneBufferGeometry(0.2, 0.1);
+  const material = new THREE.MeshPhongMaterial({
+    color: 0xFFFFFF,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.visible = false;
+  return mesh;
+})();
+container.add(wristUi);
+
 const renderer = new THREE.WebGLRenderer({
   // canvas: document.getElementById('canvas'),
   // alpha: true,
