@@ -1271,32 +1271,37 @@ const _setSession = async newSession => {
   await _loadReferenceSpace();
   const loadReferenceSpaceInterval = setInterval(_loadReferenceSpace, 1000);
 
-  session.requestAnimationFrame((timestamp, frame) => {
+  await new Promise((accept, reject) => {
     renderer.vr.setSession(session);
-    renderer.vr.enabled = true;
-    renderer.setAnimationLoop(null);
-    renderer.vr.setAnimationLoop(animate);
 
-    const pose = frame.getViewerPose(referenceSpace);
-    const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
-    // const width = viewport.width;
-    const height = viewport.height;
-    const fullWidth = (() => {
-      let result = 0;
-      for (let i = 0; i < pose.views.length; i++) {
-        result += session.renderState.baseLayer.getViewport(pose.views[i]).width;
+    session.requestAnimationFrame((timestamp, frame) => {
+      renderer.vr.enabled = true;
+      renderer.setAnimationLoop(null);
+      renderer.vr.setAnimationLoop(animate);
+
+      const pose = frame.getViewerPose(referenceSpace);
+      const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
+      // const width = viewport.width;
+      const height = viewport.height;
+      const fullWidth = (() => {
+        let result = 0;
+        for (let i = 0; i < pose.views.length; i++) {
+          result += session.renderState.baseLayer.getViewport(pose.views[i]).width;
+        }
+        return result;
+      })();
+      renderer.vr.setSession(null);
+      renderer.setSize(fullWidth, height);
+      renderer.setPixelRatio(1);
+      renderer.vr.setSession(session);
+
+      if (typeof FakeXRDisplay !== 'undefined') {
+        fakeXrDisplay = new FakeXRDisplay();
+        camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
       }
-      return result;
-    })();
-    renderer.setSize(fullWidth, height);
-    renderer.setPixelRatio(1);
 
-    if (typeof FakeXRDisplay !== 'undefined') {
-      fakeXrDisplay = new FakeXRDisplay();
-      camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
-    }
-
-    console.log('loaded root in XR');
+      accept();
+    });
   });
 };
 enterXrButton.addEventListener('click', async () => {
