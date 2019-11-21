@@ -393,20 +393,17 @@ class XRModel extends HTMLElement {
   constructor() {
     super();
 
-    this.object = null;
-    this.model = null;
-    this.fakeModel = null;
-    this.control = null;
+    this.bindState = null;
   }
   async attributeChangedCallback(name, oldValue, newValue) {
-    if (this.control) {
+    if (this.bindState) {
       if (name === 'src') {
         const url = this.src;
 
         // console.log('load 2', url, new Error().stack);
 
         const object = await _loadModelUrl(url);
-        model = object.scene;
+        const model = object.scene;
         model.boundingBoxMesh = _makeBoundingBoxMesh(model);
         model.add(model.boundingBoxMesh);
         model.element = this;
@@ -414,20 +411,19 @@ class XRModel extends HTMLElement {
         model.quaternion.fromArray(this.orientation);
         model.scale.fromArray(this.scale);
 
-        container.remove(this.model);
+        container.remove(this.bindState.model);
         container.add(model);
 
-        // this.control.detach();
-        this.control.attach(model);
+        // this.bindState.control.detach();
+        this.bindState.control.attach(model);
 
-        this.object = object;
-        this.model = model;
+        this.bindState.model = model;
       } else if (name === 'position') {
         let position = (newValue || '0 0 0').split(' ');
         if (position.length === 3) {
           position = position.map(s => parseFloat(s));
           if (position.every(n => isFinite(n))) {
-            this.control.object.position.fromArray(position);
+            this.bindState.control.object.position.fromArray(position);
           }
         }
       } else if (name === 'orientation') {
@@ -435,7 +431,7 @@ class XRModel extends HTMLElement {
         if (orientation.length === 4) {
           orientation = orientation.map(s => parseFloat(s));
           if (orientation.every(n => isFinite(n))) {
-            this.control.object.quaternion.fromArray(orientation);
+            this.bindState.control.object.quaternion.fromArray(orientation);
           }
         }
       } else if (name === 'scale') {
@@ -443,7 +439,7 @@ class XRModel extends HTMLElement {
         if (scale.length === 3) {
           scale = scale.map(s => parseFloat(s));
           if (scale.every(n => isFinite(n))) {
-            this.control.object.scale.fromArray(scale);
+            this.bindState.control.object.scale.fromArray(scale);
           }
         }
       }
@@ -460,8 +456,8 @@ class XRModel extends HTMLElement {
   connectedCallback() {
     console.log('connected', this, this.getAttribute('src'), this.getAttribute('orientation'), this.getAttribute('scale'));
 
-    this.fakeModel = new THREE.Object3D();
-    container.add(this.fakeModel);
+    const model = new THREE.Object3D();
+    container.add(model);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
@@ -476,8 +472,13 @@ class XRModel extends HTMLElement {
       control.draggable = false;
     });
     scene.add(control);
-    control.attach(this.fakeModel);
+    control.attach(model);
     this.control = control;
+
+    this.bindState = {
+      model,
+      control,
+    };
 
     this.attributeChangedCallback('src', null, this.getAttribute('src'));
     this.attributeChangedCallback('position', null, this.getAttribute('position'));
@@ -493,15 +494,13 @@ class XRModel extends HTMLElement {
   disconnectedCallback() {
     console.log('disconnected', this);
 
-    container.remove(this.model);
-    this.model = null;
+    const {model, control} = this.bindState;
 
-    container.remove(this.fakeModel);
-    this.fakeModel = null;
+    container.remove(model);
+    scene.remove(control);
+    control.dispose();
 
-    scene.remove(this.control);
-    this.control.dispose();
-    this.control = null;
+    this.bindState = null;
   }
 
   get src() {
@@ -986,7 +985,7 @@ const _keydown = e => {
     const _setMode = mode => {
       transformMode = mode;
       Array.from(document.querySelectorAll('xr-iframe')).concat(Array.from(document.querySelectorAll('xr-model'))).forEach(xrNode => {
-        xrNode.control.setMode(mode);
+        xrNode.bindState.control.setMode(mode);
       });
     };
     switch (e.which) {
@@ -1027,7 +1026,7 @@ const _mousemove = e => {
   localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
 
   const intersectionCandidates = Array.from(document.querySelectorAll('xr-model'))
-    .map(xrModel => xrModel.model && xrModel.model.boundingBoxMesh)
+    .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
     .filter(boundingBoxMesh => boundingBoxMesh);
   if (intersectionCandidates.length > 0) {
     for (let i = 0; i < intersectionCandidates.length; i++) {
