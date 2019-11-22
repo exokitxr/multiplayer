@@ -1922,6 +1922,136 @@ window.document.addEventListener('drop', async e => {
   }
 });
 
+let loginToken = null;
+const loginUrl = 'https://login.exokit.org/';
+async function doLogin(email, code) {
+  const res = await fetch(`${loginUrl}?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
+    method: 'POST',
+  });
+  if (res.status >= 200 && res.status < 300) {
+    const newLoginToken = await res.json();
+
+    await storage.set('loginToken', newLoginToken);
+
+    loginToken = newLoginToken;
+
+    // loginNameStatic.innerText = loginToken.name;
+    // loginEmailStatic.innerText = loginToken.email;
+
+    document.body.classList.add('logged-in');
+    loginForm.classList.remove('phase-1');
+    loginForm.classList.remove('phase-2');
+    loginForm.classList.add('phase-3');
+
+    return true;
+  } else {
+    return false;
+  }
+}
+const storage = {
+  async get(k) {
+    const s = localStorage.getItem(k);
+    if (typeof s === 'string') {
+      return JSON.parse(s);
+    } else {
+      return undefined;
+    }
+  },
+  async set(k, v) {
+    localStorage.setItem(k, JSON.stringify(v));
+  },
+  async remove(k) {
+    localStorage.removeItem(k);
+  },
+};
+
+// const loginButton = document.getElementById('login-button');
+// const loginButton2 = document.getElementById('login-button-2');
+// const loginPopdown = document.getElementById('login-popdown');
+const loginForm = document.getElementById('login-form');
+const loginEmail = document.getElementById('login-email');
+const loginNameStatic = document.getElementById('login-name-static');
+const loginEmailStatic = document.getElementById('login-email-static');
+const statusNotConnected = document.getElementById('status-not-connected');
+const statusConnected = document.getElementById('status-connected');
+const loginVerificationCode = document.getElementById('login-verification-code');
+const loginNotice = document.getElementById('login-notice');
+const loginError = document.getElementById('login-error');
+const logoutButton = document.getElementById('logout-button');
+loginForm.onsubmit = async e => {
+  e.preventDefault();
+
+  if (loginForm.classList.contains('phase-1') && loginEmail.value) {
+    loginNotice.innerHTML = '';
+    loginError.innerHTML = '';
+    loginForm.classList.remove('phase-1');
+
+    const res = await fetch(`${loginUrl}?email=${encodeURIComponent(loginEmail.value)}`, {
+      method: 'POST',
+    })
+    if (res.status >= 200 && res.status < 300) {
+      loginNotice.innerText = `Code sent to ${loginEmail.value}!`;
+      loginForm.classList.add('phase-2');
+
+      return res.blob();
+    } else if (res.status === 403) {
+      loginError.innerText = `${loginEmail.value} is not in the beta yet :(`;
+
+      loginForm.classList.add('phase-1');
+    } else {
+      throw new Error(`invalid status code: ${res.status}`);
+    }
+  } else if (loginForm.classList.contains('phase-2') && loginEmail.value && loginVerificationCode.value) {
+    loginNotice.innerHTML = '';
+    loginError.innerHTML = '';
+    loginForm.classList.remove('phase-2');
+
+    await doLogin(loginEmail.value, loginVerificationCode.value);
+  } else if (loginForm.classList.contains('phase-3')) {
+    await storage.remove('loginToken');
+
+    window.location.reload();
+
+    /* loginToken = null;
+    xrEngine.postMessage({
+      method: 'login',
+      loginToken,
+    });
+
+    loginNotice.innerHTML = '';
+    loginError.innerHTML = '';
+    document.body.classList.remove('logged-in');
+    loginForm.classList.remove('phase-3');
+    loginForm.classList.add('phase-1'); */
+  }
+};
+
+(async () => {
+  const localLoginToken = await storage.get('loginToken');
+  if (localLoginToken) {
+    const res = await fetch(`${loginUrl}?email=${encodeURIComponent(localLoginToken.email)}&token=${encodeURIComponent(localLoginToken.token)}`, {
+      method: 'POST',
+    })
+    if (res.status >= 200 && res.status < 300) {
+      loginToken = await res.json();
+
+      await storage.set('loginToken', loginToken);
+
+      // loginNameStatic.innerText = loginToken.name;
+      // loginEmailStatic.innerText = loginToken.email;
+
+      document.body.classList.add('logged-in');
+      loginForm.classList.remove('phase-1');
+      loginForm.classList.remove('phase-2');
+      loginForm.classList.add('phase-3');
+    } else {
+      await storage.remove('loginToken');
+
+      console.warn(`invalid status code: ${res.status}`);
+    }
+  }
+})();
+
 (async () => {
   const aAvatars = Array.from(document.querySelectorAll('.a-avatar'));
   const aAvatar = aAvatars[0];
