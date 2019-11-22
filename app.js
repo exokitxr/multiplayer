@@ -592,10 +592,13 @@ let modelUrl = '';
 let heightFactor = 0;
 const _updateXrIframeMatrices = () => {
   container.updateMatrix();
-  Array.from(document.querySelectorAll('xr-iframe')).forEach(xrIframe => {
+  const xrIframes = document.querySelectorAll('xr-iframe');
+  const numXrIframes = xrIframes.length;
+  for (let i = 0; i < numXrIframes; i++) {
+    const xrIframe = xrIframes[i];
     container.matrix.toArray(xrIframe.parentXrOffset.matrix);
     xrIframe.parentXrOffset.flagUpdate();
-  });
+  }
 };
 const _setLocalModel = newModel => {
   if (rig) {
