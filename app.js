@@ -1814,7 +1814,8 @@ const _uploadFile = file => {
         if (res.status >= 200 && res.status < 300) {
           return res.json();
         } else {
-          throw new Error(`invalid status code: ${res.status}`);
+          console.warn(`invalid status code: ${res.status}`);
+          return Promise.resolve([]);
         }
       })
       .then(j => {
