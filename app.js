@@ -646,7 +646,7 @@ function animate(timestamp, frame, referenceSpace) {
         if (inputSource && (pose = frame.getPose(inputSource.gripSpace, referenceSpace)) && (gamepad = inputSource.gamepad || gamepads[i])) {
           const {transform} = pose;
           const {position, orientation, matrix} = transform;
-          if (position) { // new WebXR api
+          if (position) {
             const rawP = localVector.copy(position);
             const p = localVector2.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
             const q = localQuaternion.copy(orientation);
@@ -677,42 +677,6 @@ function animate(timestamp, frame, referenceSpace) {
               b,
               lastB,
             };
-          /* } else if (matrix) { // old WebXR api
-            const rawP = localVector;
-            const p = localVector2;
-            const q = localQuaternion;
-            const s = localVector3;
-            localMatrix
-              .fromArray(transform.matrix)
-              .decompose(rawP, q, s);
-            p.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
-            const pressed = gamepad.buttons[0].pressed;
-            const lastPressed = lastPresseds[i];
-            const pointer = gamepad.buttons[0].value;
-            const grip = gamepad.buttons[1].value;
-            const pad = gamepad.axes[1] <= -0.5 || gamepad.axes[3] <= -0.5;
-            const padX = gamepad.axes[0] !== 0 ? gamepad.axes[0] : gamepad.axes[2];
-            const padY = gamepad.axes[1] !== 0 ? gamepad.axes[1] : gamepad.axes[3];
-            const stick = !!gamepad.buttons[3] && gamepad.buttons[3].pressed;
-            const a = !!gamepad.buttons[4] && gamepad.buttons[4].pressed;
-            const b = !!gamepad.buttons[5] && gamepad.buttons[5].pressed;
-            const lastB = lastBs[i];
-            return {
-              rawPosition: rawP,
-              position: p,
-              quaternion: q,
-              pressed,
-              lastPressed,
-              pointer,
-              grip,
-              pad,
-              padX,
-              padY,
-              stick,
-              a,
-              b,
-              lastB,
-            }; */
           } else {
             return null;
           }
@@ -756,27 +720,24 @@ function animate(timestamp, frame, referenceSpace) {
           const hmdEuler = localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
           localEuler.x = 0;
           localEuler.z = 0;
-          container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
+          localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler);
+
+          window.document.xrOffset.position.x -= localVector.x;
+          window.document.xrOffset.position.z -= localVector.z;
+          window.document.xrOffset.pushUpdate();
+          console.log('xr offset', window.document.xrOffset.position._buffer.join(','));
         }
       };
 
       const wasLastBd = lastBs[0] && lastBs[1];
 
       const lg = _getGamepad(1);
-      // let li = -1;
       if (lg) {
         const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, b} = lg;
         rig.inputs.leftGamepad.quaternion.copy(quaternion);
         rig.inputs.leftGamepad.position.copy(position);
         rig.inputs.leftGamepad.pointer = pointer;
         rig.inputs.leftGamepad.grip = grip;
-
-        /* li = mirrorMesh.getButtonIntersectionIndex(position);
-        if (pressed && !lastPressed) {
-          if (li !== -1) {
-            aAvatars[li].click();
-          }
-        } */
 
         _updateTeleportMesh(0, pad, lastPads[0], position, quaternion, 0, 0, false);
 
@@ -786,20 +747,12 @@ function animate(timestamp, frame, referenceSpace) {
         lastPositions[0].copy(rawPosition);
       }
       const rg = _getGamepad(0);
-      // let ri = -1;
       if (rg) {
         const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, padX, padY, stick, b} = rg;
         rig.inputs.rightGamepad.quaternion.copy(quaternion);
         rig.inputs.rightGamepad.position.copy(position);
         rig.inputs.rightGamepad.pointer = pointer;
         rig.inputs.rightGamepad.grip = grip;
-
-        /* ri = mirrorMesh.getButtonIntersectionIndex(position);
-        if (pressed && !lastPressed) {
-          if (ri !== -1) {
-            aAvatars[ri].click();
-          }
-        } */
 
         _updateTeleportMesh(1, false, false, position, quaternion, padX, padY, stick);
 
