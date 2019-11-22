@@ -720,12 +720,7 @@ function animate(timestamp, frame, referenceSpace) {
           const hmdEuler = localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
           localEuler.x = 0;
           localEuler.z = 0;
-          localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler);
-
-          window.document.xrOffset.position.x -= localVector.x;
-          window.document.xrOffset.position.z -= localVector.z;
-          window.document.xrOffset.pushUpdate();
-          console.log('xr offset', window.document.xrOffset.position._buffer.join(','));
+          container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
         }
       };
 
