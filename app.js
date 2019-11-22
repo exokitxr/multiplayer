@@ -590,6 +590,13 @@ const _getHeightFactor = rigHeight => rigHeight / userHeight;
 let rig = null;
 let modelUrl = '';
 let heightFactor = 0;
+const _updateXrIframeMatrices = () => {
+  container.updateMatrix();
+  Array.from(document.querySelectorAll('xr-iframe')).forEach(xrIframe => {
+    container.matrix.toArray(xrIframe.parentXrOffset.matrix);
+    xrIframe.parentXrOffset.flagUpdate();
+  });
+};
 const _setLocalModel = newModel => {
   if (rig) {
     container.remove(rig.model);
@@ -611,6 +618,7 @@ const _setLocalModel = newModel => {
   heightFactor = _getHeightFactor(rig.height);
 
   container.scale.set(1, 1, 1).divideScalar(heightFactor);
+  _updateXrIframeMatrices();
 };
 
 const lastPresseds = [false, false];
@@ -721,6 +729,8 @@ function animate(timestamp, frame, referenceSpace) {
           localEuler.x = 0;
           localEuler.z = 0;
           container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
+
+          _updateXrIframeMatrices();
         }
       };
 
@@ -782,6 +792,8 @@ function animate(timestamp, frame, referenceSpace) {
           .multiply(localMatrix.makeTranslation(-currentGripPosition.x, -currentGripPosition.y, -currentGripPosition.z))
           .multiply(localMatrix.makeTranslation(positionDiff.x, positionDiff.y, positionDiff.z))
           .decompose(container.position, container.quaternion, container.scale);
+
+        _updateXrIframeMatrices();
 
         if (rig) {
           rig.inputs.hmd.scaleFactor = startModelScale / scaleFactor;
