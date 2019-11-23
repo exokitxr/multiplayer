@@ -1030,6 +1030,7 @@ const _keydown = e => {
           const {element} = target;
           element.parentNode.removeChild(element);
           selectedBoundingBoxMesh = null;
+          selectedObjectDetails.classList.remove('open');
         }
         break;
       }
