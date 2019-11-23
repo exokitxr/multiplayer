@@ -1140,7 +1140,7 @@ const _mousemove = e => {
     return false;
   };
   const _checkToolIntersections = () => {
-    if (toolIndex === 2) {
+    if (toolIndex === 3) {
       const intersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
       if (intersection) {
         floorIntersectionPoint.copy(localVector);
