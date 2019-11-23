@@ -2042,6 +2042,27 @@ for (let i = 0; i < tools.length; i++) {
   });
 }
 
+const inventoryContent = document.getElementById('inventory-content');
+const _loadInventory = async () => {
+  const res = await fetch(`https://upload.exokit.org/${loginToken.name}`);
+  if (res.ok) {
+    const files = await res.json();
+    inventoryContent.innerHTML = files.map(filename => {
+      return `<nav class=a-file draggable=true src="${encodeURI(filename)}">
+        <div class=overlay>
+          <div class=multibutton>
+            <nav class="button first last add-button">Add</nav>
+          </div>
+        </div>
+        <i class="fas fa-file"></i>
+        <div class=name>${escape(filename)}</name>
+      </nav>`;
+    }).join('\n');
+  } else {
+    throw new Error(`invalid status code: ${res.status}`);
+  }
+};
+
 let loginToken = null;
 const loginUrl = 'https://login.exokit.org/';
 async function doLogin(email, code) {
@@ -2062,6 +2083,8 @@ async function doLogin(email, code) {
     loginForm.classList.remove('phase-1');
     loginForm.classList.remove('phase-2');
     loginForm.classList.add('phase-3');
+
+    await _loadInventory();
 
     return true;
   } else {
@@ -2164,6 +2187,8 @@ loginForm.onsubmit = async e => {
       loginForm.classList.remove('phase-1');
       loginForm.classList.remove('phase-2');
       loginForm.classList.add('phase-3');
+
+      await _loadInventory();
     } else {
       await storage.remove('loginToken');
 
