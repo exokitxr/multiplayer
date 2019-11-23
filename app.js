@@ -1254,6 +1254,17 @@ screenshotButton.addEventListener('click', async () => {
       URL.revokeObjectURL(screenshotImage.src);
     }
     screenshotImage.src = url;
+    screenshotImage.onclick = () => {
+      const a = document.createElement('a');
+      document.body.appendChild(a);
+      a.style.display = 'none';
+      a.href = url;
+      a.download = 'screenshot.png';
+      a.click();
+      document.body.removeChild(a);
+    };
+
+    console.log('screenshot done', screenshotImage);
   }
 });
 
