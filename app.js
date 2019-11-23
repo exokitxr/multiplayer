@@ -1244,13 +1244,33 @@ const mainOptions = Array.from(document.querySelectorAll('.option'));
 for (let i = 0; i < mainOptions.length; i++) {
   const mainOption = mainOptions[i];
   mainOption.addEventListener('click', e => {
-    for (let i = 0; i < mainOptions.length; i++) {
-      header.classList.remove(`main-${i+1}`);
-      mainOptions[i].classList.remove('open');
+    if (!header.classList.contains(`main-${i+1}`)) {
+      for (let i = 0; i < mainOptions.length; i++) {
+        header.classList.remove(`main-${i+1}`);
+        mainOptions[i].classList.remove('open');
+      }
+      mainOption.classList.add('open');
+      mainSelector.blur();
+      header.classList.add(`main-${i+1}`);
+
+      if (channelConnection) {
+        channelConnection.disconnect();
+        channelConnection = null;
+      }
+
+      switch (i) {
+        case 0: {
+          break;
+        }
+        case 1: {
+          break;
+        }
+        case 2: {
+          console.log('connect to land');
+          break;
+        }
+      }
     }
-    mainOption.classList.add('open');
-    mainSelector.blur();
-    header.classList.add(`main-${i+1}`);
   });
 }
 
@@ -1655,6 +1675,15 @@ connectButton.addEventListener('click', () => {
     channelConnection.addEventListener('open', () => {
       console.log('xr channel open');
     });
+    channelConnection.addEventListener('close', () => {
+      console.log('xr channel close');
+
+      _resetCodeInput();
+
+      connectButton.style.display = null;
+      disconnectButton.style.display = 'none';
+      channelInput.disabled = false;
+    });
     channelConnection.addEventListener('error', err => {
       console.warn('xr channel error', err);
     });
@@ -1897,12 +1926,6 @@ const disconnectButton = document.getElementById('disconnect-button');
 disconnectButton.addEventListener('click', () => {
   channelConnection.disconnect();
   channelConnection = null;
-
-  _resetCodeInput();
-
-  connectButton.style.display = null;
-  disconnectButton.style.display = 'none';
-  channelInput.disabled = false;
 });
 
 const codeInput = document.getElementById('code');
