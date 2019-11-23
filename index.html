@@ -227,6 +227,19 @@ a:active {
 .chat > .input:not(.open) {
   visibility: hidden;
 }
+.save-dialog {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 300px;
+  padding: 30px;
+  background-color: #FFF;
+}
+.save-dialog:not(.open) {
+  display: none;
+}
 .iframe-buttons {
   position: absolute;
   right: 330px;
@@ -636,6 +649,10 @@ header > .login-form.phase-3 > .phaseless-content
         <div class=messages id=chat-messages></div>
         <input type=text class=input id=chat-input>
       </div>
+      <form class=save-dialog id=save-dialog>
+        <input type=text placeholder="Enter file name..." id=save-name-input>
+        <input type=submit value="Save">
+      </form>
       <div class="iframe-buttons multibutton">
         <a class="button first" id="enable-mic-button">Enable Mic</a>
         <a class="button first" id="disable-mic-button" disabled style="display: none;">Disable Mic</a>
