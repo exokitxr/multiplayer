@@ -1917,7 +1917,7 @@ const _uploadFile = file => {
       body: file,
     })
       .then(res => {
-        if (res.status >= 200 && res.status < 300) {
+        if (res.ok) {
           return res.json();
         } else {
           console.warn(`invalid status code: ${res.status}`);
@@ -2048,7 +2048,7 @@ async function doLogin(email, code) {
   const res = await fetch(`${loginUrl}?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
     method: 'POST',
   });
-  if (res.status >= 200 && res.status < 300) {
+  if (res.ok) {
     const newLoginToken = await res.json();
 
     await storage.set('loginToken', newLoginToken);
@@ -2109,7 +2109,7 @@ loginForm.onsubmit = async e => {
     const res = await fetch(`${loginUrl}?email=${encodeURIComponent(loginEmail.value)}`, {
       method: 'POST',
     })
-    if (res.status >= 200 && res.status < 300) {
+    if (res.ok) {
       loginNotice.innerText = `Code sent to ${loginEmail.value}!`;
       loginForm.classList.add('phase-2');
 
@@ -2152,7 +2152,7 @@ loginForm.onsubmit = async e => {
     const res = await fetch(`${loginUrl}?email=${encodeURIComponent(localLoginToken.email)}&token=${encodeURIComponent(localLoginToken.token)}`, {
       method: 'POST',
     })
-    if (res.status >= 200 && res.status < 300) {
+    if (res.ok) {
       loginToken = await res.json();
 
       await storage.set('loginToken', loginToken);
