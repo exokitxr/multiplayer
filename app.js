@@ -1012,6 +1012,18 @@ const _keydown = e => {
         }
         break;
       }
+      case 83: { // S
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          saveDialog.classList.add('open');
+          saveNameInput.focus();
+        }
+        break;
+      }
+      case 27: { // esc
+        saveDialog.classList.remove('open');
+        break;
+      }
       case 46: { // del
         if (!chatInput.classList.contains('open') && selectedBoundingBoxMesh) {
           const {target} = selectedBoundingBoxMesh;
@@ -1048,6 +1060,50 @@ const _keydown = e => {
   }
 };
 window.addEventListener('keydown', _keydown);
+
+const saveDialog = document.getElementById('save-dialog');
+const saveNameInput = document.getElementById('save-name-input');
+saveDialog.addEventListener('submit', e => {
+  e.preventDefault();
+
+  const username = loginToken.name;
+  const filename = saveNameInput.value;
+  const headers = {
+    'Content-Type': 'text/html',
+  };
+  fetch(`https://upload.exokit.org/${username}/${filename}?email=${encodeURIComponent(loginToken.email)}&token=${encodeURIComponent(loginToken.token)}`, {
+    method: 'POST',
+    headers,
+  })
+    .then(res => {
+      if (res.ok) {
+        return res.text();
+      } else {
+        throw new Errors(`invalid status code: ${res.status}`);
+      }
+    })
+    .then(u => {
+      console.log('save result 1', u);
+      return fetch(u, {
+        method: 'PUT',
+        body: codeInput.value,
+        headers,
+      });
+    })
+    .then(res => {
+      if (res.ok) {
+        return res.text();
+      } else {
+        throw new Errors(`invalid status code: ${res.status}`);
+      }
+    })
+    .then(s => {
+      console.log('save result 2', `https://content.exokit.org/${username}/${filename}`);
+
+      saveDialog.classList.remove('open');
+      saveNameInput.value = '';
+    });
+});
 
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
