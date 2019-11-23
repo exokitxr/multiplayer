@@ -1202,9 +1202,23 @@ const _click = () => {
 renderer.domElement.addEventListener('click', _click);
 
 const mainSelector = document.getElementById('main-selector');
-mainSelector.addEventListener('click', e => {
-  mainSelector.classList.toggle('open');
+mainSelector.addEventListener('focus', () => {
+  mainSelector.classList.add('open');
 });
+mainSelector.addEventListener('blur', () => {
+  mainSelector.classList.remove('open');
+});
+const mainOptions = Array.from(document.getElementById('main-options').querySelectorAll('.option'));
+for (let i = 0; i < mainOptions.length; i++) {
+  const mainOption = mainOptions[i];
+  mainOption.addEventListener('click', e => {
+    for (let i = 0; i < mainOptions.length; i++) {
+      mainOptions[i].classList.remove('open');
+    }
+    mainOption.classList.add('open');
+    mainSelector.blur();
+  });
+}
 
 const avatarDetails = document.getElementById('avatar-details');
 const setAvatarButton = document.getElementById('set-avatar-button');
