@@ -1,7 +1,9 @@
 import './three.js';
+import './BufferGeometryUtils.js';
 import './OrbitControls.js';
 import './TransformControls.js';
 import './Reflector.js';
+import './land.js';
 import './bmfont.js';
 
 import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
