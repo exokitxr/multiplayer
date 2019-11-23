@@ -101,6 +101,9 @@ header nav:not(.selected):not([disabled]):hover {
 header nav:not(.selected):hover span {
   background-color: #EEE;
 }
+header:not(.main-2) .channel-select {
+  display: none;
+}
 .channel-select {
   display: flex;
   position: relative;
@@ -647,16 +650,16 @@ header > .login-form.phase-3 > .phaseless-content
   </head>
   <body>
     <div class=body>
-      <header>
+      <header class="header main-1" id=header>
         <div class=main-selector tabindex=-1 id=main-selector>
           <nav class=target>
             <img src="logo.svg" class="icon">
             <i class="fas fa-chevron-down"></i>
           </nav>
           <div class=options id=main-options>
-            <nav class="option open" id=main-option1>Home</nav>
-            <nav class=option id=main-option2>Multiplayer</nav>
-            <nav class=option id=main-option2>Land</nav>
+            <nav class="option open">Home</nav>
+            <nav class=option>Multiplayer</nav>
+            <nav class=option>Land</nav>
           </div>
         </div>
 

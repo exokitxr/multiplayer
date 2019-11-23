@@ -1232,6 +1232,7 @@ const _click = () => {
 };
 renderer.domElement.addEventListener('click', _click);
 
+const header = document.getElementById('header');
 const mainSelector = document.getElementById('main-selector');
 mainSelector.addEventListener('focus', () => {
   mainSelector.classList.add('open');
@@ -1240,16 +1241,16 @@ mainSelector.addEventListener('blur', () => {
   mainSelector.classList.remove('open');
 });
 const mainOptions = Array.from(document.querySelectorAll('.option'));
-let mainOptionIndex = 0;
 for (let i = 0; i < mainOptions.length; i++) {
   const mainOption = mainOptions[i];
   mainOption.addEventListener('click', e => {
     for (let i = 0; i < mainOptions.length; i++) {
+      header.classList.remove(`main-${i+1}`);
       mainOptions[i].classList.remove('open');
     }
     mainOption.classList.add('open');
     mainSelector.blur();
-    mainOptionIndex = i;
+    header.classList.add(`main-${i+1}`);
   });
 }
 
