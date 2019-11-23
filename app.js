@@ -1208,7 +1208,8 @@ mainSelector.addEventListener('focus', () => {
 mainSelector.addEventListener('blur', () => {
   mainSelector.classList.remove('open');
 });
-const mainOptions = Array.from(document.getElementById('main-options').querySelectorAll('.option'));
+const mainOptions = Array.from(document.querySelectorAll('.option'));
+let mainOptionIndex = 0;
 for (let i = 0; i < mainOptions.length; i++) {
   const mainOption = mainOptions[i];
   mainOption.addEventListener('click', e => {
@@ -1217,6 +1218,7 @@ for (let i = 0; i < mainOptions.length; i++) {
     }
     mainOption.classList.add('open');
     mainSelector.blur();
+    mainOptionIndex = i;
   });
 }
 
