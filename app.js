@@ -1,7 +1,9 @@
 import './three.js';
+import './BufferGeometryUtils.js';
 import './OrbitControls.js';
 import './TransformControls.js';
 import './Reflector.js';
+import './land.js';
 import './bmfont.js';
 
 import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
@@ -981,6 +983,8 @@ window.document.addEventListener('pointerlockchange', () => {
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 let transformMode = 'translate';
+let guardianMesh = null;
+let baseMesh = null;
 const _keydown = e => {
   if (!controlsBound) {
     const _setMode = mode => {
@@ -1047,34 +1051,80 @@ window.addEventListener('keydown', _keydown);
 
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
+let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
+let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 const _mousemove = e => {
   hoveredBoundingBoxMesh = null;
+  floorIntersectionPoint.set(NaN, NaN, NaN);
 
   const rect = renderer.domElement.getBoundingClientRect();
   const xFactor = (e.clientX - rect.left) / rect.width;
   const yFactor = -(e.clientY - rect.top) / rect.height;
   localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
 
-  const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
-    .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
-    .filter(boundingBoxMesh => boundingBoxMesh);
-  if (intersectionCandidates.length > 0) {
-    for (let i = 0; i < intersectionCandidates.length; i++) {
-      const boundingBoxMesh = intersectionCandidates[i];
-      boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.normal);
-    }
-    for (let i = 0; i < intersectionCandidates.length; i++) {
-      const boundingBoxMesh = intersectionCandidates[i];
-      const intersections = localRaycaster.intersectObject(boundingBoxMesh);
-      if (intersections.length > 0) {
-        hoveredBoundingBoxMesh = boundingBoxMesh;
-        boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.highlight);
-        break;
+  const _checkElementIntersections = () => {
+    const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
+      .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
+      .filter(boundingBoxMesh => boundingBoxMesh);
+    if (intersectionCandidates.length > 0) {
+      for (let i = 0; i < intersectionCandidates.length; i++) {
+        const boundingBoxMesh = intersectionCandidates[i];
+        boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.normal);
+      }
+      for (let i = 0; i < intersectionCandidates.length; i++) {
+        const boundingBoxMesh = intersectionCandidates[i];
+        const intersections = localRaycaster.intersectObject(boundingBoxMesh);
+        if (intersections.length > 0) {
+          hoveredBoundingBoxMesh = boundingBoxMesh;
+          boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.highlight);
+          return true;
+        }
       }
     }
+    return false;
+  };
+  const _checkToolIntersections = () => {
+    if (toolIndex === 2) {
+      const intersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
+      if (intersection) {
+        floorIntersectionPoint.copy(localVector);
+        return true;
+      }
+    }
+    return false;
+  };
+  _checkElementIntersections() || _checkToolIntersections();
+
+  if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
+    // console.log('intersect', dragStartPoint.toArray().join(','), floorIntersectionPoint.toArray().join(','));
+
+    const _incr = (a, b) => a - b;
+    const xs = [Math.floor((dragStartPoint.x)/container.scale.x), Math.floor((floorIntersectionPoint.x)/container.scale.x)].sort(_incr);
+    const ys = [Math.floor((dragStartPoint.z)/container.scale.z), Math.floor((floorIntersectionPoint.z)/container.scale.z)].sort(_incr);
+    const xrExtent = [[
+      xs[0], ys[0],
+      xs[1], ys[1],
+    ]];
+    if (guardianMesh) {
+      container.remove(guardianMesh);
+    }
+    guardianMesh = new THREE.Guardian(xrExtent, 10, colors.select);
+    container.add(guardianMesh);
+
+    if (baseMesh) {
+      container.remove(baseMesh);
+    }
+    baseMesh = new THREE.Land(xrExtent, colors.select);
+    container.add(baseMesh);
   }
 };
 renderer.domElement.addEventListener('mousemove', _mousemove);
+const _mousedown = e => {
+  if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
+    dragStartPoint.copy(floorIntersectionPoint);
+  }
+};
+renderer.domElement.addEventListener('mousedown', _mousedown);
 
 const selectedObjectDetails = document.getElementById('selected-object-details');
 const detailsContentTab = document.getElementById('details-content-tab');
@@ -1921,6 +1971,20 @@ window.document.addEventListener('drop', async e => {
     }
   }
 });
+
+const tools = Array.from(document.querySelectorAll('.tool'));
+let toolIndex = 0;
+for (let i = 0; i < tools.length; i++) {
+  const tool = tools[i];
+  tool.addEventListener('click', () => {
+    for (let i = 0; i < tools.length; i++) {
+      tools[i].classList.remove('open');
+    }
+    tool.classList.add('open');
+    toolIndex = i;
+    orbitControls.enabled = toolIndex === 0;
+  });
+}
 
 let loginToken = null;
 const loginUrl = 'https://login.exokit.org/';
