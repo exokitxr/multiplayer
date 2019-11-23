@@ -32,24 +32,48 @@ header {
   user-select: none;
   z-index: 1;
 }
-header .logo-selector {
+.main-selector {
 
 }
-header .logo-selector:hover {
+.main-selector:hover .target,
+.main-selector .options .option:hover
+{
   background-color: #42a5f5;
   color: #FFF;
 }
-header .logo-selector:active {
+.main-selector:active .target,
+.main-selector.open .target,
+.main-selector .options .option:active,
+.main-selector .options .option.open
+{
   background-color: #1e88e5;
   color: #FFF;
 }
-header .logo-selector:hover .icon {
+.main-selector:hover .target .icon,
+.main-selector.open .target .icon
+{
   filter: invert(1);
 }
-header .logo-selector .icon {
+.main-selector .target .icon {
   width: 50px;
   height: 50px;
   margin: 0 20px;
+}
+.main-selector .options {
+  display: flex;
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 300px;
+  background-color: #FFF;
+  color: #000;
+  flex-direction: column;
+}
+.main-selector .options .option {
+  padding: 15px;
+}
+.main-selector:not(.open) .options {
+  display: none;
 }
 header nav {
   display: flex;
@@ -624,10 +648,18 @@ header > .login-form.phase-3 > .phaseless-content
   <body>
     <div class=body>
       <header>
-        <nav class=logo-selector>
-          <img src="logo.svg" class="icon">
-          <i class="fas fa-chevron-down"></i>
-        </nav>
+        <div class=main-selector id=main-selector>
+          <nav class=target>
+            <img src="logo.svg" class="icon">
+            <i class="fas fa-chevron-down"></i>
+          </nav>
+          <div class=options>
+            <!-- <div class=option>Empty</div> -->
+            <nav class=option>Home</nav>
+            <nav class=option>Multiplayer</nav>
+            <nav class=option>Land</nav>
+          </div>
+        </div>
 
         <div class=channel-select>
           <div class=channels-content id=channels-content style="display: none"></div>

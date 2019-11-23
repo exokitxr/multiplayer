@@ -1201,6 +1201,11 @@ const _click = () => {
 };
 renderer.domElement.addEventListener('click', _click);
 
+const mainSelector = document.getElementById('main-selector');
+mainSelector.addEventListener('click', e => {
+  mainSelector.classList.toggle('open');
+});
+
 const avatarDetails = document.getElementById('avatar-details');
 const setAvatarButton = document.getElementById('set-avatar-button');
 const unsetAvatarButton = document.getElementById('unset-avatar-button');
