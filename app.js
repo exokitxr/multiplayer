@@ -1924,6 +1924,20 @@ window.document.addEventListener('drop', async e => {
   }
 });
 
+const tools = Array.from(document.querySelectorAll('.tool'));
+let toolIndex = 0;
+for (let i = 0; i < tools.length; i++) {
+  const tool = tools[i];
+  tool.addEventListener('click', () => {
+    for (let i = 0; i < tools.length; i++) {
+      tools[i].classList.remove('open');
+    }
+    tool.classList.add('open');
+    toolIndex = i;
+    orbitControls.enabled = toolIndex === 0;
+  });
+}
+
 let loginToken = null;
 const loginUrl = 'https://login.exokit.org/';
 async function doLogin(email, code) {
