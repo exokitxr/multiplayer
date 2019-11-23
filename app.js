@@ -1242,9 +1242,7 @@ unsetAvatarButton.addEventListener('click', () => {
 const screenshotButton = document.getElementById('screenshot-button');
 const screenshotImage = document.getElementById('screenshot-image');
 screenshotButton.addEventListener('click', async () => {
-  const {target} = selectedBoundingBoxMesh;
-  const {element} = target;
-  const {model} = element;
+  const {target: {element: {bindState: {model}}}} = selectedBoundingBoxMesh;
   console.log('screenshot', model);
   if (model) {
     const blob = await screenshot(model, {
