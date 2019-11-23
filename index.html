@@ -32,7 +32,17 @@ header {
   user-select: none;
   z-index: 1;
 }
-header .icon {
+header .logo-selector {
+
+}
+header .logo-selector:hover {
+  background-color: #42a5f5;
+  color: #FFF;
+}
+header .logo-selector:hover .icon {
+  filter: invert(1);
+}
+header .logo-selector .icon {
   width: 50px;
   height: 50px;
   margin: 0 20px;
@@ -610,8 +620,10 @@ header > .login-form.phase-3 > .phaseless-content
   <body>
     <div class=body>
       <header>
-        <img src="logo.svg" class="icon">
-        <!-- <nav class=selected><span>Multiplayer</span></nav> -->
+        <nav class=logo-selector>
+          <img src="logo.svg" class="icon">
+          <i class="fas fa-chevron-down"></i>
+        </nav>
 
         <div class=channel-select>
           <div class=channels-content id=channels-content style="display: none"></div>
