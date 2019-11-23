@@ -315,21 +315,62 @@ const _unbindXrIframe = xrIframe => {
 
   xrIframe.bindState = null;
 };
+let guardianMesh = null;
+let baseMesh = null;
+const _bindXrSite = xrSite => {
+  const observer = new MutationObserver(() => {
+    if (guardianMesh) {
+      container.remove(guardianMesh);
+      guardianMesh = null;
+    }
+    if (baseMesh) {
+      container.remove(baseMesh);
+      baseMesh = null;
+    }
+
+    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+    if (extents.length > 0) {
+      guardianMesh = new THREE.Guardian(extents, 10, colors.select);
+      container.add(guardianMesh);
+      baseMesh = new THREE.Land(extents, colors.select);
+      container.add(baseMesh);
+    }
+  });
+  observer.observe(xrSite, {
+    attributes: true,
+    attributeFilter: [
+      'extents',
+    ],
+  });
+  xrSite.bindState = {
+    observer,
+  };
+};
+const _unbindXrSite = xrSite => {
+  const {observer} = xrSite.bindState;
+  observer.disconnect();
+  xrSite.bindState = null;
+};
 new MutationObserver(mutationRecords => {
   for (let i = 0; i < mutationRecords.length; i++) {
     const {addedNodes, removedNodes} = mutationRecords[i];
 
     for (let j = 0; j < addedNodes.length; j++) {
       const node = addedNodes[j];
-      if (node.tagName === 'XR-SITE' && node.requestSession && !session) {
-        node.requestSession().then(_setSession);
+      if (node.tagName === 'XR-SITE' && !node.bindState) {
+        _bindXrSite(node);
+        if (node.requestSession && !session) {
+          node.requestSession().then(_setSession);
+        }
       } else if (node.tagName === 'XR-IFRAME' && !node.bindState) {
         _bindXrIframe(node);
       }
     }
     for (let j = 0; j < removedNodes.length; j++) {
       const node = removedNodes[j];
-      if (node.tagName === 'XR-IFRAME' && node.bindState) {
+      if (node.tagName === 'XR-SITE' && node.bindState) {
+        _unbindXrSite(node);
+      } else if (node.tagName === 'XR-IFRAME' && node.bindState) {
         _unbindXrIframe(node);
       }
     }
@@ -983,8 +1024,8 @@ window.document.addEventListener('pointerlockchange', () => {
 const chatMessages = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 let transformMode = 'translate';
-let guardianMesh = null;
-let baseMesh = null;
+let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
+let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 const _keydown = e => {
   if (!controlsBound) {
     const _setMode = mode => {
@@ -1108,8 +1149,6 @@ saveDialog.addEventListener('submit', e => {
 
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
-let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
-let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 const _mousemove = e => {
   hoveredBoundingBoxMesh = null;
   floorIntersectionPoint.set(NaN, NaN, NaN);
@@ -1158,21 +1197,12 @@ const _mousemove = e => {
     const _incr = (a, b) => a - b;
     const xs = [Math.floor((dragStartPoint.x)/container.scale.x), Math.floor((floorIntersectionPoint.x)/container.scale.x)].sort(_incr);
     const ys = [Math.floor((dragStartPoint.z)/container.scale.z), Math.floor((floorIntersectionPoint.z)/container.scale.z)].sort(_incr);
-    const xrExtent = [[
+    const extents = [[
       xs[0], ys[0],
       xs[1], ys[1],
     ]];
-    if (guardianMesh) {
-      container.remove(guardianMesh);
-    }
-    guardianMesh = new THREE.Guardian(xrExtent, 10, colors.select);
-    container.add(guardianMesh);
-
-    if (baseMesh) {
-      container.remove(baseMesh);
-    }
-    baseMesh = new THREE.Land(xrExtent, colors.select);
-    container.add(baseMesh);
+    const xrSite = document.querySelector('xr-site');
+    xrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
   }
 };
 renderer.domElement.addEventListener('mousemove', _mousemove);
