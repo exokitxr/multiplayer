@@ -174,6 +174,31 @@ a:hover {
 a:active {
   color: #1976d2;
 }
+.tools {
+  display: flex;
+  position: absolute;
+  top: 60px;
+  left: 10px;
+}
+.tools > .tool {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  justify-content: center;
+  align-items: center;
+  background-color: #EEE;
+  font-size: 16px;
+  /* color: #000; */
+  cursor: pointer;
+}
+.tools > .tool:hover {
+  background-color: #42a5f5;
+  color: #FFF;
+}
+.tools > .tool:active, .tools > .tool.open {
+  background-color: #1e88e5;
+  color: #FFF;
+}
 .chat {
   position: absolute;
   bottom: 30px;
@@ -602,6 +627,11 @@ header > .login-form.phase-3 > .phaseless-content
       </header>
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
+      <div class=tools>
+        <nav class="tool open" id=tool-1><i class="fal fa-video"></i></nav>
+        <nav class=tool id=tool-2><i class="fal fa-mouse-pointer"></i></nav>
+        <nav class=tool id=tool-3><i class="fal fa-vector-square"></i></nav>
+      </div>
       <div class=chat>
         <div class=messages id=chat-messages></div>
         <input type=text class=input id=chat-input>
