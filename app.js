@@ -223,7 +223,7 @@ const _bindXrIframe = xrIframe => {
   control.setMode(transformMode);
   control.size = 3;
   control.addEventListener('dragging-changed', e => {
-    orbitControls.enabled = !e.value;
+    orbitControls.enabled = !e.value && toolIndex === 0;
   });
   control.addEventListener('mouseEnter', () => {
     control.draggable = true;
@@ -489,7 +489,7 @@ class XRModel extends HTMLElement {
     control.setMode(transformMode);
     control.size = 3;
     control.addEventListener('dragging-changed', e => {
-      orbitControls.enabled = !e.value;
+      orbitControls.enabled = !e.value && toolIndex === 0;
     });
     control.addEventListener('mouseEnter', () => {
       control.draggable = true;
@@ -1347,7 +1347,7 @@ const _bindControls = type => {
     window.addEventListener('keyup', _keyup);
     window.removeEventListener('mousemove', _mousemove);
     orbitControls.target.copy(camera.position).add(new THREE.Vector3(0, 0, -3).applyQuaternion(camera.quaternion));
-    orbitControls.enabled = true;
+    orbitControls.enabled = toolIndex === 0;
     controlsBound = null;
   };
 };
