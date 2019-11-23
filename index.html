@@ -363,13 +363,15 @@ a:active {
   display: none;
 }
 .site-urls-content,
-.avatar-models-content
+.avatar-models-content,
+.inventory-content
 {
   display: flex;
   flex-direction: column;
 }
 .site-urls-content .a-site,
-.avatar-models-content .a-avatar
+.avatar-models-content .a-avatar,
+.inventory-content .a-file
 {
   display: flex;
   position: relative;
@@ -382,11 +384,16 @@ a:active {
   background-color: #EEE;
 } */
 .site-urls-content .a-site img,
-.avatar-models-content .a-avatar img
+.avatar-models-content .a-avatar img,
+.inventory-content .a-file i
 {
+  display: flex;
   width: 80px;
   height: 80px;
   margin-right: 10px;
+  font-size: 50px;
+  justify-content: center;
+  align-items: center;
 }
 .site-urls-content .a-site .wrap {
   display: flex;
@@ -401,7 +408,8 @@ a:active {
   overflow: hidden;
 }
 .site-urls-content .a-site .overlay,
-.avatar-models-content .a-avatar .overlay
+.avatar-models-content .a-avatar .overlay,
+.inventory-content .a-file .overlay
 {
   display: none;
   position: absolute;
@@ -420,7 +428,8 @@ a:active {
   align-items: center;
 }
 .site-urls-content .a-site:hover .overlay,
-.avatar-models-content .a-avatar:hover .overlay
+.avatar-models-content .a-avatar:hover .overlay,
+.inventory-content .a-file:hover .overlay
 {
   display: flex;
 }
@@ -695,9 +704,9 @@ header > .login-form.phase-3 > .phaseless-content
         </div>
         <div class="content site-urls-content open" id=site-urls-content></div>
         <div class="content avatar-models-content" id=avatar-models-content></div>
-        <div class="content"></div>
-        <div class="content"></div>
-        <div class="content">
+        <div class="content prefabs-conent"></div>
+        <div class="content inventory-content" id=inventory-content></div>
+        <div class="content code-content">
           <textarea class=code id=code spellcheck=false></textarea>
           <div class=code-buttons>
             <div class=multibutton>
