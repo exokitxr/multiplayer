@@ -228,8 +228,9 @@ const _bindXrIframe = xrIframe => {
   container.add(model);
 
   const boundingBox = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1));
-  boundingBox.visible = toolManager.getSelectedToolName() === 'select';
-  model.boundingBoxMesh = _makeBoundingBoxMesh(model, boundingBox);
+  const boundingBoxMesh = _makeBoundingBoxMesh(model, boundingBox);
+  boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
+  model.boundingBoxMesh = boundingBoxMesh;
   model.add(model.boundingBoxMesh);
   model.element = xrIframe;
 
