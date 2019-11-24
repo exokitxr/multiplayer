@@ -360,6 +360,11 @@ const _bindXrSite = xrSite => {
   };
 };
 const _unbindXrSite = xrSite => {
+  container.remove(xrSite.guardianMesh);
+  xrSite.guardianMesh = null;
+  container.remove(xrSite.baseMesh);
+  xrSite.baseMesh = null;
+
   const {observer} = xrSite.bindState;
   observer.disconnect();
   xrSite.bindState = null;
@@ -1094,6 +1099,19 @@ const _keydown = e => {
           selectedBoundingBoxMesh = null;
           selectedObjectDetails.classList.remove('open');
         }
+        if (selectedXrSite) {
+          selectedXrSite.parentNode.removeChild(selectedXrSite);
+          if (hoveredXrSite === selectedXrSite) {
+            hoveredXrSite = null;
+          }
+          if (editedXrSite === selectedXrSite) {
+            editedXrSite = null;
+            editParcelButton.style.display = null;
+            stopEditingButton.style.display = 'none';
+          }
+          selectedXrSite = null;
+          parcelDetails.classList.remove('open');
+        }
         break;
       }
       case 13: { // enter
@@ -1290,6 +1308,12 @@ const _mousedown = e => {
         parcelDetails.classList.add('open');
       } else {
         parcelDetails.classList.remove('open');
+      }
+
+      if (editedXrSite) {
+        editedXrSite = null;
+        editParcelButton.style.display = null;
+        stopEditingButton.style.display = 'none';
       }
 
       selectedXrSite = hoveredXrSite;
