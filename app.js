@@ -1277,7 +1277,7 @@ const _mousedown = e => {
 
         parcelDetails.classList.add('open');
       } else {
-        parcelDetails.classList.add('close');
+        parcelDetails.classList.remove('open');
       }
     }
   }
