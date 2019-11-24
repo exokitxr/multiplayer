@@ -132,7 +132,7 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   return mesh;
 };
 
-/* const mirrorMesh = (() => {
+const mirrorMesh = (() => {
   const mirrorWidth = 3;
   const mirrorHeight = 2;
   const geometry = new THREE.PlaneBufferGeometry(mirrorWidth, mirrorHeight)
@@ -169,7 +169,14 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
 
   return mesh;
 })();
-container.add(mirrorMesh); */
+container.add(mirrorMesh);
+const mirrorMeshSwitchWrap = document.getElementById('mirror-mesh-switch-wrap');
+if (localStorage.getItem('mirrorMesh')) {
+  mirrorMesh.visible = true;
+  mirrorMeshSwitchWrap.classList.add('on');
+} else {
+  mirrorMesh.visible = false;
+}
 
 const renderer = new THREE.WebGLRenderer({
   // alpha: true,
@@ -1577,6 +1584,34 @@ thirdpersonButton.addEventListener('click', async () => {
   if (rig) {
     await renderer.domElement.requestPointerLock();
     _bindControls('thirdperson');
+  }
+});
+
+const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
+realityLayersSwitchWrap.addEventListener('click', async () => {
+  realityLayersSwitchWrap.classList.toggle('on');
+
+  const enabled = realityLayersSwitchWrap.classList.contains('on');
+  if (enabled) {
+    localStorage.setItem('realityLayers', true);
+    await ew.register();
+    location.reload();
+  } else {
+    localStorage.removeItem('realityLayers');
+    await ew.unregister();
+    location.reload();
+  }
+});
+
+mirrorMeshSwitchWrap.addEventListener('click', async () => {
+  mirrorMeshSwitchWrap.classList.toggle('on');
+
+  const enabled = mirrorMeshSwitchWrap.classList.contains('on');
+  mirrorMesh.visible = enabled;
+  if (enabled) {
+    localStorage.setItem('mirrorMesh', true);
+  } else {
+    localStorage.removeItem('mirrorMesh');
   }
 });
 
