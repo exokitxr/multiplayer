@@ -15,6 +15,8 @@ import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 
+const {document: topDocument} = window.top;
+
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
 const floorPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0));
@@ -175,10 +177,11 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.sortObjects = false;
-document.getElementById('iframe-wrapper').appendChild(renderer.domElement);
+const iframeWrapper = document.getElementById('iframe-wrapper');
+iframeWrapper.appendChild(renderer.domElement);
 renderer.domElement.addEventListener('mousedown', e => {
-  if (document.activeElement) {
-    document.activeElement.blur();
+  if (topDocument.activeElement) {
+    topDocument.activeElement.blur();
   }
 });
 
@@ -1014,15 +1017,15 @@ const keys = {
 };
 let controlsBound = null;
 let unbindControls = null;
-window.document.addEventListener('pointerlockchange', () => {
-  if (!window.document.pointerLockElement && unbindControls) {
+document.addEventListener('pointerlockchange', () => {
+  if (!document.pointerLockElement && unbindControls) {
     unbindControls();
     unbindControls = null;
   }
 });
 
-const chatMessages = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
+const chatMessages = topDocument.getElementById('chat-messages');
+const chatInput = topDocument.getElementById('chat-input');
 let transformMode = 'translate';
 let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
 let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
@@ -1081,7 +1084,7 @@ const _keydown = e => {
           chatInput.focus();
         } else {
           if (chatInput.value) {
-            const messageEl = document.createElement('message');
+            const messageEl = topDocument.createElement('message');
             messageEl.classList.add('message');
             messageEl.innerHTML = `<div class=message><b>you</b>: <span class=text></span></div>`;
             const textEl = messageEl.querySelector('.text');
@@ -1103,8 +1106,8 @@ const _keydown = e => {
 };
 window.addEventListener('keydown', _keydown);
 
-const saveDialog = document.getElementById('save-dialog');
-const saveNameInput = document.getElementById('save-name-input');
+const saveDialog = topDocument.getElementById('save-dialog');
+const saveNameInput = topDocument.getElementById('save-name-input');
 saveDialog.addEventListener('submit', e => {
   e.preventDefault();
 
@@ -1226,8 +1229,8 @@ const _mousedown = e => {
 };
 renderer.domElement.addEventListener('mousedown', _mousedown);
 
-const selectedObjectDetails = document.getElementById('selected-object-details');
-const detailsContentTab = document.getElementById('details-content-tab');
+const selectedObjectDetails = topDocument.getElementById('selected-object-details');
+const detailsContentTab = topDocument.getElementById('details-content-tab');
 const _click = () => {
   console.log('select', hoveredBoundingBoxMesh);
   if (selectedBoundingBoxMesh) {
@@ -1245,8 +1248,8 @@ const _click = () => {
 };
 renderer.domElement.addEventListener('click', _click);
 
-const header = document.getElementById('header');
-const mainSelector = document.getElementById('main-selector');
+const header = topDocument.getElementById('header');
+const mainSelector = topDocument.getElementById('main-selector');
 mainSelector.addEventListener('focus', () => {
   mainSelector.classList.add('open');
 });
@@ -1347,10 +1350,10 @@ const _connectLand = () => {
   };
 };
 
-const avatarDetails = document.getElementById('avatar-details');
-const setAvatarButton = document.getElementById('set-avatar-button');
-const unsetAvatarButton = document.getElementById('unset-avatar-button');
-const settingAvatarButton = document.getElementById('setting-avatar-button');
+const avatarDetails = topDocument.getElementById('avatar-details');
+const setAvatarButton = topDocument.getElementById('set-avatar-button');
+const unsetAvatarButton = topDocument.getElementById('unset-avatar-button');
+const settingAvatarButton = topDocument.getElementById('setting-avatar-button');
 setAvatarButton.addEventListener('click', async () => {
   const {target} = selectedBoundingBoxMesh;
   const {element} = target;
@@ -1385,8 +1388,8 @@ unsetAvatarButton.addEventListener('click', () => {
   avatarDetails.classList.remove('open');
 });
 
-const screenshotButton = document.getElementById('screenshot-button');
-const screenshotImage = document.getElementById('screenshot-image');
+const screenshotButton = topDocument.getElementById('screenshot-button');
+const screenshotImage = topDocument.getElementById('screenshot-image');
 screenshotButton.addEventListener('click', async () => {
   const {target: {element: {bindState: {model}}}} = selectedBoundingBoxMesh;
   console.log('screenshot', model);
@@ -1401,13 +1404,13 @@ screenshotButton.addEventListener('click', async () => {
     }
     screenshotImage.src = url;
     screenshotImage.onclick = () => {
-      const a = document.createElement('a');
-      document.body.appendChild(a);
+      const a = topDocument.createElement('a');
+      topDocument.body.appendChild(a);
       a.style.display = 'none';
       a.href = url;
       a.download = 'screenshot.png';
       a.click();
-      document.body.removeChild(a);
+      topDocument.body.removeChild(a);
     };
 
     console.log('screenshot done', screenshotImage);
@@ -1506,14 +1509,14 @@ const _bindControls = type => {
     controlsBound = null;
   };
 };
-const firstpersonButton = document.getElementById('firstperson-button');
+const firstpersonButton = topDocument.getElementById('firstperson-button');
 firstpersonButton.addEventListener('click', async () => {
   if (rig) {
     await renderer.domElement.requestPointerLock();
     _bindControls('firstperson');
   }
 });
-const thirdpersonButton = document.getElementById('thirdperson-button');
+const thirdpersonButton = topDocument.getElementById('thirdperson-button');
 thirdpersonButton.addEventListener('click', async () => {
   if (rig) {
     await renderer.domElement.requestPointerLock();
@@ -1522,7 +1525,7 @@ thirdpersonButton.addEventListener('click', async () => {
 });
 
 let session = null;
-const enterXrButton = document.getElementById('enter-xr-button');
+const enterXrButton = topDocument.getElementById('enter-xr-button');
 const _setSession = async newSession => {
   session = newSession;
 
@@ -1593,8 +1596,8 @@ enterXrButton.addEventListener('click', async () => {
 });
 
 let microphoneMediaStream = null;
-const enableMicButton = document.getElementById('enable-mic-button');
-const disableMicButton = document.getElementById('disable-mic-button');
+const enableMicButton = topDocument.getElementById('enable-mic-button');
+const disableMicButton = topDocument.getElementById('disable-mic-button');
 enableMicButton.addEventListener('click', async () => {
   try {
     microphoneMediaStream  = await navigator.mediaDevices.getUserMedia({
@@ -1634,8 +1637,8 @@ disableMicButton.addEventListener('click', async () => {
   } */
 });
 
-const siteUrlsContent = document.getElementById('site-urls-content');
-const avatarModelsContent = document.getElementById('avatar-models-content');
+const siteUrlsContent = topDocument.getElementById('site-urls-content');
+const avatarModelsContent = topDocument.getElementById('avatar-models-content');
 Promise.resolve().then(() => {
   Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
     const src = aSite.getAttribute('src');
@@ -1698,7 +1701,7 @@ Promise.resolve().then(() => {
   });
 });
 
-const channelsContent = document.getElementById('channels-content');
+const channelsContent = topDocument.getElementById('channels-content');
 const _getChannels = () => Array.from(channelsContent.querySelectorAll('.a-channel')).map(aChannel => aChannel.getAttribute('name'));
 const _updateChannelsContent = () => {
   Array.from(channelsContent.querySelectorAll('.a-channel')).forEach(aChannel => {
@@ -1712,7 +1715,7 @@ const _updateChannelsContent = () => {
 };
 _updateChannelsContent();
 
-const channelInput = document.getElementById('channel-input');
+const channelInput = topDocument.getElementById('channel-input');
 channelInput.addEventListener('input', () => {
   const inputText = channelInput.value;
   if (inputText) {
@@ -1736,7 +1739,7 @@ const _sendAllPeerConnections = s => {
     peerConnections[i].send(s);
   }
 };
-const connectButton = document.getElementById('connect-button');
+const connectButton = topDocument.getElementById('connect-button');
 connectButton.addEventListener('click', () => {
   const channelName = channelInput.value;
 
@@ -1983,7 +1986,7 @@ connectButton.addEventListener('click', () => {
     disconnectButton.style.display = null;
     channelInput.disabled = true;
 
-    const uploadFileLabel = document.getElementById('upload-file-label');
+    const uploadFileLabel = topDocument.getElementById('upload-file-label');
     uploadFileLabel.style.display = null;
 
     if (!_getChannels().includes(channelName)) {
@@ -1995,13 +1998,13 @@ connectButton.addEventListener('click', () => {
     }
   }
 });
-const disconnectButton = document.getElementById('disconnect-button');
+const disconnectButton = topDocument.getElementById('disconnect-button');
 disconnectButton.addEventListener('click', () => {
   channelConnection.disconnect();
   channelConnection = null;
 });
 
-const codeInput = document.getElementById('code');
+const codeInput = topDocument.getElementById('code');
 codeInput.addEventListener('change', () => {
   const newText = codeInput.value;
   const normalizedNewText = htmlClient.pushUpdate(newText);
@@ -2113,7 +2116,7 @@ const _bindUploadFileButton = inputFileEl => {
 
     const {parentNode} = inputFileEl;
     parentNode.removeChild(inputFileEl);
-    const newInputFileEl = document.createElement('input');
+    const newInputFileEl = topDocument.createElement('input');
     newInputFileEl.type = 'file';
     newInputFileEl.id = 'upload-file-button';
     newInputFileEl.style.display = 'none';
@@ -2121,7 +2124,7 @@ const _bindUploadFileButton = inputFileEl => {
     _bindUploadFileButton(newInputFileEl);
   });
 };
-_bindUploadFileButton(document.getElementById('upload-file-button'));
+_bindUploadFileButton(topDocument.getElementById('upload-file-button'));
 window.document.addEventListener('drop', async e => {
   e.preventDefault();
 
@@ -2186,7 +2189,7 @@ window.document.addEventListener('drop', async e => {
   }
 });
 
-const tools = Array.from(document.querySelectorAll('.tool'));
+const tools = Array.from(topDocument.querySelectorAll('.tool'));
 let toolIndex = 0;
 for (let i = 0; i < tools.length; i++) {
   const tool = tools[i];
@@ -2200,7 +2203,7 @@ for (let i = 0; i < tools.length; i++) {
   });
 }
 
-const inventoryContent = document.getElementById('inventory-content');
+const inventoryContent = topDocument.getElementById('inventory-content');
 const _loadInventory = async () => {
   const res = await fetch(`https://upload.exokit.org/${loginToken.name}`);
   if (res.ok) {
@@ -2237,7 +2240,7 @@ async function doLogin(email, code) {
     // loginNameStatic.innerText = loginToken.name;
     // loginEmailStatic.innerText = loginToken.email;
 
-    document.body.classList.add('logged-in');
+    topDocument.body.classList.add('logged-in');
     loginForm.classList.remove('phase-1');
     loginForm.classList.remove('phase-2');
     loginForm.classList.add('phase-3');
@@ -2266,19 +2269,19 @@ const storage = {
   },
 };
 
-// const loginButton = document.getElementById('login-button');
-// const loginButton2 = document.getElementById('login-button-2');
-// const loginPopdown = document.getElementById('login-popdown');
-const loginForm = document.getElementById('login-form');
-const loginEmail = document.getElementById('login-email');
-const loginNameStatic = document.getElementById('login-name-static');
-const loginEmailStatic = document.getElementById('login-email-static');
-const statusNotConnected = document.getElementById('status-not-connected');
-const statusConnected = document.getElementById('status-connected');
-const loginVerificationCode = document.getElementById('login-verification-code');
-const loginNotice = document.getElementById('login-notice');
-const loginError = document.getElementById('login-error');
-const logoutButton = document.getElementById('logout-button');
+// const loginButton = topDocument.getElementById('login-button');
+// const loginButton2 = topDocument.getElementById('login-button-2');
+// const loginPopdown = topDocument.getElementById('login-popdown');
+const loginForm = topDocument.getElementById('login-form');
+const loginEmail = topDocument.getElementById('login-email');
+const loginNameStatic = topDocument.getElementById('login-name-static');
+const loginEmailStatic = topDocument.getElementById('login-email-static');
+const statusNotConnected = topDocument.getElementById('status-not-connected');
+const statusConnected = topDocument.getElementById('status-connected');
+const loginVerificationCode = topDocument.getElementById('login-verification-code');
+const loginNotice = topDocument.getElementById('login-notice');
+const loginError = topDocument.getElementById('login-error');
+const logoutButton = topDocument.getElementById('logout-button');
 loginForm.onsubmit = async e => {
   e.preventDefault();
 
@@ -2321,7 +2324,7 @@ loginForm.onsubmit = async e => {
 
     loginNotice.innerHTML = '';
     loginError.innerHTML = '';
-    document.body.classList.remove('logged-in');
+    topDocument.body.classList.remove('logged-in');
     loginForm.classList.remove('phase-3');
     loginForm.classList.add('phase-1'); */
   }
@@ -2341,7 +2344,7 @@ loginForm.onsubmit = async e => {
       // loginNameStatic.innerText = loginToken.name;
       // loginEmailStatic.innerText = loginToken.email;
 
-      document.body.classList.add('logged-in');
+      topDocument.body.classList.add('logged-in');
       loginForm.classList.remove('phase-1');
       loginForm.classList.remove('phase-2');
       loginForm.classList.add('phase-3');
@@ -2356,7 +2359,7 @@ loginForm.onsubmit = async e => {
 })();
 
 (async () => {
-  const aAvatars = Array.from(document.querySelectorAll('.a-avatar'));
+  const aAvatars = Array.from(topDocument.querySelectorAll('.a-avatar'));
   const aAvatar = aAvatars[0];
   const src = aAvatar.getAttribute('src');
   const model = await _loadModelUrl(src);
