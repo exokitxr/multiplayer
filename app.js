@@ -1257,6 +1257,10 @@ for (let i = 0; i < mainOptions.length; i++) {
         channelConnection.disconnect();
         channelConnection = null;
       }
+      if (landConnection) {
+        landConnection.disconnect();
+        landConnection = null;
+      }
 
       switch (i) {
         case 0: {
@@ -1267,12 +1271,67 @@ for (let i = 0; i < mainOptions.length; i++) {
         }
         case 2: {
           console.log('connect to land');
+          landConnection = _connectLand();
           break;
         }
       }
     }
   });
 }
+
+let landConnection = null;
+const parcelSize = 16;
+const _getCameraPosition = () => {
+  const position = (() => {
+    if (renderer.vr.enabled) {
+      const vrCameras = renderer.vr.getCamera(camera).cameras;
+      const vrCamera = vrCameras[0];
+      vrCamera.matrixWorld.decompose(vrCamera.position, vrCamera.quaternion, vrCamera.scale);
+      return vrCamera.position;
+    } else {
+      return camera.position;
+    }
+  })();
+  return [position.x, position.z];
+};
+const _getParcelKey = () => {
+  const [x, z] = _getCameraPosition();
+  return [Math.floor(x/parcelSize), Math.floor(z/parcelSize)];
+};
+const _connectLand = () => {
+  let lastParcelKey = '';
+  let running = false;
+  const _updateGrid = async () => {
+    if (!running) {
+      running = true;
+
+      const parcelKey = _getParcelKey();
+      const parcelKeyString = parcelKey.join(':');
+      if (parcelKeyString !== lastParcelKey) {
+        const [x, z] = parcelKey;
+        const res = await fetch(`https://grid.exokit.org/coords/${x*parcelSize}/${z*parcelSize}`);
+        if (res.ok) {
+          const j = await res.json();
+          console.log('got grid', j);
+        } else {
+          console.warn('failed to get grid', res.status);
+        }
+        lastParcelKey = parcelKeyString;
+      }
+
+      running = false;
+    }
+  }
+  _updateGrid();
+
+  const interval = setInterval(_updateGrid, 500);
+
+  return {
+    disconnect() {
+      clearInterval(interval);
+    },
+  };
+};
 
 const avatarDetails = document.getElementById('avatar-details');
 const setAvatarButton = document.getElementById('set-avatar-button');
