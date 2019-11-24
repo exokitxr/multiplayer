@@ -65,34 +65,6 @@ scene.add(directionalLight);
 const gridHelper = new THREE.GridHelper(10, 10);
 container.add(gridHelper);
 
-const cubeGeometry = new THREE.ConeBufferGeometry(0.05, 0.2, 3)
-  .applyMatrix(new THREE.Matrix4().makeTranslation(0, 0.2/2, 0.05/2))
-  .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1))
-  ))
-  .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI*0.0375)
-  ));
-const materials ={};
-const _getCubeMaterial = color => {
-  let material = materials[color];
-  if (!material) {
-    material = new THREE.MeshPhongMaterial({
-      color,
-      flatShading: true,
-    });
-    materials[color] = material;
-  }
-  return material;
-}
-const _makeCubeMesh = (color = 0x0000FF) => {
-  const mesh = new THREE.Mesh(cubeGeometry, _getCubeMaterial(color));
-  mesh.frustumCulled = false;
-  if (color === 0x008000 || color === 0x808000) {
-    // mesh.add(new THREE.AxesHelper());
-  }
-  return mesh;
-};
 /* const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   // create a geometry of packed bitmap glyphs,
   // word wrapped to 300px and right-aligned
