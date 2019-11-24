@@ -375,7 +375,7 @@ new MutationObserver(mutationRecords => {
       }
     }
   }
-}).observe(window.document, {
+}).observe(document, {
   childList: true,
   subtree: true,
 });
