@@ -1100,6 +1100,17 @@ const _keydown = e => {
           selectedObjectDetails.classList.remove('open');
         }
         if (selectedXrSite) {
+          const extents = THREE.Land.parseExtents(selectedXrSite.getAttribute('extents'));
+          for (let i = 0; i < extents.length; i++) {
+            const extent = extents[i];
+            const [x1, y1, x2, y2] = extent;
+            for (let x = x1; x <= x2; x++) {
+              for (let y = y1; y <= y2; y++) {
+                pixels[_getPixelKey(x, y)] = false;
+              }
+            }
+          }
+
           selectedXrSite.parentNode.removeChild(selectedXrSite);
           if (hoveredXrSite === selectedXrSite) {
             hoveredXrSite = null;
@@ -1260,15 +1271,25 @@ const _mousemove = e => {
 };
 renderer.domElement.addEventListener('mousemove', _mousemove);
 let extentXrSite = null;
+const pixels = {};
+const _getPixelKey = (x, z) => [x, z].join(':');
 const _updateExtentXrSite = () => {
   const _incr = (a, b) => a - b;
   const xs = [Math.floor(dragStartPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.x/container.scale.x)].sort(_incr);
   const ys = [Math.floor(dragStartPoint.z/container.scale.z), Math.floor(floorIntersectionPoint.z/container.scale.z)].sort(_incr);
-  const extents = [[
-    xs[0], ys[0],
-    xs[1], ys[1],
-  ]];
-  extentXrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
+  const pixelKeys = [];
+  for (let x = xs[0]; x <= xs[1]; x++) {
+    for (let y = ys[0]; y <= ys[1]; y++) {
+      pixelKeys.push(_getPixelKey(x, y));
+    }
+  }
+  if (pixelKeys.every(k => !pixels[k])) {
+    const extents = [[
+      xs[0], ys[0],
+      xs[1], ys[1],
+    ]];
+    extentXrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
+  }
 };
 const parcelDetails = document.getElementById('parcel-details');
 const _mousedown = e => {
@@ -1338,7 +1359,18 @@ const _mousedown = e => {
 };
 renderer.domElement.addEventListener('mousedown', _mousedown);
 const _mouseup = e => {
-  if (!(e.buttons & 1)) {
+  if (extentXrSite && !(e.buttons & 1)) {
+    const extents = THREE.Land.parseExtents(extentXrSite.getAttribute('extents'));
+    for (let i = 0; i < extents.length; i++) {
+      const extent = extents[i];
+      const [x1, y1, x2, y2] = extent;
+      for (let x = x1; x <= x2; x++) {
+        for (let y = y1; y <= y2; y++) {
+          pixels[_getPixelKey(x, y)] = true;
+        }
+      }
+    }
+
     extentXrSite = null;
   }
 };
