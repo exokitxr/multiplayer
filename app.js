@@ -1374,12 +1374,18 @@ setAvatarButton.addEventListener('click', async () => {
     avatarDetails.classList.remove('open');
   }
 
+  _sendAllPeerConnections(JSON.stringify({
+    method: 'model',
+    url: modelUrl,
+  }));
+
   setAvatarButton.style.display = null;
   settingAvatarButton.style.display = 'none';
 });
 unsetAvatarButton.addEventListener('click', () => {
   _setLocalModel(null);
   modelUrl = null;
+
   _sendAllPeerConnections(JSON.stringify({
     method: 'model',
     url: modelUrl,
@@ -1694,9 +1700,15 @@ Promise.resolve().then(() => {
     const wearButton = aAvatar.querySelector('.wear-button');
     wearButton.addEventListener('click', async () => {
       console.log('wear avatar', src);
+
       const model = await _loadModelUrl(src);
       _setLocalModel(model);
       modelUrl = src;
+
+      _sendAllPeerConnections(JSON.stringify({
+        method: 'model',
+        url: modelUrl,
+      }));
     });
   });
 });
