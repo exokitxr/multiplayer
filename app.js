@@ -14,20 +14,13 @@ import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import screenshot from 'https://screenshots.exokit.org/screenshot.js';
+import {colors} from './constants.js';
 
 const {document: topDocument} = window.top;
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.025;
 const floorPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0));
-const colors = {
-  normal: 0x808080,
-  highlight: 0xAAAAAA,
-  select: 0x42a5f5,
-  select2: 0x039be5,
-  select3: 0x66bb6a,
-  white: 0xFFFFFF,
-};
 
 const localVector = new THREE.Vector3();
 const localVector2 = new THREE.Vector3();
