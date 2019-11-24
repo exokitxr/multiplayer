@@ -1192,7 +1192,7 @@ const _mousemove = e => {
     }
   };
   const _checkToolIntersections = () => {
-    if (toolIndex === 3) {
+    if (landConnection && toolIndex === 3) {
       const intersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
       if (intersection) {
         floorIntersectionPoint.copy(localVector);
@@ -1209,7 +1209,7 @@ const _mousemove = e => {
     if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < (x2+1) && y >= y1 && y < (y2+1))) {
       console.log('hit');
     }
-  } else if (toolIndex === 3 && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
+  } else if (landConnection && toolIndex === 3 && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
     const _incr = (a, b) => a - b;
     const xs = [Math.floor(dragStartPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.x/container.scale.x)].sort(_incr);
     const ys = [Math.floor(dragStartPoint.z/container.scale.z), Math.floor(floorIntersectionPoint.z/container.scale.z)].sort(_incr);
