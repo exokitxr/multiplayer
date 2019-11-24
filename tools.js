@@ -3,6 +3,21 @@ import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 
 const {document: topDocument} = window.top;
 
+const codeInput = topDocument.getElementById('code');
+const detailsContentTab = topDocument.getElementById('details-content-tab');
+const selectedObjectDetails = topDocument.getElementById('selected-object-details');
+const avatarDetails = topDocument.getElementById('avatar-details');
+const setAvatarButton = topDocument.getElementById('set-avatar-button');
+const unsetAvatarButton = topDocument.getElementById('unset-avatar-button');
+const settingAvatarButton = topDocument.getElementById('setting-avatar-button');
+const screenshotButton = topDocument.getElementById('screenshot-button');
+const screenshotImage = topDocument.getElementById('screenshot-image');
+const parcelDetails = document.getElementById('parcel-details');
+// const parcelNameInput = topDocument.getElementById('parcel-name-input');
+// const saveParcelButton = topDocument.getElementById('save-parcel-button');
+const editParcelButton = topDocument.getElementById('edit-parcel-button');
+const stopEditingButton = topDocument.getElementById('stop-editing-button');
+
 const toolNames = [
   'camera',
   'select',
@@ -69,15 +84,6 @@ const _updateExtentXrSite = () => {
   }
 };
 
-const codeInput = topDocument.getElementById('code');
-const detailsContentTab = topDocument.getElementById('details-content-tab');
-
-const selectedObjectDetails = topDocument.getElementById('selected-object-details');
-
-const avatarDetails = topDocument.getElementById('avatar-details');
-const setAvatarButton = topDocument.getElementById('set-avatar-button');
-const unsetAvatarButton = topDocument.getElementById('unset-avatar-button');
-const settingAvatarButton = topDocument.getElementById('setting-avatar-button');
 setAvatarButton.addEventListener('click', async () => {
   const {target} = selectedBoundingBoxMesh;
   const {element} = target;
@@ -118,8 +124,6 @@ unsetAvatarButton.addEventListener('click', () => {
   avatarDetails.classList.remove('open');
 });
 
-const screenshotButton = topDocument.getElementById('screenshot-button');
-const screenshotImage = topDocument.getElementById('screenshot-image');
 screenshotButton.addEventListener('click', async () => {
   const {target: {element: {bindState: {model}}}} = selectedBoundingBoxMesh;
   console.log('screenshot', model);
@@ -147,11 +151,6 @@ screenshotButton.addEventListener('click', async () => {
   }
 });
 
-const parcelDetails = document.getElementById('parcel-details');
-// const parcelNameInput = topDocument.getElementById('parcel-name-input');
-// const saveParcelButton = topDocument.getElementById('save-parcel-button');
-const editParcelButton = topDocument.getElementById('edit-parcel-button');
-const stopEditingButton = topDocument.getElementById('stop-editing-button');
 editParcelButton.addEventListener('click', () => {
   editedXrSite = selectedXrSite;
 
