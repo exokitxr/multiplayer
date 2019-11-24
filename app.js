@@ -170,7 +170,7 @@ const mirrorMesh = (() => {
   return mesh;
 })();
 container.add(mirrorMesh);
-const mirrorMeshSwitchWrap = document.getElementById('mirror-mesh-switch-wrap');
+const mirrorMeshSwitchWrap = topDocument.getElementById('mirror-mesh-switch-wrap');
 if (localStorage.getItem('mirrorMesh')) {
   mirrorMesh.visible = true;
   mirrorMeshSwitchWrap.classList.add('on');
@@ -1587,7 +1587,7 @@ thirdpersonButton.addEventListener('click', async () => {
   }
 });
 
-const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
+const realityLayersSwitchWrap = topDocument.getElementById('reality-layers-switch-wrap');
 realityLayersSwitchWrap.addEventListener('click', async () => {
   realityLayersSwitchWrap.classList.toggle('on');
 
