@@ -24,6 +24,8 @@ const colors = {
   normal: 0x808080,
   highlight: 0xAAAAAA,
   select: 0x42a5f5,
+  select2: 0x039be5,
+  select3: 0x66bb6a,
 };
 
 const localVector = new THREE.Vector3();
@@ -1151,9 +1153,11 @@ saveDialog.addEventListener('submit', e => {
 
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
+let hoveredXrSite = null;
 const _mousemove = e => {
   hoveredBoundingBoxMesh = null;
   floorIntersectionPoint.set(NaN, NaN, NaN);
+  hoveredXrSite = null;
 
   const rect = renderer.domElement.getBoundingClientRect();
   const xFactor = (e.clientX - rect.left) / rect.width;
@@ -1210,7 +1214,7 @@ const _mousemove = e => {
       const xrSite = xrSites[i];
       const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
       if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < (x2+1) && y >= y1 && y < (y2+1))) {
-        console.log('hit', xrSite, extents);
+        hoveredXrSite = xrSite;
       }
     }
   } else if (extentXrSite && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
@@ -1243,6 +1247,27 @@ const _mousedown = e => {
       extentXrSite = xrSites[xrSites.length - 1];
 
       _updateExtentXrSite();
+    } else if (landConnection && toolIndex === 1) {
+      const xrSites = Array.from(document.querySelectorAll('xr-site'));
+      for (let i = 0; i < xrSites.length; i++) {
+        const {baseMesh, guardianMesh} = xrSites[i];
+        if (baseMesh) {
+          baseMesh.material.uniforms.uColor.value.setHex(colors.select);
+        }
+        if (guardianMesh) {
+          guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
+        }
+      }
+      if (hoveredXrSite) {
+        const {baseMesh, guardianMesh} = hoveredXrSite;
+        if (baseMesh) {
+          // console.log('set base mesh 2', baseMesh, baseMesh.material.uniforms.uColor.value);
+          baseMesh.material.uniforms.uColor.value.setHex(colors.select3);
+        }
+        if (guardianMesh) {
+          guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
+        }
+      }
     }
   }
 };
