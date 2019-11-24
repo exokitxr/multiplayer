@@ -1260,13 +1260,48 @@ const _mousemove = e => {
 
   if (toolIndex === 1 && !isNaN(floorIntersectionPoint.x)) {
     if (draggedXrSite) {
+      const oldPixelKeys = [];
+      const oldPixelKeysIndex = {};
+      const oldExtents = THREE.Land.parseExtents(draggedXrSite.getAttribute('extents'));
+      for (let i = 0; i < oldExtents.length; i++) {
+        const extent = oldExtents[i];
+        const [x1, y1, x2, y2] = extent;
+        for (let x = x1; x <= x2; x++) {
+          for (let y = y1; y <= y2; y++) {
+            const k = _getPixelKey(x, y);
+            oldPixelKeys.push(k);
+            oldPixelKeysIndex[k] = true;
+          }
+        }
+      }
+
       localVector
         .set(Math.floor(floorIntersectionPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.y/container.scale.y), Math.floor(floorIntersectionPoint.z/container.scale.z))
         .sub(localVector2.set(Math.floor(dragStartPoint.x/container.scale.x), Math.floor(dragStartPoint.y/container.scale.y), Math.floor(dragStartPoint.z/container.scale.z)));
       const dx = localVector.x;
       const dy = localVector.z;
       const newExtents = dragStartExtents.map(([x1, y1, x2, y2]) => [x1 + dx, y1 + dy, x2 + dx, y2 + dy]);
-      draggedXrSite.setAttribute('extents', THREE.Land.serializeExtents(newExtents));
+
+      const newPixelKeys = [];
+      for (let i = 0; i < newExtents.length; i++) {
+        const extent = newExtents[i];
+        const [x1, y1, x2, y2] = extent;
+        for (let x = x1; x <= x2; x++) {
+          for (let y = y1; y <= y2; y++) {
+            newPixelKeys.push(_getPixelKey(x, y));
+          }
+        }
+      }
+      if (newPixelKeys.every(k => !pixels[k] || oldPixelKeysIndex[k])) {
+        draggedXrSite.setAttribute('extents', THREE.Land.serializeExtents(newExtents));
+
+        for (let i = 0; i < oldPixelKeys.length; i++) {
+          pixels[oldPixelKeys[i]] = false;
+        }
+        for (let i = 0; i < newPixelKeys.length; i++) {
+          pixels[newPixelKeys[i]] = true;
+        }
+      }
     } else {
       const x = floorIntersectionPoint.x/container.scale.x;
       const y = floorIntersectionPoint.z/container.scale.z;
