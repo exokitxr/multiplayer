@@ -1531,7 +1531,7 @@ Promise.resolve().then(() => {
       const dom = parseHtml(codeInput.value);
       const xrSite = _findNodeWithTagName(dom, 'xr-site');
       if (xrSite) {
-        const position = camera.position.clone()
+        const position = localVector.copy(camera.position)
           .divide(container.scale)
           .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
         xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
