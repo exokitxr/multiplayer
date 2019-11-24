@@ -197,12 +197,15 @@ const toolManager = new ToolManager({
 });
 toolManager.addEventListener('toolchange', e => {
   const toolName = e.data;
-
-  orbitControls.enabled = toolName === 'camera';;
-
+  const cameraSelected = toolName === 'camera';
+  const selectSelected = toolName === 'select';
   const moveSelected = toolName === 'move';
+
+  orbitControls.enabled = cameraSelected;
+
   Array.from(document.querySelectorAll('xr-iframe')).concat(Array.from(document.querySelectorAll('xr-model'))).forEach(xrNode => {
-    const {bindState: {control}} = xrNode;
+    const {bindState: {model: {boundingBoxMesh}, control}} = xrNode;
+    boundingBoxMesh.visible = selectSelected;
     control.visible = moveSelected;
     control.enabled = moveSelected;
   });
@@ -226,6 +229,7 @@ const _bindXrIframe = xrIframe => {
   container.add(model);
 
   const boundingBox = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1));
+  boundingBox.visible = toolManager.getSelectedToolName() === 'select';
   model.boundingBoxMesh = _makeBoundingBoxMesh(model, boundingBox);
   model.add(model.boundingBoxMesh);
   model.element = xrIframe;
@@ -495,7 +499,9 @@ class XRModel extends HTMLElement {
 
         const object = await _loadModelUrl(url);
         const model = object.scene;
-        model.boundingBoxMesh = _makeBoundingBoxMesh(model);
+        const boundingBoxMesh = _makeBoundingBoxMesh(model);
+        boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
+        model.boundingBoxMesh = boundingBoxMesh;
         model.add(model.boundingBoxMesh);
         model.element = this;
         model.position.fromArray(this.position);

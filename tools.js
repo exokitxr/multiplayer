@@ -59,8 +59,9 @@ for (let i = 0; i < tools.length; i++) {
     }
     tool.classList.add('open');
     toolIndex = i;
+    const toolName = toolNames[toolIndex];
     this.dispatchEvent(new MessageEvent('toolchange', {
-      data: toolIndex,
+      data: toolName,
     }));
   });
 }
