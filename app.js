@@ -1433,6 +1433,15 @@ const _mouseup = e => {
   }
 };
 renderer.domElement.addEventListener('mouseup', _mouseup);
+const _dblclick = e => {
+  if (selectedXrSite) {
+    editedXrSite = selectedXrSite;
+
+    editParcelButton.style.display = 'none';
+    stopEditingButton.style.display = null;
+  }
+};
+renderer.domElement.addEventListener('dblclick', _dblclick);
 
 const selectedObjectDetails = topDocument.getElementById('selected-object-details');
 const detailsContentTab = topDocument.getElementById('details-content-tab');
