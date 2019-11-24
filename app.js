@@ -93,7 +93,7 @@ const _makeCubeMesh = (color = 0x0000FF) => {
   }
   return mesh;
 };
-const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
+/* const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   // create a geometry of packed bitmap glyphs,
   // word wrapped to 300px and right-aligned
   var geometry = createTextGeometry({
@@ -132,7 +132,7 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
     }
   };
   return mesh;
-};
+}; */
 
 const mirrorMesh = (() => {
   const mirrorWidth = 3;
