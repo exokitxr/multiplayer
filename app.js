@@ -1587,22 +1587,6 @@ thirdpersonButton.addEventListener('click', async () => {
   }
 });
 
-const realityLayersSwitchWrap = topDocument.getElementById('reality-layers-switch-wrap');
-realityLayersSwitchWrap.addEventListener('click', async () => {
-  realityLayersSwitchWrap.classList.toggle('on');
-
-  const enabled = realityLayersSwitchWrap.classList.contains('on');
-  if (enabled) {
-    localStorage.setItem('realityLayers', true);
-    await ew.register();
-    location.reload();
-  } else {
-    localStorage.removeItem('realityLayers');
-    await ew.unregister();
-    location.reload();
-  }
-});
-
 mirrorMeshSwitchWrap.addEventListener('click', async () => {
   mirrorMeshSwitchWrap.classList.toggle('on');
 
