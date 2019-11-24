@@ -26,6 +26,7 @@ const colors = {
   select: 0x42a5f5,
   select2: 0x039be5,
   select3: 0x66bb6a,
+  white: 0xFFFFFF,
 };
 
 const localVector = new THREE.Vector3();
@@ -40,6 +41,7 @@ const localMatrix = new THREE.Matrix4();
 const localEuler = new THREE.Euler();
 const localRay = new THREE.Ray();
 const localRaycaster = new THREE.Raycaster();
+const localColor = new THREE.Color();
 
 const z180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 
@@ -690,6 +692,14 @@ const realDateNow = (now => () => dateOffset + now())(Date.now);
 let fakeXrDisplay = null;
 let possessRig = false;
 function animate(timestamp, frame, referenceSpace) {
+  if (editedXrSite) {
+    const {baseMesh, guardianMesh} = editedXrSite;
+    const f = 1 + Math.pow(1 - (Date.now() % 1000) / 1000, 2);
+    const c = localColor.setHex(colors.select3).multiplyScalar(f);
+    baseMesh.material.uniforms.uColor.value.copy(c);
+    guardianMesh.material.uniforms.uColor.value.copy(c);
+  }
+
   if (rig) {
     if (possessRig) {
       const vrCameras = renderer.vr.getCamera(camera).cameras;
@@ -1161,6 +1171,8 @@ saveDialog.addEventListener('submit', e => {
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
 let hoveredXrSite = null;
+let selectedXrSite = null;
+let editedXrSite = null;
 const _mousemove = e => {
   hoveredBoundingBoxMesh = null;
   floorIntersectionPoint.set(NaN, NaN, NaN);
@@ -1279,6 +1291,8 @@ const _mousedown = e => {
       } else {
         parcelDetails.classList.remove('open');
       }
+
+      selectedXrSite = hoveredXrSite;
     }
   }
 };
@@ -1293,7 +1307,7 @@ renderer.domElement.addEventListener('mouseup', _mouseup);
 const selectedObjectDetails = topDocument.getElementById('selected-object-details');
 const detailsContentTab = topDocument.getElementById('details-content-tab');
 const _click = () => {
-  console.log('select', hoveredBoundingBoxMesh);
+  // console.log('select', hoveredBoundingBoxMesh);
   if (selectedBoundingBoxMesh) {
     selectedBoundingBoxMesh.material.color.setHex(colors.normal);
   }
@@ -1308,6 +1322,23 @@ const _click = () => {
   }
 };
 renderer.domElement.addEventListener('click', _click);
+
+// const parcelNameInput = topDocument.getElementById('parcel-name-input');
+// const saveParcelButton = topDocument.getElementById('save-parcel-button');
+const editParcelButton = topDocument.getElementById('edit-parcel-button');
+const stopEditingButton = topDocument.getElementById('stop-editing-button');
+editParcelButton.addEventListener('click', () => {
+  editedXrSite = selectedXrSite;
+
+  editParcelButton.style.display = 'none';
+  stopEditingButton.style.display = null;
+});
+stopEditingButton.addEventListener('click', () => {
+  editedXrSite = null;
+
+  editParcelButton.style.display = null;
+  stopEditingButton.style.display = 'none';
+});
 
 const header = topDocument.getElementById('header');
 const mainSelector = topDocument.getElementById('main-selector');
