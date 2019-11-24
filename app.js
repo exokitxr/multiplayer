@@ -1268,7 +1268,6 @@ const _mousedown = e => {
       if (hoveredXrSite) {
         const {baseMesh, guardianMesh} = hoveredXrSite;
         if (baseMesh) {
-          // console.log('set base mesh 2', baseMesh, baseMesh.material.uniforms.uColor.value);
           baseMesh.material.uniforms.uColor.value.setHex(colors.select3);
         }
         if (guardianMesh) {
