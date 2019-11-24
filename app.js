@@ -196,8 +196,16 @@ const toolManager = new ToolManager({
   container,
 });
 toolManager.addEventListener('toolchange', e => {
-  const toolIndex = e.data;
-  orbitControls.enabled = toolIndex === 0;
+  const toolName = e.data;
+
+  orbitControls.enabled = toolName === 'camera';;
+
+  const moveSelected = toolName === 'move';
+  Array.from(document.querySelectorAll('xr-iframe')).concat(Array.from(document.querySelectorAll('xr-model'))).forEach(xrNode => {
+    const {bindState: {control}} = xrNode;
+    control.visible = moveSelected;
+    control.enabled = moveSelected;
+  });
 });
 /* toolManager.addEventListener('selectchange', e => {
   const {oldEl, newEl} = e.data;
@@ -225,6 +233,8 @@ const _bindXrIframe = xrIframe => {
   const control = new THREE.TransformControls(camera, renderer.domElement);
   control.setMode(transformMode);
   control.size = 3;
+  control.visible = toolManager.getSelectedToolName() === 'move';
+  control.enabled = control.visible;
   control.addEventListener('dragging-changed', e => {
     orbitControls.enabled = !e.value && toolManager.getSelectedToolName() === 'camera';
   });
@@ -234,8 +244,8 @@ const _bindXrIframe = xrIframe => {
   control.addEventListener('mouseLeave', () => {
     control.draggable = false;
   });
-  scene.add(control);
   control.attach(model);
+  scene.add(control);
 
   const observer = new MutationObserver(mutationRecords => {
     for (let i = 0; i < mutationRecords.length; i++) {
@@ -543,6 +553,8 @@ class XRModel extends HTMLElement {
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
     control.size = 3;
+    control.visible = toolManager.getSelectedToolName() === 'move';
+    control.enabled = control.visible;
     control.addEventListener('dragging-changed', e => {
       orbitControls.enabled = !e.value && toolManager.getSelectedToolName() === 'camera';
     });
@@ -552,8 +564,8 @@ class XRModel extends HTMLElement {
     control.addEventListener('mouseLeave', () => {
       control.draggable = false;
     });
-    scene.add(control);
     control.attach(model);
+    scene.add(control);
     this.control = control;
 
     this.bindState = {
@@ -1062,19 +1074,19 @@ const _keydown = e => {
     };
     switch (e.which) {
       case 87: { // W
-        if (!chatInput.classList.contains('open')) {
+        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
           _setMode('translate');
         }
         break;
       }
       case 69: { // E
-        if (!chatInput.classList.contains('open')) {
+        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
           _setMode('rotate');
         }
         break;
       }
       case 82: { // R
-        if (!chatInput.classList.contains('open')) {
+        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
           _setMode('scale');
         }
         break;
