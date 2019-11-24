@@ -199,7 +199,7 @@ toolManager.addEventListener('toolchange', e => {
   const toolIndex = e.data;
   orbitControls.enabled = toolIndex === 0;
 });
-toolManager.addEventListener('selectchange', e => {
+/* toolManager.addEventListener('selectchange', e => {
   const {oldEl, newEl} = e.data;
 
   if (oldEl && oldEl.tagName === 'XR-SITE') {
@@ -211,7 +211,7 @@ toolManager.addEventListener('selectchange', e => {
     newEl.baseMesh.material.uniforms.uColor.value.setHex(colors.select3);
     newEl.guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
   }
-});
+}); */
 
 const _bindXrIframe = xrIframe => {
   const model = new THREE.Object3D();
