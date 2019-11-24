@@ -17,6 +17,7 @@ const parcelDetails = document.getElementById('parcel-details');
 // const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const editParcelButton = topDocument.getElementById('edit-parcel-button');
 const stopEditingButton = topDocument.getElementById('stop-editing-button');
+const tools = Array.from(topDocument.querySelectorAll('.tool'));
 
 const toolNames = [
   'camera',
@@ -50,7 +51,6 @@ class ToolManager extends EventTarget {
   constructor({domElement, camera, container}) {
     super();
 
-const tools = Array.from(topDocument.querySelectorAll('.tool'));
 for (let i = 0; i < tools.length; i++) {
   const tool = tools[i];
   tool.addEventListener('click', () => {
@@ -397,6 +397,9 @@ const _mousemove = e => {
 };
 domElement.addEventListener('mousemove', _mousemove);
 
+  }
+  selectTool(i) {
+    tools[i].click();
   }
   getSelectedToolName() {
     return toolNames[toolIndex];

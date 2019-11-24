@@ -1087,6 +1087,14 @@ const _keydown = e => {
         }
         break;
       }
+      case 49: // 1
+      case 50: // 2
+      case 51: // 3
+      case 52: // 4
+      {
+        toolManager.selectTool(e.which - 49);
+        break;
+      }
       case 27: { // esc
         saveDialog.classList.remove('open');
         break;
