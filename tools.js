@@ -16,6 +16,7 @@ const localVector2 = new THREE.Vector3();
 const localVector2D = new THREE.Vector2();
 const localRaycaster = new THREE.Raycaster();
 
+let toolIndex = 0;
 const pixels = {};
 let hoveredBoundingBoxMesh = null;
 let selectedBoundingBoxMesh = null;
@@ -35,7 +36,6 @@ class ToolManager extends EventTarget {
     super();
 
 const tools = Array.from(topDocument.querySelectorAll('.tool'));
-let toolIndex = 0;
 for (let i = 0; i < tools.length; i++) {
   const tool = tools[i];
   tool.addEventListener('click', () => {
