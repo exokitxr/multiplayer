@@ -1284,6 +1284,22 @@ const _mousedown = e => {
       const xrSites = document.querySelectorAll('xr-site');
       extentXrSite = xrSites[xrSites.length - 1];
 
+      if (selectedXrSite) {
+        selectedXrSite.baseMesh.material.uniforms.uColor.value.setHex(colors.select);
+        selectedXrSite.guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
+
+        if (hoveredXrSite === selectedXrSite) {
+          hoveredXrSite = null;
+        }
+        if (editedXrSite === selectedXrSite) {
+          editedXrSite = null;
+          editParcelButton.style.display = null;
+          stopEditingButton.style.display = 'none';
+        }
+        selectedXrSite = null;
+        parcelDetails.classList.remove('open');
+      }
+
       _updateExtentXrSite();
     } else if (landConnection && toolIndex === 1) {
       const xrSites = Array.from(document.querySelectorAll('xr-site'));
