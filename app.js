@@ -341,9 +341,9 @@ const _bindXrSite = xrSite => {
 
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     if (extents.length > 0) {
-      xrSite.guardianMesh = new THREE.Guardian(extents, 10, colors.select);
+      xrSite.guardianMesh = new THREE.Guardian(extents, 10, selectedXrSite === xrSite ? colors.select3 : colors.select);
       container.add(xrSite.guardianMesh);
-      xrSite.baseMesh = new THREE.Land(extents, colors.select);
+      xrSite.baseMesh = new THREE.Land(extents, selectedXrSite === xrSite ? colors.select3 : colors.select);
       container.add(xrSite.baseMesh);
     }
   };
