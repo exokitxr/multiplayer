@@ -1309,10 +1309,10 @@ const _mousedown = e => {
         selectedXrSite.baseMesh.material.uniforms.uColor.value.setHex(colors.select);
         selectedXrSite.guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
 
-        if (hoveredXrSite === selectedXrSite) {
+        if (hoveredXrSite !== selectedXrSite) {
           hoveredXrSite = null;
         }
-        if (editedXrSite === selectedXrSite) {
+        if (editedXrSite !== selectedXrSite) {
           editedXrSite = null;
           editParcelButton.style.display = null;
           stopEditingButton.style.display = 'none';
