@@ -1456,12 +1456,27 @@ const _connectLand = () => {
     }
   }
   _updateGrid();
-
-  const interval = setInterval(_updateGrid, 500);
+  const updateInterval = setInterval(_updateGrid, 500);
 
   return {
     disconnect() {
-      clearInterval(interval);
+      if (selectedXrSite) {
+        selectedXrSite.baseMesh.material.uniforms.uColor.value.setHex(colors.select);
+        selectedXrSite.guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
+
+        if (hoveredXrSite === selectedXrSite) {
+          hoveredXrSite = null;
+        }
+        if (editedXrSite === selectedXrSite) {
+          editedXrSite = null;
+          editParcelButton.style.display = null;
+          stopEditingButton.style.display = 'none';
+        }
+        selectedXrSite = null;
+        parcelDetails.classList.remove('open');
+      }
+
+      clearInterval(updateInterval);
     },
   };
 };
