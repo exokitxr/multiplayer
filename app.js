@@ -317,6 +317,7 @@ const _unbindXrIframe = xrIframe => {
 };
 let guardianMesh = null;
 let baseMesh = null;
+let extents = [];
 const _bindXrSite = xrSite => {
   const observer = new MutationObserver(() => {
     if (guardianMesh) {
@@ -328,7 +329,7 @@ const _bindXrSite = xrSite => {
       baseMesh = null;
     }
 
-    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+    extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     if (extents.length > 0) {
       guardianMesh = new THREE.Guardian(extents, 10, colors.select);
       container.add(guardianMesh);
@@ -1179,6 +1180,15 @@ const _mousemove = e => {
     }
     return false;
   };
+  const _checkPointerIntersections = () => {
+    if (toolIndex === 1) {
+      const intersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
+      if (intersection) {
+        floorIntersectionPoint.copy(localVector);
+        return true;
+      }
+    }
+  };
   const _checkToolIntersections = () => {
     if (toolIndex === 3) {
       const intersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
@@ -1189,14 +1199,18 @@ const _mousemove = e => {
     }
     return false;
   };
-  _checkElementIntersections() || _checkToolIntersections();
+  _checkElementIntersections() || _checkPointerIntersections() || _checkToolIntersections();
 
-  if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
-    // console.log('intersect', dragStartPoint.toArray().join(','), floorIntersectionPoint.toArray().join(','));
-
+  if (toolIndex === 1 && !isNaN(floorIntersectionPoint.x)) {
+    const x = floorIntersectionPoint.x/container.scale.x;
+    const y = floorIntersectionPoint.z/container.scale.z;
+    if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < (x2+1) && y >= y1 && y < (y2+1))) {
+      console.log('hit');
+    }
+  } else if (toolIndex === 3 && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
     const _incr = (a, b) => a - b;
-    const xs = [Math.floor((dragStartPoint.x)/container.scale.x), Math.floor((floorIntersectionPoint.x)/container.scale.x)].sort(_incr);
-    const ys = [Math.floor((dragStartPoint.z)/container.scale.z), Math.floor((floorIntersectionPoint.z)/container.scale.z)].sort(_incr);
+    const xs = [Math.floor(dragStartPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.x/container.scale.x)].sort(_incr);
+    const ys = [Math.floor(dragStartPoint.z/container.scale.z), Math.floor(floorIntersectionPoint.z/container.scale.z)].sort(_incr);
     const extents = [[
       xs[0], ys[0],
       xs[1], ys[1],
