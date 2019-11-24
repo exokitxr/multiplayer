@@ -317,28 +317,27 @@ const _unbindXrIframe = xrIframe => {
 
   xrIframe.bindState = null;
 };
-let guardianMesh = null;
-let baseMesh = null;
-let extents = [];
 const _bindXrSite = xrSite => {
-  const observer = new MutationObserver(() => {
-    if (guardianMesh) {
-      container.remove(guardianMesh);
-      guardianMesh = null;
+  const _update = () => {
+    if (xrSite.guardianMesh) {
+      container.remove(xrSite.guardianMesh);
+      xrSite.guardianMesh = null;
     }
-    if (baseMesh) {
-      container.remove(baseMesh);
-      baseMesh = null;
+    if (xrSite.baseMesh) {
+      container.remove(xrSite.baseMesh);
+      xrSite.baseMesh = null;
     }
 
-    extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     if (extents.length > 0) {
-      guardianMesh = new THREE.Guardian(extents, 10, colors.select);
-      container.add(guardianMesh);
-      baseMesh = new THREE.Land(extents, colors.select);
-      container.add(baseMesh);
+      xrSite.guardianMesh = new THREE.Guardian(extents, 10, colors.select);
+      container.add(xrSite.guardianMesh);
+      xrSite.baseMesh = new THREE.Land(extents, colors.select);
+      container.add(xrSite.baseMesh);
     }
-  });
+  };
+  _update();
+  const observer = new MutationObserver(_update);
   observer.observe(xrSite, {
     attributes: true,
     attributeFilter: [
@@ -1206,28 +1205,54 @@ const _mousemove = e => {
   if (toolIndex === 1 && !isNaN(floorIntersectionPoint.x)) {
     const x = floorIntersectionPoint.x/container.scale.x;
     const y = floorIntersectionPoint.z/container.scale.z;
-    if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < (x2+1) && y >= y1 && y < (y2+1))) {
-      console.log('hit');
+    const xrSites = Array.from(document.querySelectorAll('xr-site'));
+    for (let i = 0; i < xrSites.length; i++) {
+      const xrSite = xrSites[i];
+      const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+      if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < (x2+1) && y >= y1 && y < (y2+1))) {
+        console.log('hit', xrSite, extents);
+      }
     }
-  } else if (landConnection && toolIndex === 3 && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
-    const _incr = (a, b) => a - b;
-    const xs = [Math.floor(dragStartPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.x/container.scale.x)].sort(_incr);
-    const ys = [Math.floor(dragStartPoint.z/container.scale.z), Math.floor(floorIntersectionPoint.z/container.scale.z)].sort(_incr);
-    const extents = [[
-      xs[0], ys[0],
-      xs[1], ys[1],
-    ]];
-    const xrSite = document.querySelector('xr-site');
-    xrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
+  } else if (extentXrSite && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
+    _updateExtentXrSite();
   }
 };
 renderer.domElement.addEventListener('mousemove', _mousemove);
+let extentXrSite = null;
+const _updateExtentXrSite = () => {
+  const _incr = (a, b) => a - b;
+  const xs = [Math.floor(dragStartPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.x/container.scale.x)].sort(_incr);
+  const ys = [Math.floor(dragStartPoint.z/container.scale.z), Math.floor(floorIntersectionPoint.z/container.scale.z)].sort(_incr);
+  const extents = [[
+    xs[0], ys[0],
+    xs[1], ys[1],
+  ]];
+  extentXrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
+};
 const _mousedown = e => {
   if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
     dragStartPoint.copy(floorIntersectionPoint);
+
+    if (landConnection && toolIndex === 3) {
+      const dom = parseHtml(codeInput.value);
+      dom.childNodes.push(parseHtml(`<xr-site></xr-site>`).childNodes[0]);
+      codeInput.value = serializeHtml(dom);
+      codeInput.dispatchEvent(new CustomEvent('change'));
+
+      const xrSites = document.querySelectorAll('xr-site');
+      extentXrSite = xrSites[xrSites.length - 1];
+
+      _updateExtentXrSite();
+    }
   }
 };
 renderer.domElement.addEventListener('mousedown', _mousedown);
+const _mouseup = e => {
+  if (!(e.buttons & 1)) {
+    extentXrSite = null;
+  }
+};
+renderer.domElement.addEventListener('mouseup', _mouseup);
 
 const selectedObjectDetails = topDocument.getElementById('selected-object-details');
 const detailsContentTab = topDocument.getElementById('details-content-tab');
