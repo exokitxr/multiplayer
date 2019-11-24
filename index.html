@@ -476,13 +476,15 @@ a:active {
 }
 .selected-object-details,
 .avatar-details,
+.parcel-details,
 .placeholder-details
 {
   display: none;
 }
 .selected-object-details.open,
 .avatar-details.open,
-.selected-object-details:not(.open) + .avatar-details:not(.open) + .placeholder-details
+.parcel-details.open,
+.selected-object-details:not(.open) + .avatar-details:not(.open) + .parcel-details:not(.open) + .placeholder-details
 {
   display: block;
 }
@@ -793,6 +795,12 @@ header > .login-form.phase-3 > .phaseless-content
           <div class=avatar-details id=avatar-details>
             <div class=multibutton>
               <nav class="button first last" id=unset-avatar-button>Unset avatar</nav>
+            </div>
+          </div>
+          <div class=parcel-details id=parcel-details>
+            <!-- <input type=text placeholder="https://" id=parcel-url-input> -->
+            <div class=multibutton>
+              <nav class="button first last" id=-button>Edit parcel</nav>
             </div>
           </div>
           <div class=placeholder-details id=placeholder-details>

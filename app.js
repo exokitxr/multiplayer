@@ -1240,6 +1240,7 @@ const _updateExtentXrSite = () => {
   ]];
   extentXrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
 };
+const parcelDetails = document.getElementById('parcel-details');
 const _mousedown = e => {
   if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
     dragStartPoint.copy(floorIntersectionPoint);
@@ -1273,6 +1274,10 @@ const _mousedown = e => {
         if (guardianMesh) {
           guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
         }
+
+        parcelDetails.classList.add('open');
+      } else {
+        parcelDetails.classList.add('close');
       }
     }
   }
