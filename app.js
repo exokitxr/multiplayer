@@ -1347,13 +1347,13 @@ const _mousedown = e => {
         parcelDetails.classList.remove('open');
       }
 
-      if (editedXrSite) {
+      selectedXrSite = hoveredXrSite;
+
+      if (editedXrSite !== selectedXrSite) {
         editedXrSite = null;
         editParcelButton.style.display = null;
         stopEditingButton.style.display = 'none';
       }
-
-      selectedXrSite = hoveredXrSite;
     }
   }
 };
