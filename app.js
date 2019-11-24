@@ -13,7 +13,6 @@ import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
-import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 import {colors} from './constants.js';
 import {ToolManager} from './tools.js';
 

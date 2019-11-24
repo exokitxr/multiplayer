@@ -1,5 +1,6 @@
 import {colors} from './constants.js';
 import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
+import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 
 const {document: topDocument} = window.top;
 
