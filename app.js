@@ -168,7 +168,6 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
 container.add(mirrorMesh); */
 
 const renderer = new THREE.WebGLRenderer({
-  // canvas: document.getElementById('canvas'),
   // alpha: true,
   antialias: true,
 });
