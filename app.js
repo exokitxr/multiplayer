@@ -1254,7 +1254,7 @@ mainSelector.addEventListener('focus', () => {
 mainSelector.addEventListener('blur', () => {
   mainSelector.classList.remove('open');
 });
-const mainOptions = Array.from(document.querySelectorAll('.option'));
+const mainOptions = Array.from(mainSelector.querySelectorAll('.option'));
 for (let i = 0; i < mainOptions.length; i++) {
   const mainOption = mainOptions[i];
   mainOption.addEventListener('click', e => {
@@ -1265,6 +1265,7 @@ for (let i = 0; i < mainOptions.length; i++) {
       }
       mainOption.classList.add('open');
       mainSelector.blur();
+      mainSelector.dispatchEvent(new CustomEvent('blur'));
       header.classList.add(`main-${i+1}`);
 
       if (channelConnection) {

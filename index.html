@@ -933,6 +933,67 @@ let xrEngine = null;
       // const canvas = e.data;
 
       [
+        'header',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        new MutationObserver(() => {
+          el.setAttribute('class', el2.getAttribute('class'));
+        }).observe(el2, {
+          attributes: true,
+          attributeFilter: [
+            'class',
+          ],
+        });
+      });
+
+      [
+        'main-selector',
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
+        el.addEventListener('focus', e => {
+          el2.dispatchEvent(new CustomEvent('focus'));
+        });
+        el.addEventListener('blur', e => {
+          el2.dispatchEvent(new CustomEvent('blur'));
+        });
+        el2.addEventListener('blur', e => {
+          el.blur();
+        });
+
+        const mainOptions = Array.from(el.querySelectorAll('.option'));
+        const mainOptions2 = Array.from(el2.querySelectorAll('.option'));
+        for (let i = 0; i < mainOptions.length; i++) {
+          const mainOption = mainOptions[i];
+          const mainOption2 = mainOptions2[i];
+          mainOption.addEventListener('click', e => {
+            mainOption2.dispatchEvent(new CustomEvent('click'));
+          });
+        }
+
+        new MutationObserver(mutationRecords => {
+          for (let i = 0; i < mutationRecords.length; i++) {
+            const {target: target2} = mutationRecords[i];
+            if (target2.classList.contains('main-selector')) {
+              const target = el;
+              target.setAttribute('class', target2.getAttribute('class'));
+            } else if (target2.classList.contains('option')) {
+              const index = mainOptions2.indexOf(target2);
+              const target = mainOptions[index];
+              target.setAttribute('class', target2.getAttribute('class'));
+            }
+          }
+        }).observe(el2, {
+          attributes: true,
+          attributeFilter: [
+            'class',
+          ],
+          subtree: true,
+        });
+      });
+
+      [
         'set-avatar-button',
         'unset-avatar-button',
         'screenshot-button',
