@@ -314,6 +314,10 @@ const _bindXrIframe = xrIframe => {
   });
 
   control.addEventListener('change', e => {
+    if (editedXrSite) {
+      _clampPositionToElementExtent(control.object.position, editedXrSite);
+    }
+
     xrIframe.position = control.object.position.toArray();
     xrIframe.orientation = control.object.quaternion.toArray();
     xrIframe.scale = control.object.scale.toArray();
@@ -571,6 +575,10 @@ class XRModel extends HTMLElement {
     this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
 
     control.addEventListener('change', e => {
+      if (editedXrSite) {
+        _clampPositionToElementExtent(control.object.position, editedXrSite);
+      }
+
       this.position = control.object.position.toArray();
       this.orientation = control.object.quaternion.toArray();
       this.scale = control.object.scale.toArray();
@@ -696,6 +704,14 @@ const dateOffset = Math.floor(Math.random() * 60 * 1000);
 const realDateNow = (now => () => dateOffset + now())(Date.now);
 let fakeXrDisplay = null;
 let possessRig = false;
+const _clampPositionToElementExtent = (position, xrSite) => {
+  const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+  for (let i = 0; i < extents.length; i++) {
+    const [x1, y1, x2, y2] = extents[i];
+    position.x = Math.min(Math.max(position.x, x1), x2+1);
+    position.z = Math.min(Math.max(position.z, y1), y2+1);
+  }
+};
 function animate(timestamp, frame, referenceSpace) {
   if (editedXrSite) {
     const {baseMesh, guardianMesh} = editedXrSite;
