@@ -151,7 +151,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 	this.attach = function ( object ) {
 
 		this.object = object;
-		this.visible = true;
+		// this.visible = true;
 
 		return this;
 
@@ -161,7 +161,7 @@ THREE.TransformControls = function ( camera, domElement ) {
 	this.detach = function () {
 
 		this.object = undefined;
-		this.visible = false;
+		// this.visible = false;
 		this.axis = null;
 
 		return this;
