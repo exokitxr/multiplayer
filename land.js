@@ -27,8 +27,8 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
     const boxGeometries = [];
     for (let i = 0; i < extents.length; i++) {
       const [x1, y1, x2, y2] = extents[i];
-      for (let x = x1; x <= x2; x++) {
-        for (let y = y1; y <= y2; y++) {
+      for (let x = x1; x < x2; x++) {
+        for (let y = y1; y < y2; y++) {
           const hasCoords = {
             left: pixels[`${x-1}:${y}`],
             right: pixels[`${x+1}:${y}`],
@@ -126,8 +126,8 @@ THREE.Land = function Land(extents, color) {
     const geometries = [];
     for (let i = 0; i < extents.length; i++) {
       const [x1, y1, x2, y2] = extents[i];
-      for (let x = x1; x <= x2; x++) {
-        for (let y = y1; y <= y2; y++) {
+      for (let x = x1; x < x2; x++) {
+        for (let y = y1; y < y2; y++) {
           geometries.push(
             planeGeometry.clone()
               .applyMatrix(new THREE.Matrix4().makeTranslation(x, 0, y))

@@ -1,4 +1,4 @@
-import {colors} from './constants.js';
+import {parcelSize, colors} from './constants.js';
 import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 
@@ -43,6 +43,7 @@ let draggedXrSite = null;
 let dragStartExtents = [];
 let editedXrSite = null;
 let extentXrSite = null;
+let dirtyXrSite = null;
 let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
 let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 
@@ -69,11 +70,13 @@ for (let i = 0; i < tools.length; i++) {
 
 const _updateExtentXrSite = () => {
   const _incr = (a, b) => a - b;
-  const xs = [Math.floor(dragStartPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.x/container.scale.x)].sort(_incr);
-  const ys = [Math.floor(dragStartPoint.z/container.scale.z), Math.floor(floorIntersectionPoint.z/container.scale.z)].sort(_incr);
+  const xs = [Math.floor(dragStartPoint.x/container.scale.x/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.x/container.scale.x/parcelSize)*parcelSize].sort(_incr);
+  const ys = [Math.floor(dragStartPoint.z/container.scale.z/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.z/container.scale.z/parcelSize)*parcelSize].sort(_incr);
+  xs[1] += parcelSize;
+  ys[1] += parcelSize;
   const pixelKeys = [];
-  for (let x = xs[0]; x <= xs[1]; x++) {
-    for (let y = ys[0]; y <= ys[1]; y++) {
+  for (let x = xs[0]; x < xs[1]; x++) {
+    for (let y = ys[0]; y < ys[1]; y++) {
       pixelKeys.push(_getPixelKey(x, y));
     }
   }
@@ -171,13 +174,29 @@ const _mousedown = e => {
     dragStartPoint.copy(floorIntersectionPoint);
 
     if (toolIndex === 3) {
-      const dom = parseHtml(codeInput.value);
-      dom.childNodes.push(parseHtml(`<xr-site></xr-site>`).childNodes[0]);
-      codeInput.value = serializeHtml(dom);
-      codeInput.dispatchEvent(new CustomEvent('change'));
+      if (!dirtyXrSite) {
+        const dom = parseHtml(codeInput.value);
+        dom.childNodes.push(parseHtml(`<xr-site></xr-site>`).childNodes[0]);
+        codeInput.value = serializeHtml(dom);
+        codeInput.dispatchEvent(new CustomEvent('change'));
 
-      const xrSites = document.querySelectorAll('xr-site');
-      extentXrSite = xrSites[xrSites.length - 1];
+        const xrSites = document.querySelectorAll('xr-site');
+        dirtyXrSite = xrSites[xrSites.length - 1];
+      } else {
+        const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
+        for (let i = 0; i < extents.length; i++) {
+          const extent = extents[i];
+          const [x1, y1, x2, y2] = extent;
+          for (let x = x1; x < x2; x++) {
+            for (let y = y1; y < y2; y++) {
+              pixels[_getPixelKey(x, y)] = false;
+            }
+          }
+        }
+        dirtyXrSite.removeAttribute('extents');
+      }
+
+      extentXrSite = dirtyXrSite;
 
       if (selectedXrSite) {
         selectedXrSite.baseMesh.material.uniforms.uColor.value.setHex(colors.select);
@@ -191,9 +210,10 @@ const _mousedown = e => {
           editParcelButton.style.display = null;
           stopEditingButton.style.display = 'none';
         }
-        selectedXrSite = null;
-        parcelDetails.classList.remove('open');
       }
+
+      selectedXrSite = extentXrSite;
+      parcelDetails.classList.add('open');
 
       _updateExtentXrSite();
     } else if (toolIndex === 1) {
@@ -212,15 +232,30 @@ const _mousedown = e => {
       if (hoveredXrSite) {
         const {baseMesh, guardianMesh} = hoveredXrSite;
         if (baseMesh) {
-          baseMesh.material.uniforms.uColor.value.setHex(colors.select3);
+          baseMesh.material.uniforms.uColor.value.setHex(colors.select4);
         }
         if (guardianMesh) {
-          guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
+          guardianMesh.material.uniforms.uColor.value.setHex(colors.select4);
         }
 
         parcelDetails.classList.add('open');
       } else {
         parcelDetails.classList.remove('open');
+      }
+
+      if (dirtyXrSite && dirtyXrSite !== hoveredXrSite) {
+        const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
+        for (let i = 0; i < extents.length; i++) {
+          const extent = extents[i];
+          const [x1, y1, x2, y2] = extent;
+          for (let x = x1; x < x2; x++) {
+            for (let y = y1; y < y2; y++) {
+              pixels[_getPixelKey(x, y)] = false;
+            }
+          }
+        }
+        dirtyXrSite.parentNode.removeChild(dirtyXrSite);
+        dirtyXrSite = null;
       }
 
       selectedXrSite = hoveredXrSite;
@@ -245,8 +280,8 @@ const _mouseup = e => {
       for (let i = 0; i < extents.length; i++) {
         const extent = extents[i];
         const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x <= x2; x++) {
-          for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x < x2; x++) {
+          for (let y = y1; y < y2; y++) {
             pixels[_getPixelKey(x, y)] = true;
           }
         }
@@ -345,8 +380,8 @@ const _mousemove = e => {
       for (let i = 0; i < oldExtents.length; i++) {
         const extent = oldExtents[i];
         const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x <= x2; x++) {
-          for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x < x2; x++) {
+          for (let y = y1; y < y2; y++) {
             const k = _getPixelKey(x, y);
             oldPixelKeys.push(k);
             oldPixelKeysIndex[k] = true;
@@ -355,8 +390,8 @@ const _mousemove = e => {
       }
 
       localVector
-        .set(Math.floor(floorIntersectionPoint.x/container.scale.x), Math.floor(floorIntersectionPoint.y/container.scale.y), Math.floor(floorIntersectionPoint.z/container.scale.z))
-        .sub(localVector2.set(Math.floor(dragStartPoint.x/container.scale.x), Math.floor(dragStartPoint.y/container.scale.y), Math.floor(dragStartPoint.z/container.scale.z)));
+        .set(Math.floor(floorIntersectionPoint.x/container.scale.x/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.y/container.scale.y/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.z/container.scale.z/parcelSize)*parcelSize)
+        .sub(localVector2.set(Math.floor(dragStartPoint.x/container.scale.x/parcelSize)*parcelSize, Math.floor(dragStartPoint.y/container.scale.y/parcelSize)*parcelSize, Math.floor(dragStartPoint.z/container.scale.z/parcelSize)*parcelSize));
       const dx = localVector.x;
       const dy = localVector.z;
       const newExtents = dragStartExtents.map(([x1, y1, x2, y2]) => [x1 + dx, y1 + dy, x2 + dx, y2 + dy]);
@@ -365,8 +400,8 @@ const _mousemove = e => {
       for (let i = 0; i < newExtents.length; i++) {
         const extent = newExtents[i];
         const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x <= x2; x++) {
-          for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x < x2; x++) {
+          for (let y = y1; y < y2; y++) {
             newPixelKeys.push(_getPixelKey(x, y));
           }
         }
@@ -388,7 +423,7 @@ const _mousemove = e => {
       for (let i = 0; i < xrSites.length; i++) {
         const xrSite = xrSites[i];
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
-        if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < (x2+1) && y >= y1 && y < (y2+1))) {
+        if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < x2 && y >= y1 && y < y2)) {
           hoveredXrSite = xrSite;
         }
       }
@@ -412,6 +447,9 @@ domElement.addEventListener('mousemove', _mousemove);
   getEditedElement() {
     return editedXrSite;
   }
+  getDirtyElement() {
+    return dirtyXrSite;
+  }
   clampPositionToElementExtent(position, xrSite) {
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     for (let i = 0; i < extents.length; i++) {
@@ -433,8 +471,8 @@ domElement.addEventListener('mousemove', _mousemove);
       for (let i = 0; i < extents.length; i++) {
         const extent = extents[i];
         const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x <= x2; x++) {
-          for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x < x2; x++) {
+          for (let y = y1; y < y2; y++) {
             pixels[_getPixelKey(x, y)] = false;
           }
         }
@@ -443,6 +481,9 @@ domElement.addEventListener('mousemove', _mousemove);
       selectedXrSite.parentNode.removeChild(selectedXrSite);
       if (hoveredXrSite === selectedXrSite) {
         hoveredXrSite = null;
+      }
+      if (dirtyXrSite === selectedXrSite) {
+        dirtyXrSite = null;
       }
       if (editedXrSite === selectedXrSite) {
         editedXrSite = null;

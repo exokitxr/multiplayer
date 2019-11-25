@@ -349,10 +349,17 @@ const _bindXrSite = xrSite => {
 
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     if (extents.length > 0) {
-      const xrSiteSelected = toolManager.getSelectedElement() === xrSite;
-      xrSite.guardianMesh = new THREE.Guardian(extents, 10, xrSiteSelected ? colors.select3 : colors.select);
+      let color;
+      if (toolManager.getDirtyElement() === xrSite) {
+        color = colors.select4;
+      } else if (toolManager.getSelectedElement() === xrSite) {
+        color = colors.select3;
+      } else {
+        color = colors.select;
+      }
+      xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
       container.add(xrSite.guardianMesh);
-      xrSite.baseMesh = new THREE.Land(extents, xrSiteSelected ? colors.select3 : colors.select);
+      xrSite.baseMesh = new THREE.Land(extents, color);
       container.add(xrSite.baseMesh);
     }
   };
