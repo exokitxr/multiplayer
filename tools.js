@@ -14,8 +14,8 @@ const settingAvatarButton = topDocument.getElementById('setting-avatar-button');
 const screenshotButton = topDocument.getElementById('screenshot-button');
 const screenshotImage = topDocument.getElementById('screenshot-image');
 const parcelDetails = topDocument.getElementById('parcel-details');
-// const parcelNameInput = topDocument.getElementById('parcel-name-input');
-// const saveParcelButton = topDocument.getElementById('save-parcel-button');
+const parcelNameInput = topDocument.getElementById('parcel-name-input');
+const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const editParcelButton = topDocument.getElementById('edit-parcel-button');
 const stopEditingButton = topDocument.getElementById('stop-editing-button');
 const tools = Array.from(topDocument.querySelectorAll('.tool'));
@@ -156,6 +156,42 @@ screenshotButton.addEventListener('click', async () => {
   }
 });
 
+saveParcelButton.addEventListener('click', async () => {
+  if (dirtyXrSite) {
+    const coords = [];
+    const parcelKeyIndex = {};
+    const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
+    for (let i = 0; i < extents.length; i++) {
+      const extent = extents[i];
+      const [x1, y1, x2, y2] = extent;
+      for (let x = x1; x < x2; x += parcelSize) {
+        for (let y = y1; y < y2; y += parcelSize) {
+          const k =_getPixelKey(x, y);
+          if (!parcelKeyIndex[k]) {
+            parcelKeyIndex[k] = true;
+            coords.push([x/parcelSize, y/parcelSize]);
+          }
+        }
+      }
+    }
+
+    const res = await fetch(`https://grid.exokit.org/parcels`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: parcelNameInput.value,
+        coords,
+        html: '',
+      }),
+    });
+    if (res.ok) {
+      const j = await res.text();
+    } else {
+      console.warn(`invalid status code: ${res.status}`);
+    }
+  } else {
+    console.log('save parcel click');
+  }
+});
 editParcelButton.addEventListener('click', () => {
   editedXrSite = selectedXrSite;
 
