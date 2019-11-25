@@ -39,7 +39,7 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
           if (!hasCoords.up) {
             for (let h = 0; h <= 2; h++) {
               boxGeometries.push(boxGeometry.clone()
-                .applyMatrix(new THREE.Matrix4().makeTranslation(x + 0.5, h + 0.5, y + 0.5))
+                .applyMatrix(new THREE.Matrix4().makeTranslation(x - 0.5, h + 0.5, y - 0.5))
               );
             }
           }
@@ -55,7 +55,7 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
             for (let h = 0; h <= 2; h++) {
               boxGeometries.push(boxGeometry.clone()
                 .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)))
-                .applyMatrix(new THREE.Matrix4().makeTranslation(x + 0.5, h + 0.5, y + 0.5))
+                .applyMatrix(new THREE.Matrix4().makeTranslation(x - 0.5, h + 0.5, y - 0.5))
               );
             }
           }
