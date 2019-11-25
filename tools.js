@@ -157,12 +157,11 @@ screenshotButton.addEventListener('click', async () => {
 });
 
 saveParcelButton.addEventListener('click', async () => {
-  if (dirtyXrSite) {
-    const xrSite = dirtyXrSite;
-
+  const xrSite = dirtyXrSite || selectedXrSite;
+  if (xrSite) {
     const coords = [];
     const parcelKeyIndex = {};
-    const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
+    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     for (let i = 0; i < extents.length; i++) {
       const extent = extents[i];
       const [x1, y1, x2, y2] = extent;
@@ -177,7 +176,7 @@ saveParcelButton.addEventListener('click', async () => {
       }
     }
 
-    const res = await fetch(`https://grid.exokit.org/parcels`, {
+    const res = await fetch(`https://grid.exokit.org/parcels${xrSite !== dirtyXrSite ? `/${coords[0][0]}/${coords[0][1]}` : ''}`, {
       method: 'POST',
       body: JSON.stringify({
         name: parcelNameInput.value,
@@ -199,7 +198,7 @@ saveParcelButton.addEventListener('click', async () => {
       console.warn(`invalid status code: ${res.status}`);
     }
   } else {
-    console.log('save parcel click');
+    console.warn('no parcel to save');
   }
 });
 editParcelButton.addEventListener('click', () => {

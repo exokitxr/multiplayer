@@ -1332,6 +1332,7 @@ const _connectLand = () => {
               parcel.coord = coord;
               const xrSites = document.querySelectorAll('xr-site');
               parcel.xrSite = xrSites[xrSites.length - 1];
+              parcel.xrSite.parcel = parcel;
 
               console.log('add parcel', coord, parcel, extents);
             } else {
