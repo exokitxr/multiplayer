@@ -27,8 +27,8 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
     const boxGeometries = [];
     for (let i = 0; i < extents.length; i++) {
       const [x1, y1, x2, y2] = extents[i];
-      for (let x = x1; x < x2; x++) {
-        for (let y = y1; y < y2; y++) {
+      for (let x = x1; x <= x2; x++) {
+        for (let y = y1; y <= y2; y++) {
           const hasCoords = {
             left: pixels[`${x-1}:${y}`],
             right: pixels[`${x+1}:${y}`],
@@ -47,7 +47,7 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
             for (let h = 0; h <= 2; h++) {
               boxGeometries.push(boxGeometry.clone()
                 .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)))
-                .applyMatrix(new THREE.Matrix4().makeTranslation(x + 0.5, h + 0.5, y + 0.5))
+                .applyMatrix(new THREE.Matrix4().makeTranslation(x - 0.5, h + 0.5, y - 0.5))
               );
             }
           }
@@ -63,7 +63,7 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
             for (let h = 0; h <= 2; h++) {
               boxGeometries.push(boxGeometry.clone()
                 .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2)))
-                .applyMatrix(new THREE.Matrix4().makeTranslation(x + 0.5, h + 0.5, y + 0.5))
+                .applyMatrix(new THREE.Matrix4().makeTranslation(x - 0.5, h + 0.5, y - 0.5))
               );
             }
           }
