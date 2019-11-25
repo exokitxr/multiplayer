@@ -158,6 +158,8 @@ screenshotButton.addEventListener('click', async () => {
 
 saveParcelButton.addEventListener('click', async () => {
   if (dirtyXrSite) {
+    const xrSite = dirtyXrSite;
+
     const coords = [];
     const parcelKeyIndex = {};
     const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
@@ -184,7 +186,15 @@ saveParcelButton.addEventListener('click', async () => {
       }),
     });
     if (res.ok) {
-      const j = await res.text();
+      await res.blob();
+
+      const color = xrSite === selectedXrSite ? colors.select3 : colors.select;
+      xrSite.baseMesh && xrSite.baseMesh.material.uniforms.uColor.value.setHex(color);
+      xrSite.guardianMesh && xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
+
+      if (dirtyXrSite === xrSite) {
+        dirtyXrSite = null;
+      }
     } else {
       console.warn(`invalid status code: ${res.status}`);
     }
