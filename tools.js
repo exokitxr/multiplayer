@@ -277,11 +277,12 @@ const _mousedown = e => {
       }
       if (hoveredXrSite) {
         const {baseMesh, guardianMesh} = hoveredXrSite;
+        const color = hoveredXrSite === dirtyXrSite ? colors.select4 : colors.select3;
         if (baseMesh) {
-          baseMesh.material.uniforms.uColor.value.setHex(colors.select4);
+          baseMesh.material.uniforms.uColor.value.setHex(color);
         }
         if (guardianMesh) {
-          guardianMesh.material.uniforms.uColor.value.setHex(colors.select4);
+          guardianMesh.material.uniforms.uColor.value.setHex(color);
         }
 
         parcelDetails.classList.add('open');
