@@ -1273,6 +1273,18 @@ const _getParcelKey = () => {
   const [x, z] = _getCameraPosition();
   return [Math.floor(x/parcelSize), Math.floor(z/parcelSize)];
 };
+const _getRequiredParcelKeys = (x, z) => [
+  [x-1, z-1],
+  [x-1, z],
+  [x-1, z+1],
+  [x, z-1],
+  [x, z],
+  [x, z+1],
+  [x+1, z-1],
+  [x+1, z],
+  [x+1, z+1],
+];
+const parcels = {};
 const _connectLand = () => {
   let lastParcelKey = '';
   let running = false;
@@ -1280,18 +1292,68 @@ const _connectLand = () => {
     if (!running) {
       running = true;
 
-      const parcelKey = _getParcelKey();
-      const parcelKeyString = parcelKey.join(':');
-      if (parcelKeyString !== lastParcelKey) {
-        const [x, z] = parcelKey;
-        const res = await fetch(`https://grid.exokit.org/parcels/${x}/${z}`);
-        if (res.ok) {
-          const j = await res.json();
-          console.log('got parcels', j);
-        } else {
-          console.warn('failed to get parcels', res.status);
+      const coord = _getParcelKey();
+      const k = coord.join(':');
+      if (k !== lastParcelKey) {
+        const [x, z] = coord;
+        const requiredParcelKeys = _getRequiredParcelKeys(x, z);
+        const missingParcelKeys = requiredParcelKeys.filter(k => !parcels[k.join(':')]);
+        const outrangedParcels = Object.keys(parcels)
+          .map(k => parcels[k])
+          .filter(parcel => // parcels where no coord is required
+            !parcel.coords.some(coord => requiredParcelKeys.some(coord2 => coord2[0] === coord[0] && coord2[1] === coord[1]))
+          );
+        await Promise.all(missingParcelKeys.map(async coord => {
+          const [x, z] = coord;
+          const res = await fetch(`https://grid.exokit.org/parcels/${x}/${z}`);
+          if (res.ok) {
+            let parcel = await res.json();
+            if (parcel) {
+              const k = coord.join(':');
+              parcels[k] = parcel;
+
+              const dom = parseHtml(codeInput.value);
+              let minX = Infinity;
+              let minZ = Infinity;
+              let maxX = -Infinity;
+              let maxZ = -Infinity;
+              for (let i = 0; i < parcel.coords.length; i++) {
+                const [px, pz] = parcel.coords[i];
+                minX = Math.min(px, minX);
+                minZ = Math.min(pz, minZ);
+                maxX = Math.max(px+1, maxX);
+                maxZ = Math.max(pz+1, maxZ);
+              }
+              const extents = [[minX*parcelSize, minZ*parcelSize, maxX*parcelSize, maxZ*parcelSize]];
+              dom.childNodes.push(parseHtml(`<xr-site extents="${THREE.Land.serializeExtents(extents)}"></xr-site>`).childNodes[0]);
+              codeInput.value = serializeHtml(dom);
+              codeInput.dispatchEvent(new CustomEvent('change'));
+
+              parcel.coord = coord;
+              const xrSites = document.querySelectorAll('xr-site');
+              parcel.xrSite = xrSites[xrSites.length - 1];
+
+              console.log('add parcel', coord, parcel, extents);
+            } else {
+              parcel = {
+                coords: [coord],
+                coord,
+                xrSite: null,
+              };
+            }
+          } else {
+            console.warn('failed to get parcels', res.status);
+          }
+        }));
+        for (let i = 0; i < outrangedParcels.length; i++) {
+          const k = outrangedParcels[i].coord.join(':');
+          const parcel = parcels[k];
+          const {xrSite} = parcel;
+          xrSite.parentNode.removeChild(xrSite);
+          console.log('remove parcel', parcel);
+          delete parcels[k];
         }
-        lastParcelKey = parcelKeyString;
+        lastParcelKey = k;
       }
 
       running = false;
