@@ -19,7 +19,7 @@ import {ToolManager} from './tools.js';
 const {document: topDocument} = window.top;
 
 const peerPoseUpdateRate = 50;
-const walkSpeed = 0.025;
+const walkSpeed = 0.0015;
 const parcelSize = 16;
 const floorPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0));
 
@@ -715,7 +715,11 @@ const dateOffset = Math.floor(Math.random() * 60 * 1000);
 const realDateNow = (now => () => dateOffset + now())(Date.now);
 let fakeXrDisplay = null;
 let possessRig = false;
+let lastTimestamp = Date.now();
 function animate(timestamp, frame, referenceSpace) {
+  const now = Date.now();
+  const timeDiff = now - lastTimestamp;
+
   const editedEl = toolManager.getEditedElement();
   if (editedEl && editedEl.tagName === 'XR-SITE') {
     const {baseMesh, guardianMesh} = editedEl;
@@ -820,7 +824,7 @@ function animate(timestamp, frame, referenceSpace) {
           const hmdEuler = localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
           localEuler.x = 0;
           localEuler.z = 0;
-          container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
+          container.position.sub(localVector.multiplyScalar(walkSpeed * timeDiff * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
 
           _updateXrIframeMatrices();
         }
@@ -980,7 +984,7 @@ function animate(timestamp, frame, referenceSpace) {
       if (keys.down) {
         localVector.z += 1;
       }
-      rig.inputs.hmd.position.add(localVector.normalize().multiplyScalar(walkSpeed * (keys.shift ? 3 : 1) * rig.height).applyQuaternion(floorRotation));
+      rig.inputs.hmd.position.add(localVector.normalize().multiplyScalar(walkSpeed * timeDiff * (keys.shift ? 3 : 1) * rig.height).applyQuaternion(floorRotation));
       if (keys.space) {
         const lerpFactor = 0.3;
         rig.inputs.hmd.position.y = rig.inputs.hmd.position.y * (1-lerpFactor) + rig.height*1.1 * lerpFactor;
@@ -1030,6 +1034,8 @@ function animate(timestamp, frame, referenceSpace) {
     fakeXrDisplay.quaternion.copy(camera.quaternion);
     fakeXrDisplay.pushUpdate();
   }
+
+  lastTimestamp = now;
 }
 renderer.setAnimationLoop(animate);
 
