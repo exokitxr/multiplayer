@@ -1284,12 +1284,12 @@ const _connectLand = () => {
       const parcelKeyString = parcelKey.join(':');
       if (parcelKeyString !== lastParcelKey) {
         const [x, z] = parcelKey;
-        const res = await fetch(`https://grid.exokit.org/coords/${x*parcelSize}/${z*parcelSize}`);
+        const res = await fetch(`https://grid.exokit.org/parcels/${x}/${z}`);
         if (res.ok) {
           const j = await res.json();
-          console.log('got grid', j);
+          console.log('got parcels', j);
         } else {
-          console.warn('failed to get grid', res.status);
+          console.warn('failed to get parcels', res.status);
         }
         lastParcelKey = parcelKeyString;
       }
