@@ -1,3 +1,4 @@
+const parcelSize = 16;
 const colors = {
   normal: 0x808080,
   highlight: 0xAAAAAA,
@@ -8,5 +9,6 @@ const colors = {
 };
 
 export {
+  parcelSize,
   colors,
 };

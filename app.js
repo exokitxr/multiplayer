@@ -13,14 +13,13 @@ import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
-import {colors} from './constants.js';
+import {parcelSize, colors} from './constants.js';
 import {ToolManager} from './tools.js';
 
 const {document: topDocument} = window.top;
 
 const peerPoseUpdateRate = 50;
 const walkSpeed = 0.0015;
-const parcelSize = 16;
 const floorPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0));
 
 const localVector = new THREE.Vector3();
