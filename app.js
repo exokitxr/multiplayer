@@ -723,7 +723,7 @@ function animate(timestamp, frame, referenceSpace) {
   const editedEl = toolManager.getEditedElement();
   if (editedEl && editedEl.tagName === 'XR-SITE') {
     const {baseMesh, guardianMesh} = editedEl;
-    const f = 1 + Math.pow(1 - (Date.now() % 1000) / 1000, 2);
+    const f = 1 + Math.pow(1 - (now % 1000) / 1000, 2);
     const c = localColor.setHex(colors.select3).multiplyScalar(f);
     baseMesh.material.uniforms.uColor.value.copy(c);
     guardianMesh.material.uniforms.uColor.value.copy(c);
@@ -937,11 +937,11 @@ function animate(timestamp, frame, referenceSpace) {
         new THREE.Vector3(0.1, 0, -1).normalize().multiplyScalar(rig.leftArmLength*0.4).applyQuaternion(rig.inputs.leftGamepad.quaternion)
       );*/
 
-      rig.inputs.leftGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
-      rig.inputs.leftGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.leftGamepad.pointer = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.leftGamepad.grip = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
 
-      rig.inputs.rightGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
-      rig.inputs.rightGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.rightGamepad.pointer = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.rightGamepad.grip = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
 
       rig.update();
     }
