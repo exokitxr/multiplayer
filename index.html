@@ -101,7 +101,9 @@ header nav:not(.selected):not([disabled]):hover {
 header nav:not(.selected):hover span {
   background-color: #EEE;
 }
-header:not(.main-2) .channel-select {
+header:not(.main-2) .channel-select,
+header:not(.main-3) .parcel-display
+{
   display: none;
 }
 .channel-select {
@@ -672,6 +674,10 @@ header > .login-form.phase-3 > .phaseless-content
             <nav class="button first last" disabled id=connect-button>Create</nav>
             <nav class="button first last" id=disconnect-button style="display: none">Disconnect</nav>
           </div>
+        </div>
+
+        <div class=parcel-display>
+          <div class=parcel-name id=parcel-name></div>
         </div>
 
         <form class="login-form phase-1" id=login-form>
