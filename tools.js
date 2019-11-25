@@ -4,6 +4,8 @@ import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 
 const {document: topDocument} = window.top;
 
+const tools = Array.from(topDocument.querySelectorAll('.tool'));
+const parcelName = topDocument.getElementById('parcel-name');
 const codeInput = topDocument.getElementById('code');
 const detailsContentTab = topDocument.getElementById('details-content-tab');
 const selectedObjectDetails = topDocument.getElementById('selected-object-details');
@@ -18,7 +20,6 @@ const parcelNameInput = topDocument.getElementById('parcel-name-input');
 const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const editParcelButton = topDocument.getElementById('edit-parcel-button');
 const stopEditingButton = topDocument.getElementById('stop-editing-button');
-const tools = Array.from(topDocument.querySelectorAll('.tool'));
 
 const toolNames = [
   'camera',
@@ -258,6 +259,7 @@ const _mousedown = e => {
       }
 
       selectedXrSite = extentXrSite;
+      parcelName.innerText = 'parcel';
       parcelDetails.classList.add('open');
 
       _updateExtentXrSite();
@@ -305,6 +307,7 @@ const _mousedown = e => {
       }
 
       selectedXrSite = hoveredXrSite;
+      parcelName.innerText = selectedXrSite ? 'parcel' : '';
       draggedXrSite = hoveredXrSite;
       dragStartExtents = hoveredXrSite ? THREE.Land.parseExtents(hoveredXrSite.getAttribute('extents')) : [];
 
@@ -537,6 +540,7 @@ domElement.addEventListener('mousemove', _mousemove);
         stopEditingButton.style.display = 'none';
       }
       selectedXrSite = null;
+      parcelName.innerText = '';
       parcelDetails.classList.remove('open');
     }
   }
