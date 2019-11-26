@@ -574,6 +574,7 @@ class XRModel extends HTMLElement {
     console.log('connected', this, this.getAttribute('src'), this.getAttribute('orientation'), this.getAttribute('scale'));
 
     const model = new THREE.Object3D();
+    model.boundingBoxMesh = new THREE.Object3D();
     container.add(model);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
