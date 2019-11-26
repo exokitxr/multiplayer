@@ -221,6 +221,9 @@ toolManager.addEventListener('toolchange', e => {
     newEl.guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
   }
 }); */
+toolManager.addEventListener('editchange', e => {
+  lastParcelKey = '';
+});
 
 const _bindXrIframe = xrIframe => {
   const model = new THREE.Object3D();
@@ -1126,7 +1129,13 @@ const _keydown = e => {
         break;
       }
       case 27: { // esc
-        saveDialog.classList.remove('open');
+        if (!chatInput.classList.contains('open')) {
+          saveDialog.classList.remove('open');
+          toolManager.escape();
+        } else {
+          chatInput.classList.remove('open');
+          chatInput.value = '';
+        }
         break;
       }
       case 46: { // del
@@ -1318,69 +1327,71 @@ const _getParcelXrSite = coord => {
   }
   return null;
 };
+let lastParcelKey = '';
 const _connectLand = () => {
-  let lastParcelKey = '';
   let running = false;
   const _updateGrid = async () => {
     if (!running) {
       running = true;
 
-      const coord = _getCurrentParcelCoords();
-      const k = coord.join(':');
-      if (k !== lastParcelKey) {
-        const [x, z] = coord;
-        const requiredParcelCoords = _getRequiredParcelCoords(x, z);
-        const missingParcelCoords = requiredParcelCoords.filter(coord => !_getParcelXrSite(coord));
-        const outrangedParcels = _getAllParcelXrSites()
-          .filter(xrSite => // parcels where every coord is not required
-            _getParcelCoords(xrSite).every(coord => !requiredParcelCoords.some(coord2 => coord2[0] === coord[0] && coord2[1] === coord[1]))
-          );
-        for (let i = 0; i < outrangedParcels.length; i++) {
-          const xrSite = outrangedParcels[i];
-          xrSite.parentNode.removeChild(xrSite);
-        }
-        const seenCoords = {};
-        await Promise.all(missingParcelCoords.map(async coord => {
+      if (!toolManager.getEditedElement()) {
+        const coord = _getCurrentParcelCoords();
+        const k = coord.join(':');
+        if (k !== lastParcelKey) {
           const [x, z] = coord;
-          const k = coord.join(':');
-          const res = await fetch(`https://grid.exokit.org/parcels/${x}/${z}`);
-          if (res.ok) {
-            let parcel = await res.json();
-            if (parcel) {
-              const dom = parseHtml(codeInput.value);
-              let minX = Infinity;
-              let minZ = Infinity;
-              let maxX = -Infinity;
-              let maxZ = -Infinity;
-              for (let i = 0; i < parcel.coords.length; i++) {
-                const k = coord.join(':');
-                if (seenCoords[k]) { // already did this coord, so bail
-                  return;
-                } else {
+          const requiredParcelCoords = _getRequiredParcelCoords(x, z);
+          const missingParcelCoords = requiredParcelCoords.filter(coord => !_getParcelXrSite(coord));
+          const outrangedParcels = _getAllParcelXrSites()
+            .filter(xrSite => // parcels where every coord is not required
+              _getParcelCoords(xrSite).every(coord => !requiredParcelCoords.some(coord2 => coord2[0] === coord[0] && coord2[1] === coord[1]))
+            );
+          for (let i = 0; i < outrangedParcels.length; i++) {
+            const xrSite = outrangedParcels[i];
+            xrSite.parentNode.removeChild(xrSite);
+          }
+          const seenCoords = {};
+          await Promise.all(missingParcelCoords.map(async coord => {
+            const [x, z] = coord;
+            const k = coord.join(':');
+            const res = await fetch(`https://grid.exokit.org/parcels/${x}/${z}`);
+            if (res.ok) {
+              let parcel = await res.json();
+              if (parcel) {
+                const dom = parseHtml(codeInput.value);
+                let minX = Infinity;
+                let minZ = Infinity;
+                let maxX = -Infinity;
+                let maxZ = -Infinity;
+                for (let i = 0; i < parcel.coords.length; i++) {
+                  const k = coord.join(':');
+                  if (seenCoords[k]) { // already did this coord, so bail
+                    return;
+                  } else {
+                    const coord = parcel.coords[i];
+                    const [px, pz] = coord;
+                    minX = Math.min(px, minX);
+                    minZ = Math.min(pz, minZ);
+                    maxX = Math.max(px, maxX);
+                    maxZ = Math.max(pz, maxZ);
+                  }
+                }
+                const extents = [[minX*parcelSize, minZ*parcelSize, (maxX+1)*parcelSize, (maxZ+1)*parcelSize]];
+                dom.childNodes.push(parseHtml(`<xr-site name="${encodeURIComponent(parcel.name)}" extents="${THREE.Land.serializeExtents(extents)}" html="${encodeURIComponent(parcel.html)}"></xr-site>`).childNodes[0]);
+                codeInput.value = serializeHtml(dom);
+                codeInput.dispatchEvent(new CustomEvent('change'));
+
+                for (let i = 0; i < parcel.coords.length; i++) {
                   const coord = parcel.coords[i];
-                  const [px, pz] = coord;
-                  minX = Math.min(px, minX);
-                  minZ = Math.min(pz, minZ);
-                  maxX = Math.max(px, maxX);
-                  maxZ = Math.max(pz, maxZ);
+                  const k = coord.join(':');
+                  seenCoords[k] = true;
                 }
               }
-              const extents = [[minX*parcelSize, minZ*parcelSize, (maxX+1)*parcelSize, (maxZ+1)*parcelSize]];
-              dom.childNodes.push(parseHtml(`<xr-site name="${encodeURIComponent(parcel.name)}" extents="${THREE.Land.serializeExtents(extents)}" html="${encodeURIComponent(parcel.html)}"></xr-site>`).childNodes[0]);
-              codeInput.value = serializeHtml(dom);
-              codeInput.dispatchEvent(new CustomEvent('change'));
-
-              for (let i = 0; i < parcel.coords.length; i++) {
-                const coord = parcel.coords[i];
-                const k = coord.join(':');
-                seenCoords[k] = true;
-              }
+            } else {
+              console.warn('failed to get parcels', res.status);
             }
-          } else {
-            console.warn('failed to get parcels', res.status);
-          }
-        }));
-        lastParcelKey = k;
+          }));
+          lastParcelKey = k;
+        }
       }
 
       running = false;

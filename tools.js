@@ -49,6 +49,26 @@ let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
 let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 
 const _getPixelKey = (x, z) => [x, z].join(':');
+const _editXrSite = xrSite => {
+  editedXrSite = xrSite;
+
+  const xrSites = Array.from(document.querySelectorAll('xr-site'));
+  for (let i = 0; i < xrSites.length; i++) {
+    const xrSite = xrSites[i];
+    if (xrSite !== editedXrSite) {
+      xrSite.parentNode.removeChild(xrSite);
+    }
+  }
+
+  editParcelButton.style.display = 'none';
+  stopEditingButton.style.display = null;
+};
+const _uneditXrSite = () => {
+  editedXrSite = null;
+
+  editParcelButton.style.display = null;
+  stopEditingButton.style.display = 'none';
+};
 
 class ToolManager extends EventTarget {
   constructor({domElement, camera, container}) {
@@ -203,16 +223,12 @@ saveParcelButton.addEventListener('click', async () => {
   }
 });
 editParcelButton.addEventListener('click', () => {
-  editedXrSite = selectedXrSite;
-
-  editParcelButton.style.display = 'none';
-  stopEditingButton.style.display = null;
+  _editXrSite(selectedXrSite);
+  this.dispatchEvent(new MessageEvent('editchange'));
 });
 stopEditingButton.addEventListener('click', () => {
-  editedXrSite = null;
-
-  editParcelButton.style.display = null;
-  stopEditingButton.style.display = 'none';
+  _uneditXrSite();
+  this.dispatchEvent(new MessageEvent('editchange'));
 });
 
 const _mousedown = e => {
@@ -359,10 +375,8 @@ const _click = () => {
 domElement.addEventListener('click', _click);
 const _dblclick = e => {
   if (selectedXrSite) {
-    editedXrSite = selectedXrSite;
-
-    editParcelButton.style.display = 'none';
-    stopEditingButton.style.display = null;
+    _editXrSite(selectedXrSite);
+    this.dispatchEvent(new MessageEvent('editchange'));
   }
 };
 domElement.addEventListener('dblclick', _dblclick);
@@ -535,13 +549,20 @@ domElement.addEventListener('mousemove', _mousemove);
         dirtyXrSite = null;
       }
       if (editedXrSite === selectedXrSite) {
-        editedXrSite = null;
-        editParcelButton.style.display = null;
-        stopEditingButton.style.display = 'none';
+        _uneditXrSite();
+        this.dispatchEvent(new MessageEvent('editchange'));
       }
       selectedXrSite = null;
       parcelName.innerText = '';
       parcelDetails.classList.remove('open');
+    }
+
+    // XXX add selected parcel delete support
+  }
+  escape() {
+    if (editedXrSite) {
+      _uneditXrSite();
+      this.dispatchEvent(new MessageEvent('editchange'));
     }
   }
 }
