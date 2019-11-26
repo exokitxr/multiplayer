@@ -199,12 +199,13 @@ saveParcelButton.addEventListener('click', async () => {
     }
 
     const name = parcelNameInput.value;
+    const html = xrSite.innerHTML;
     const res = await fetch(`https://grid.exokit.org/parcels${xrSite !== dirtyXrSite ? `/${coords[0][0]}/${coords[0][1]}` : ''}`, {
       method: 'POST',
       body: JSON.stringify({
         name,
         coords,
-        html: '',
+        html,
       }),
     });
     if (res.ok) {
