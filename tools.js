@@ -59,17 +59,27 @@ const _editXrSite = xrSite => {
     }
   }
 
-  saveParcelButton.style.display = null;
-  editParcelButton.style.display = 'none';
-  stopEditingButton.style.display = null;
+  _updateParcelButtons();
 };
 const _uneditXrSite = () => {
   editedXrSite = null;
 
-  saveParcelButton.style.display = 'none';
-  editParcelButton.style.display = null;
-  stopEditingButton.style.display = 'none';
+  _updateParcelButtons();
 };
+const _updateParcelButtons = () => {
+  if (editedXrSite || dirtyXrSite) {
+    saveParcelButton.style.display = null;
+  } else {
+    saveParcelButton.style.display = null;
+  }
+  if (editedXrSite) {
+    editParcelButton.style.display = null;
+    stopEditingButton.style.display = 'none';
+  } else {
+    editParcelButton.style.display = 'none';
+    stopEditingButton.style.display = null;
+  }
+}
 
 class ToolManager extends EventTarget {
   constructor({domElement, camera, container}) {
@@ -221,6 +231,7 @@ saveParcelButton.addEventListener('click', async () => {
       }
       if (dirtyXrSite === xrSite) {
         dirtyXrSite = null;
+        _updateParcelButtons();
       }
     } else {
       console.warn(`invalid status code: ${res.status}`);
@@ -251,6 +262,8 @@ const _mousedown = e => {
 
         const xrSites = document.querySelectorAll('xr-site');
         dirtyXrSite = xrSites[xrSites.length - 1];
+
+        _updateParcelButtons();
       } else {
         const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
         for (let i = 0; i < extents.length; i++) {
@@ -281,7 +294,6 @@ const _mousedown = e => {
 
       selectedXrSite = extentXrSite;
       parcelNameInput.value = selectedXrSite.getAttribute('name');
-      // parcelDetails.classList.add('open');
 
       _updateExtentXrSite();
     } else if (toolIndex === 1) {
@@ -306,11 +318,7 @@ const _mousedown = e => {
         if (guardianMesh) {
           guardianMesh.material.uniforms.uColor.value.setHex(color);
         }
-
-        // parcelDetails.classList.add('open');
-      } /* else {
-        parcelDetails.classList.remove('open');
-      } */
+      }
 
       if (dirtyXrSite && dirtyXrSite !== hoveredXrSite) {
         const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
@@ -325,6 +333,7 @@ const _mousedown = e => {
         }
         dirtyXrSite.parentNode.removeChild(dirtyXrSite);
         dirtyXrSite = null;
+        _updateParcelButtons();
       }
 
       selectedXrSite = hoveredXrSite;
@@ -562,10 +571,10 @@ domElement.addEventListener('mousemove', _mousemove);
       }
       selectedXrSite = null;
       parcelNameInput.value = '';
-      // parcelDetails.classList.remove('open');
-    }
+      _updateParcelButtons();
 
-    // XXX add land parcel delete support
+      // XXX add land parcel delete support
+    }
   }
   escape() {
     if (editedXrSite) {
