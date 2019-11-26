@@ -396,6 +396,11 @@ new MutationObserver(mutationRecords => {
       const node = addedNodes[j];
       if (node.tagName === 'XR-SITE' && !node.bindState) {
         _bindXrSite(node);
+        Array.from(node.querySelectorAll('xr-iframe')).forEach(childNode => {
+          if (childNode.tagName === 'XR-IFRAME' && !childNode.bindState) {
+            _bindXrIframe(childNode);
+          }
+        });
         if (node.requestSession && !session) {
           node.requestSession().then(_setSession);
         }
@@ -407,6 +412,11 @@ new MutationObserver(mutationRecords => {
       const node = removedNodes[j];
       if (node.tagName === 'XR-SITE' && node.bindState) {
         _unbindXrSite(node);
+        Array.from(node.querySelectorAll('xr-iframe')).forEach(childNode => {
+          if (childNode.tagName === 'XR-IFRAME' && childNode.bindState) {
+            _unbindXrIframe(childNode);
+          }
+        });
       } else if (node.tagName === 'XR-IFRAME' && node.bindState) {
         _unbindXrIframe(node);
       }
