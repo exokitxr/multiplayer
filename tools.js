@@ -479,6 +479,8 @@ const _mousemove = e => {
           pixels[newPixelKeys[i]] = true;
         }
       }
+
+      // XXX add parcel remove support
     } else {
       const x = floorIntersectionPoint.x/container.scale.x;
       const y = floorIntersectionPoint.z/container.scale.z;
@@ -557,7 +559,7 @@ domElement.addEventListener('mousemove', _mousemove);
       parcelDetails.classList.remove('open');
     }
 
-    // XXX add selected parcel delete support
+    // XXX add land parcel delete support
   }
   escape() {
     if (editedXrSite) {
