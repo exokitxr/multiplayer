@@ -517,6 +517,7 @@ class XRModel extends HTMLElement {
         // console.log('load 2', url, new Error().stack);
 
         const object = await _loadModelUrl(url);
+        if (!this.bindState) return;
         const model = object.scene;
         const boundingBoxMesh = _makeBoundingBoxMesh(model);
         boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
