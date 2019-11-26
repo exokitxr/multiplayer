@@ -1660,7 +1660,8 @@ Promise.resolve().then(() => {
     addButton.addEventListener('click', () => {
       const dom = parseHtml(codeInput.value);
       const xrSite = _findNodeWithTagName(dom, 'xr-site');
-      if (xrSite) {
+      const editedEl = toolManager.getEditedElement();
+      if (xrSite && (!landConnection || editedEl)) {
         const position = localVector.copy(camera.position)
           .divide(container.scale)
           .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
@@ -2161,7 +2162,8 @@ window.document.addEventListener('drop', async e => {
         const _loadElement = (tagName, src) => {
           const dom = parseHtml(codeInput.value);
           const xrSite = _findNodeWithTagName(dom, 'xr-site');
-          if (xrSite) {
+          const editedEl = toolManager.getEditedElement();
+          if (xrSite && (!landConnection || editedEl)) {
             const position = new THREE.Vector3();
             const rect = renderer.domElement.getBoundingClientRect();
             const xFactor = (e.clientX - rect.left) / rect.width;
@@ -2183,7 +2185,6 @@ window.document.addEventListener('drop', async e => {
                   .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
               }
 
-              const editedEl = toolManager.getEditedElement();
               if (editedEl) {
                 toolManager.clampPositionToElementExtent(position, editedEl);
               }
