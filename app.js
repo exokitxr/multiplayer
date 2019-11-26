@@ -1698,7 +1698,8 @@ Promise.resolve().then(() => {
     addButton.addEventListener('click', () => {
       const dom = parseHtml(codeInput.value);
       const xrSite = _findNodeWithTagName(dom, 'xr-model');
-      if (xrSite) {
+      const editedEl = toolManager.getEditedElement();
+      if (xrSite && (!landConnection || editedEl)) {
         const position = camera.position.clone()
           .divide(container.scale)
           .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
