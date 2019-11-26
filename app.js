@@ -208,19 +208,6 @@ toolManager.addEventListener('toolchange', e => {
     control.enabled = moveSelected;
   });
 });
-/* toolManager.addEventListener('selectchange', e => {
-  const {oldEl, newEl} = e.data;
-
-  if (oldEl && oldEl.tagName === 'XR-SITE') {
-    oldEl.baseMesh.material.uniforms.uColor.value.setHex(colors.select);
-    oldEl.guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
-  }
-
-  if (newEl && newEl.tagName === 'XR-SITE') {
-    newEl.baseMesh.material.uniforms.uColor.value.setHex(colors.select3);
-    newEl.guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
-  }
-}); */
 toolManager.addEventListener('editchange', e => {
   lastParcelKey = '';
 });
