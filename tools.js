@@ -523,6 +523,9 @@ domElement.addEventListener('mousemove', _mousemove);
       position.z = Math.min(Math.max(position.z, y1), y2+1);
     }
   }
+  deselect() {
+    // XXX finish this
+  }
   delete() {
     if (selectedBoundingBoxMesh) {
       const {target} = selectedBoundingBoxMesh;
