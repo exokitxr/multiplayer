@@ -1386,7 +1386,7 @@ const _connectLand = () => {
                   }
                 }
                 const extents = [[minX*parcelSize, minZ*parcelSize, (maxX+1)*parcelSize, (maxZ+1)*parcelSize]];
-                dom.childNodes.push(parseHtml(`<xr-site name="${encodeURIComponent(parcel.name)}" extents="${THREE.Land.serializeExtents(extents)}" html="${encodeURIComponent(parcel.html)}"></xr-site>`).childNodes[0]);
+                dom.childNodes.push(parseHtml(`<xr-site name="${encodeURIComponent(parcel.name)}" extents="${THREE.Land.serializeExtents(extents)}">${parcel.html}</xr-site>`).childNodes[0]);
                 codeInput.value = serializeHtml(dom);
                 codeInput.dispatchEvent(new CustomEvent('change'));
 
