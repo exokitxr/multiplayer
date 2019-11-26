@@ -1330,7 +1330,6 @@ const _connectLand = () => {
       if (k !== lastParcelKey) {
         const [x, z] = coord;
         const requiredParcelCoords = _getRequiredParcelCoords(x, z);
-        const existingParcelCoords = requiredParcelCoords.filter(coord => _getParcelXrSite(coord));
         const missingParcelCoords = requiredParcelCoords.filter(coord => !_getParcelXrSite(coord));
         const outrangedParcels = _getAllParcelXrSites()
           .filter(xrSite => // parcels where every coord is not required
