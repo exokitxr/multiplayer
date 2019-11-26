@@ -531,8 +531,8 @@ domElement.addEventListener('mousemove', _mousemove);
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     for (let i = 0; i < extents.length; i++) {
       const [x1, y1, x2, y2] = extents[i];
-      position.x = Math.min(Math.max(position.x, x1), x2+1);
-      position.z = Math.min(Math.max(position.z, y1), y2+1);
+      position.x = Math.min(Math.max(position.x, x1), x2);
+      position.z = Math.min(Math.max(position.z, y1), y2);
     }
   }
   deselect() {
