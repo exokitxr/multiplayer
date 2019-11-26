@@ -545,8 +545,7 @@ domElement.addEventListener('mousemove', _mousemove);
       element.parentNode.removeChild(element);
       selectedBoundingBoxMesh = null;
       selectedObjectDetails.classList.remove('open');
-    }
-    if (selectedXrSite) {
+    } else if (selectedXrSite) {
       const extents = THREE.Land.parseExtents(selectedXrSite.getAttribute('extents'));
       for (let i = 0; i < extents.length; i++) {
         const extent = extents[i];
