@@ -1294,19 +1294,6 @@ const _getCurrentParcelCoords = () => {
   const [x, z] = _getCameraPosition();
   return [Math.floor(x/parcelSize), Math.floor(z/parcelSize)];
 };
-const _getParcelCoords = xrSite => {
-  const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
-  return extents.flatMap(extent => {
-    const [x1, y1, x2, y2] = extent;
-    const result = [];
-    for (let x = x1; x < x2; x += parcelSize) {
-      for (let y = y1; y < y2; y += parcelSize) {
-        result.push([x/parcelSize, y/parcelSize]);
-      }
-    }
-    return result;
-  });
-};
 const _getRequiredParcelCoords = (x, z) => [
   [x-1, z-1],
   [x-1, z],
@@ -1318,14 +1305,60 @@ const _getRequiredParcelCoords = (x, z) => [
   [x+1, z],
   [x+1, z+1],
 ];
-const _getAllParcelXrSites = () => Array.from(document.querySelectorAll('xr-site'));
-const _getParcelXrSite = coord => {
+let lastParcelKey = '';
+const _getAllParcelXrSites = dom => {
+  const result = [];
+  const _recurse = node => {
+    if (node.tagName === 'xr-site') {
+      result.push(node);
+    }
+    if (node.childNodes) {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        _recurse(node.childNodes[i]);
+      }
+    }
+  };
+  _recurse(dom);
+  return result;
+};
+const _getParcelCoords = xrSite => {
+  const extentsValue = xrSite.attrs.extents ? xrSite.attrs.extents.value : '';
+  const extents = THREE.Land.parseExtents(extentsValue);
+  return extents.flatMap(extent => {
+    const [x1, y1, x2, y2] = extent;
+    const result = [];
+    for (let x = x1; x < x2; x += parcelSize) {
+      for (let y = y1; y < y2; y += parcelSize) {
+        result.push([x/parcelSize, y/parcelSize]);
+      }
+    }
+    return result;
+  });
+};
+const _removeParcelDomNode = (dom, removeNode) => {
+  const _recurse = node => {
+    if (node.childNodes) {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        const childNode = node.childNodes[i];
+        if (childNode === removeNode) {
+          node.childNodes.splice(i, 1);
+          break;
+        } else {
+          _recurse(childNode);
+        }
+      }
+    }
+  };
+  _recurse(dom);
+};
+const _getParcelXrSite = (dom, coord) => {
+  const xrSites = _getAllParcelXrSites(dom);
   const ax = coord[0]*parcelSize;
   const ay = coord[1]*parcelSize;
-  const xrSites = Array.from(document.querySelectorAll('xr-site'));
   for (let i = 0; i < xrSites.length; i++) {
     const xrSite = xrSites[i];
-    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+    const extentsValue = xrSite.attrs.extents ? xrSite.attrs.extents.value : '';
+    const extents = THREE.Land.parseExtents(extentsValue);
     for (let j = 0; j < extents.length; j++) {
       const [x1, y1, x2, y2] = extents[j];
       for (let x = x1; x < x2; x += parcelSize) {
@@ -1339,7 +1372,6 @@ const _getParcelXrSite = coord => {
   }
   return null;
 };
-let lastParcelKey = '';
 const _connectLand = () => {
   let running = false;
   const _updateGrid = async () => {
@@ -1351,16 +1383,20 @@ const _connectLand = () => {
         const k = coord.join(':');
         if (k !== lastParcelKey) {
           const [x, z] = coord;
+          const dom = parseHtml(codeInput.value);
           const requiredParcelCoords = _getRequiredParcelCoords(x, z);
-          const missingParcelCoords = requiredParcelCoords.filter(coord => !_getParcelXrSite(coord));
-          const outrangedParcels = _getAllParcelXrSites()
+          const outrangedParcels = _getAllParcelXrSites(dom)
             .filter(xrSite => // parcels where every coord is not required
               _getParcelCoords(xrSite).every(coord => !requiredParcelCoords.some(coord2 => coord2[0] === coord[0] && coord2[1] === coord[1]))
             );
-          for (let i = 0; i < outrangedParcels.length; i++) {
-            const xrSite = outrangedParcels[i];
-            xrSite.parentNode.removeChild(xrSite);
+          if (outrangedParcels.length > 0) {
+            for (let i = 0; i < outrangedParcels.length; i++) {
+              _removeParcelDomNode(dom, outrangedParcels[i]);
+            }
+            codeInput.value = serializeHtml(dom);
+            codeInput.dispatchEvent(new CustomEvent('change'));
           }
+          const missingParcelCoords = requiredParcelCoords.filter(coord => !_getParcelXrSite(dom, coord));
           const seenCoords = {};
           await Promise.all(missingParcelCoords.map(async coord => {
             const [x, z] = coord;
@@ -1369,17 +1405,16 @@ const _connectLand = () => {
             if (res.ok) {
               let parcel = await res.json();
               if (parcel) {
-                const dom = parseHtml(codeInput.value);
                 let minX = Infinity;
                 let minZ = Infinity;
                 let maxX = -Infinity;
                 let maxZ = -Infinity;
                 for (let i = 0; i < parcel.coords.length; i++) {
+                  const coord = parcel.coords[i];
                   const k = coord.join(':');
                   if (seenCoords[k]) { // already did this coord, so bail
                     return;
                   } else {
-                    const coord = parcel.coords[i];
                     const [px, pz] = coord;
                     minX = Math.min(px, minX);
                     minZ = Math.min(pz, minZ);
