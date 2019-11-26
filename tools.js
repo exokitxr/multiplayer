@@ -5,7 +5,6 @@ import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 const {document: topDocument} = window.top;
 
 const tools = Array.from(topDocument.querySelectorAll('.tool'));
-const parcelName = topDocument.getElementById('parcel-name');
 const codeInput = topDocument.getElementById('code');
 const detailsContentTab = topDocument.getElementById('details-content-tab');
 const selectedObjectDetails = topDocument.getElementById('selected-object-details');
@@ -15,7 +14,7 @@ const unsetAvatarButton = topDocument.getElementById('unset-avatar-button');
 const settingAvatarButton = topDocument.getElementById('setting-avatar-button');
 const screenshotButton = topDocument.getElementById('screenshot-button');
 const screenshotImage = topDocument.getElementById('screenshot-image');
-const parcelDetails = topDocument.getElementById('parcel-details');
+// const parcelDetails = topDocument.getElementById('parcel-details');
 const parcelNameInput = topDocument.getElementById('parcel-name-input');
 const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const editParcelButton = topDocument.getElementById('edit-parcel-button');
@@ -60,12 +59,14 @@ const _editXrSite = xrSite => {
     }
   }
 
+  saveParcelButton.style.display = null;
   editParcelButton.style.display = 'none';
   stopEditingButton.style.display = null;
 };
 const _uneditXrSite = () => {
   editedXrSite = null;
 
+  saveParcelButton.style.display = 'none';
   editParcelButton.style.display = null;
   stopEditingButton.style.display = 'none';
 };
@@ -197,10 +198,11 @@ saveParcelButton.addEventListener('click', async () => {
       }
     }
 
+    const name = parcelNameInput.value;
     const res = await fetch(`https://grid.exokit.org/parcels${xrSite !== dirtyXrSite ? `/${coords[0][0]}/${coords[0][1]}` : ''}`, {
       method: 'POST',
       body: JSON.stringify({
-        name: parcelNameInput.value,
+        name,
         coords,
         html: '',
       }),
@@ -208,10 +210,14 @@ saveParcelButton.addEventListener('click', async () => {
     if (res.ok) {
       await res.blob();
 
+      xrSite.setAttribute('name', name);
       const color = xrSite === selectedXrSite ? colors.select3 : colors.select;
       xrSite.baseMesh && xrSite.baseMesh.material.uniforms.uColor.value.setHex(color);
       xrSite.guardianMesh && xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
 
+      if (selectedXrSite === xrSite) {
+        parcelNameInput.value = name;
+      }
       if (dirtyXrSite === xrSite) {
         dirtyXrSite = null;
       }
@@ -268,15 +274,13 @@ const _mousedown = e => {
           hoveredXrSite = null;
         }
         if (editedXrSite !== selectedXrSite) {
-          editedXrSite = null;
-          editParcelButton.style.display = null;
-          stopEditingButton.style.display = 'none';
+          _uneditXrSite();
         }
       }
 
       selectedXrSite = extentXrSite;
-      parcelName.innerText = selectedXrSite.getAttribute('name');
-      parcelDetails.classList.add('open');
+      parcelNameInput.value = selectedXrSite.getAttribute('name');
+      // parcelDetails.classList.add('open');
 
       _updateExtentXrSite();
     } else if (toolIndex === 1) {
@@ -302,10 +306,10 @@ const _mousedown = e => {
           guardianMesh.material.uniforms.uColor.value.setHex(color);
         }
 
-        parcelDetails.classList.add('open');
-      } else {
+        // parcelDetails.classList.add('open');
+      } /* else {
         parcelDetails.classList.remove('open');
-      }
+      } */
 
       if (dirtyXrSite && dirtyXrSite !== hoveredXrSite) {
         const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
@@ -323,14 +327,12 @@ const _mousedown = e => {
       }
 
       selectedXrSite = hoveredXrSite;
-      parcelName.innerText = selectedXrSite ? selectedXrSite.getAttribute('name') : '';
+      parcelNameInput.value  = selectedXrSite ? selectedXrSite.getAttribute('name') : '';
       draggedXrSite = hoveredXrSite;
       dragStartExtents = hoveredXrSite ? THREE.Land.parseExtents(hoveredXrSite.getAttribute('extents')) : [];
 
       if (editedXrSite !== selectedXrSite) {
-        editedXrSite = null;
-        editParcelButton.style.display = null;
-        stopEditingButton.style.display = 'none';
+        _uneditXrSite();
       }
     }
   }
@@ -558,8 +560,8 @@ domElement.addEventListener('mousemove', _mousemove);
         this.dispatchEvent(new MessageEvent('editchange'));
       }
       selectedXrSite = null;
-      parcelName.innerText = '';
-      parcelDetails.classList.remove('open');
+      parcelNameInput.value = '';
+      // parcelDetails.classList.remove('open');
     }
 
     // XXX add land parcel delete support

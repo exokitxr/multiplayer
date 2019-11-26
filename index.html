@@ -115,6 +115,9 @@ header:not(.main-3) .parcel-display
   height: 50px;
   border-radius: 0;
 }
+.parcel-display {
+  display: flex;
+}
 .channels-content {
   display: flex;
   position: absolute;
@@ -478,15 +481,15 @@ a:active {
 }
 .selected-object-details,
 .avatar-details,
-.parcel-details,
+/* .parcel-details, */
 .placeholder-details
 {
   display: none;
 }
 .selected-object-details.open,
 .avatar-details.open,
-.parcel-details.open,
-.selected-object-details:not(.open) + .avatar-details:not(.open) + .parcel-details:not(.open) + .placeholder-details
+/* .parcel-details.open, */
+.selected-object-details:not(.open) + .avatar-details:not(.open) /* + .parcel-details:not(.open) */ + .placeholder-details
 {
   display: block;
 }
@@ -677,7 +680,16 @@ header > .login-form.phase-3 > .phaseless-content
         </div>
 
         <div class=parcel-display>
-          <div class=parcel-name id=parcel-name></div>
+          <input type=text placeholder="channel name" id=parcel-name-input>
+          <div class=multibutton>
+            <nav class="button first last" id=save-parcel-button style="display: none">Save</nav>
+          </div>
+          <div class=multibutton>
+            <nav class="button first last" id=edit-parcel-button>Edit parcel</nav>
+          </div>
+          <div class=multibutton>
+            <nav class="button first last" id=stop-editing-button style="display: none">Stop editing</nav>
+          </div>
         </div>
 
         <form class="login-form phase-1" id=login-form>
@@ -803,8 +815,8 @@ header > .login-form.phase-3 > .phaseless-content
               <nav class="button first last" id=unset-avatar-button>Unset avatar</nav>
             </div>
           </div>
-          <div class=parcel-details id=parcel-details>
-              <input type=text placeholder="Parcel name" id=parcel-name-input>
+          <!-- <div class=parcel-details id=parcel-details>
+            <input type=text placeholder="Parcel name" id=parcel-name-input>
             <div class=multibutton>
               <nav class="button first last" id=save-parcel-button>Save parcel</nav>
             </div>
@@ -814,7 +826,7 @@ header > .login-form.phase-3 > .phaseless-content
             <div class=multibutton>
               <nav class="button first last" id=stop-editing-button style="display: none">Stop editing</nav>
             </div>
-          </div>
+          </div> -->
           <div class=placeholder-details id=placeholder-details>
             <h3>Nothing selected</h3>
           </div>
