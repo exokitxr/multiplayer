@@ -207,6 +207,11 @@ toolManager.addEventListener('toolchange', e => {
     control.visible = moveSelected;
     control.enabled = moveSelected;
   });
+  /* Array.from(document.querySelectorAll('xr-site')).forEach(xrSite => {
+    const toolName = toolManager.getSelectedToolName();
+    xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
+    xrSite.guardianMesh.visible = toolName === 'select';
+  }); */
 });
 toolManager.addEventListener('editchange', e => {
   lastParcelKey = '';
@@ -347,10 +352,14 @@ const _bindXrSite = xrSite => {
       } else {
         color = colors.select;
       }
-      xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
-      container.add(xrSite.guardianMesh);
+
+      // const toolName = toolManager.getSelectedToolName();
       xrSite.baseMesh = new THREE.Land(extents, color);
+      // xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
       container.add(xrSite.baseMesh);
+      xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
+      // xrSite.guardianMesh.visible = toolName === 'select';
+      container.add(xrSite.guardianMesh);
     }
   };
   _update();
