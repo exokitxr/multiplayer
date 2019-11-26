@@ -259,7 +259,7 @@ const _mousedown = e => {
       }
 
       selectedXrSite = extentXrSite;
-      parcelName.innerText = 'parcel';
+      parcelName.innerText = selectedXrSite.getAttribute('name');
       parcelDetails.classList.add('open');
 
       _updateExtentXrSite();
@@ -307,7 +307,7 @@ const _mousedown = e => {
       }
 
       selectedXrSite = hoveredXrSite;
-      parcelName.innerText = selectedXrSite ? 'parcel' : '';
+      parcelName.innerText = selectedXrSite ? selectedXrSite.getAttribute('name') : '';
       draggedXrSite = hoveredXrSite;
       dragStartExtents = hoveredXrSite ? THREE.Land.parseExtents(hoveredXrSite.getAttribute('extents')) : [];
 
