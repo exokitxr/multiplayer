@@ -189,7 +189,7 @@ const teleportMeshes = [
 container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
-{
+(async () => {
   const manager = new THREE.LoadingManager();
   manager.setURLModifier(u => {
     console.log('resource', u);
@@ -197,38 +197,117 @@ container.add(teleportMeshes[1]);
     if (match = u.match(/^(.+?)\/([^\/]+?\.png)$/)) {
       if (match[2] === 'PolygonNature.png') {
         match[2] = 'PolygonNature_01.png';
+      } else if (match[2] === 'FlowerPatch_02.png') {
+        match[2] = 'Misc/FlowerPatch_02.png';
+      } else if (match[2] === 'FernLeaf.png') {
+        match[2] = 'Leaves/Fern_Texture.png';
+      } else if (match[2] === 'PolygonSciFiCity_Texture_01_A.png') {
+        match[2] = 'PolygonScifi_01_A.png';
+      } else if (match[2] === 'PolygonTown_Texture_03_A_House.png') {
+        match[2] = 'PolygonTown_Texture_03_A.png';
+      } else if (match[2] === 'InteriorWallBake_baseTexBaked.png') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'PolygonCity_Road_01.png') {
+        if (/town/.test(match[1])) {
+          match[2] = 'PolygonTown_Texture_01_A.png';
+        } else {
+          match[2] = 'PolygonSciFi_Road_01.png';
+        }
+      } else if (match[2] === 'PolygonCity_Texture_01_A.png') {
+        match[2] = 'PolygonScifi_01_A.png';
+      } else if (match[2] === 'churchbase3.png') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
       }
-      // console.log('new u', [u, match[1], match[2], `${match[1]}/Textures/${match[2]}`]);
+      // console.log('new u', `${match[1]}/Textures/${match[2]}`);
       return `${match[1]}/Textures/${match[2]}`;
     } else if (match = u.match(/^(.+?)\/([^\/]+?\.psd)$/)) {
-      if (match[2] === 'PolygonScifi_Texture.psd') {
+      if (match[2] === 'PolygonScifi_Texture.psd' || match[2] === 'PolygonScifi_.psd') {
+        match[2] = 'PolygonScifi_01_A.png';
+      } else if (match[2] === 'Sky.psd') {
+        match[2] = 'SimpleSky.png';
+      } else if (match[2] === 'Building_Window_Emissive.psd') {
+        match[2] = 'PolygonScifi_Background_Building_Emissive.png';
+      } else if (match[2] === 'BillboardsGraffiti_01.psd') {
+        match[2] = 'Billboards.png';
+      } else if (match[2] === 'Signs_Emission.psd') {
+        match[2] = 'Signs.png';
+      } else if (match[2] === 'Neon_Animation.psd') {
+        match[2] = 'NeonSigns.png';
+      } else if (match[2] === 'PolygonScifi_Texture_Mike.psd') {
         match[2] = 'PolygonScifi_01_A.png';
       } else if (match[2] === 'Dungeons_Texture.psd') {
-        match[2] = 'Dungeons_Texture_01.png';
+        if (/scifi/.test(match[1])) {
+          match[2] = 'PolygonScifi_01_A.png';
+        } else {
+          match[2] = 'Dungeons_Texture_01.png';
+        }
+      } else if (match[2] === 'PolygonTown_Texture_01_Mike.psd') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'PolygonWestern_Texture.psd') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'PolygonTown_Texture_01_A.psd') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'Windows.psd') {
+        match[2] = 'PolygonTown_Window_01.png';
+      } else if (match[2] === 'PolygonTown_Texture_01_Andrew.psd') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'PolygonWar_Texture.psd') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'noraml.psd') {
+        match[2] = 'PolygonTown_Texture_Normal_A.png';
       }
-      // console.log('new u', [u, match[1], match[2], `${match[1]}/Textures/${match[2]}`]);
+      console.log('new u', `${match[1]}/Textures/${match[2]}`);
       return `${match[1]}/Textures/${match[2]}`;
     } else {
       return u;
     }
   });
-  const loader = new THREE.FBXLoader(manager);
-  // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/nature/SM_Plant_01.fbx`, object => {
-  // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/scifi/SM_Prop_Crate_01.fbx`, object => {
-  // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/dungeon/SM_Env_Mushroom_Giant_01.fbx`, object => {
-  loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/town/SM_Bld_House_Preset_01.fbx`, object => {
+  manager.onError = err => {
+    console.warn(err);
+    debugger;
+  };
+  let objects = [];
+
+  const startI = 0;
+  for (let i = 0; (startI + i) < itemModels.length; i++) {
+    const itemModel = itemModels[startI + i];
+    const loader = new THREE.FBXLoader(manager);
+    // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/nature/SM_Plant_01.fbx`, object => {
+    // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/scifi/SM_Prop_Crate_01.fbx`, object => {
+    // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/dungeon/SM_Env_Mushroom_Giant_01.fbx`, object => {
+    const object = await new Promise((accept, reject) => {
+      loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/${itemModel}`, accept, progress => {}, reject);
+    });
     console.log('got model', object);
     object.traverse(o => {
       if (o.isMesh && !Array.isArray(o.material)) {
+        if (!o.material.map) {
+          console.log('missing material texture', o.material);
+          /* const img = new Image();
+          img.crossOrigin = true;
+          img.src = `https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/nature/Textures/PolygonNature_01.png`;
+          o.material.map = new THREE.Texture(img);
+          img.onload = () => {
+            o.material.map.needsUpdate = true;
+          }; */
+        }
         o.material = new THREE.MeshPhongMaterial({
           map: o.material.map,
         });
       }
     });
-    object.scale.multiplyScalar(0.01);
+    object.position.x = (i%10)*2;
+    // object.scale.multiplyScalar(0.01);
+    object.scale.multiplyScalar(0.1);
     scene.add(object);
-  });
-}
+    objects.push(object);
+
+    while (objects.length > 10) {
+      const object = objects.shift();
+      scene.remove(object);
+    }
+  }
+})();
 
 const toolManager = new ToolManager({
   domElement: renderer.domElement,
