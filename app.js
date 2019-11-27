@@ -1799,6 +1799,27 @@ const _sendAllPeerConnections = s => {
   }
 };
 
+const chatChannels = [];
+class XRChat extends HTMLElement {
+  constructor() {
+
+  }
+  connectedCallback() {
+
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+
+  }
+  static get observedAttributes() {
+    return [
+      'provider',
+      'token',
+      'channel',
+    ];
+  }
+}
+customElements.define('xr-chat', XRChat);
+
 const discordToken = '';
 const _discordSendMessage = text => {
   channelConnection.send(JSON.stringify({
