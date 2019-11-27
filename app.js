@@ -15,6 +15,7 @@ import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import {parcelSize, colors} from './constants.js';
 import {ToolManager} from './tools.js';
+import itemModels from 'https://item-models.exokit.org/item-models.js';
 
 const {document: topDocument} = window.top;
 
