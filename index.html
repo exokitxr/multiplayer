@@ -32,10 +32,48 @@ header {
   user-select: none;
   z-index: 1;
 }
-header .icon {
+.main-selector {
+  outline: none;
+}
+.main-selector:hover .target,
+.main-selector .options .option:hover
+{
+  background-color: #42a5f5;
+  color: #FFF;
+}
+.main-selector:active .target,
+.main-selector.open .target,
+.main-selector .options .option:active,
+.main-selector .options .option.open
+{
+  background-color: #1e88e5;
+  color: #FFF;
+}
+.main-selector:hover .target .icon,
+.main-selector.open .target .icon
+{
+  filter: invert(1);
+}
+.main-selector .target .icon {
   width: 50px;
   height: 50px;
   margin: 0 20px;
+}
+.main-selector .options {
+  display: flex;
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 300px;
+  background-color: #FFF;
+  color: #000;
+  flex-direction: column;
+}
+.main-selector .options .option {
+  padding: 15px;
+}
+.main-selector:not(.open) .options {
+  display: none;
 }
 header nav {
   display: flex;
@@ -63,6 +101,11 @@ header nav:not(.selected):not([disabled]):hover {
 header nav:not(.selected):hover span {
   background-color: #EEE;
 }
+header:not(.main-2) .channel-select,
+header:not(.main-3) .parcel-display
+{
+  display: none;
+}
 .channel-select {
   display: flex;
   position: relative;
@@ -71,6 +114,9 @@ header nav:not(.selected):hover span {
 .channel-select input[type=text] {
   height: 50px;
   border-radius: 0;
+}
+.parcel-display {
+  display: flex;
 }
 .channels-content {
   display: flex;
@@ -160,8 +206,9 @@ h1, h2, h3, h4, h5, h6, p {
 }
 canvas {
   width: 100% !important;
-  height: 100vh !important;
+  height: 100% !important;
   background-color: #f8f8f8;
+  outline: none;
 }
 a {
   color: #AAA;
@@ -172,6 +219,31 @@ a:hover {
 }
 a:active {
   color: #1976d2;
+}
+.tools {
+  display: flex;
+  position: absolute;
+  top: 60px;
+  left: 10px;
+}
+.tools > .tool {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  justify-content: center;
+  align-items: center;
+  background-color: #EEE;
+  font-size: 16px;
+  /* color: #000; */
+  cursor: pointer;
+}
+.tools > .tool:hover {
+  background-color: #42a5f5;
+  color: #FFF;
+}
+.tools > .tool:active, .tools > .tool.open {
+  background-color: #1e88e5;
+  color: #FFF;
 }
 .chat {
   position: absolute;
@@ -200,6 +272,19 @@ a:active {
 }
 .chat > .input:not(.open) {
   visibility: hidden;
+}
+.save-dialog {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 50px;
+  left: 0;
+  width: 300px;
+  padding: 30px;
+  background-color: #FFF;
+}
+.save-dialog:not(.open) {
+  display: none;
 }
 .iframe-buttons {
   position: absolute;
@@ -324,13 +409,15 @@ a:active {
   display: none;
 }
 .site-urls-content,
-.avatar-models-content
+.avatar-models-content,
+.inventory-content
 {
   display: flex;
   flex-direction: column;
 }
 .site-urls-content .a-site,
-.avatar-models-content .a-avatar
+.avatar-models-content .a-avatar,
+.inventory-content .a-file
 {
   display: flex;
   position: relative;
@@ -343,11 +430,16 @@ a:active {
   background-color: #EEE;
 } */
 .site-urls-content .a-site img,
-.avatar-models-content .a-avatar img
+.avatar-models-content .a-avatar img,
+.inventory-content .a-file i
 {
+  display: flex;
   width: 80px;
   height: 80px;
   margin-right: 10px;
+  font-size: 50px;
+  justify-content: center;
+  align-items: center;
 }
 .site-urls-content .a-site .wrap {
   display: flex;
@@ -362,7 +454,8 @@ a:active {
   overflow: hidden;
 }
 .site-urls-content .a-site .overlay,
-.avatar-models-content .a-avatar .overlay
+.avatar-models-content .a-avatar .overlay,
+.inventory-content .a-file .overlay
 {
   display: none;
   position: absolute;
@@ -381,19 +474,22 @@ a:active {
   align-items: center;
 }
 .site-urls-content .a-site:hover .overlay,
-.avatar-models-content .a-avatar:hover .overlay
+.avatar-models-content .a-avatar:hover .overlay,
+.inventory-content .a-file:hover .overlay
 {
   display: flex;
 }
 .selected-object-details,
 .avatar-details,
+/* .parcel-details, */
 .placeholder-details
 {
   display: none;
 }
 .selected-object-details.open,
 .avatar-details.open,
-.selected-object-details:not(.open) + .avatar-details:not(.open) + .placeholder-details
+/* .parcel-details.open, */
+.selected-object-details:not(.open) + .avatar-details:not(.open) /* + .parcel-details:not(.open) */ + .placeholder-details
 {
   display: block;
 }
@@ -561,9 +657,18 @@ header > .login-form.phase-3 > .phaseless-content
   </head>
   <body>
     <div class=body>
-      <header>
-        <img src="logo.svg" class="icon">
-        <!-- <nav class=selected><span>Multiplayer</span></nav> -->
+      <header class="header main-1" id=header>
+        <div class=main-selector tabindex=-1 id=main-selector>
+          <nav class=target>
+            <img src="logo.svg" class="icon">
+            <i class="fas fa-chevron-down"></i>
+          </nav>
+          <div class=options>
+            <nav class="option open">Home</nav>
+            <nav class=option>Multiplayer</nav>
+            <nav class=option>Land</nav>
+          </div>
+        </div>
 
         <div class=channel-select>
           <div class=channels-content id=channels-content style="display: none"></div>
@@ -571,6 +676,19 @@ header > .login-form.phase-3 > .phaseless-content
           <div class=multibutton>
             <nav class="button first last" disabled id=connect-button>Create</nav>
             <nav class="button first last" id=disconnect-button style="display: none">Disconnect</nav>
+          </div>
+        </div>
+
+        <div class=parcel-display>
+          <input type=text placeholder="parcel name" id=parcel-name-input>
+          <div class=multibutton>
+            <nav class="button first last" id=save-parcel-button style="display: none">Save</nav>
+          </div>
+          <div class=multibutton>
+            <nav class="button first last" id=edit-parcel-button>Edit parcel</nav>
+          </div>
+          <div class=multibutton>
+            <nav class="button first last" id=stop-editing-button style="display: none">Stop editing</nav>
           </div>
         </div>
 
@@ -592,8 +710,6 @@ header > .login-form.phase-3 > .phaseless-content
               <img src="exobot.png">
               <span class=name id=login-email-static>a@modules.io</span>
             </button>
-            <input type=button value="Load avatar" class="button highlight" id=load-avater>
-            <input type=button value="Save avatar" class="button highlight" id=save-avater>
             <input type=submit value="Log out" class="button highlight">
           </div>
           <div class="phase-content phaseless-content">
@@ -603,10 +719,20 @@ header > .login-form.phase-3 > .phaseless-content
       </header>
 
       <div class=iframe-wrapper id=iframe-wrapper></div>
+      <div class=tools>
+        <nav class="tool open"><i class="fal fa-video"></i></nav>
+        <nav class=tool><i class="fal fa-mouse-pointer"></i></nav>
+        <nav class=tool><i class="fal fa-arrows"></i></nav>
+        <nav class=tool><i class="fal fa-vector-square"></i></nav>
+      </div>
       <div class=chat>
         <div class=messages id=chat-messages></div>
         <input type=text class=input id=chat-input>
       </div>
+      <form class=save-dialog id=save-dialog>
+        <input type=text placeholder="Enter file name..." id=save-name-input>
+        <input type=submit value="Save">
+      </form>
       <div class="iframe-buttons multibutton">
         <a class="button first" id="enable-mic-button">Enable Mic</a>
         <a class="button first" id="disable-mic-button" disabled style="display: none;">Disable Mic</a>
@@ -627,7 +753,7 @@ header > .login-form.phase-3 > .phaseless-content
             <i class="fas fa-hood-cloak"></i>
           </nav>
           <nav class=content-tab>
-            <div class=sub>Places</div>
+            <div class=sub>Prefabs</div>
             <i class="fas fa-building"></i>
           </nav>
           <nav class=content-tab>
@@ -649,9 +775,9 @@ header > .login-form.phase-3 > .phaseless-content
         </div>
         <div class="content site-urls-content open" id=site-urls-content></div>
         <div class="content avatar-models-content" id=avatar-models-content></div>
-        <div class="content"></div>
-        <div class="content"></div>
-        <div class="content">
+        <div class="content prefabs-conent"></div>
+        <div class="content inventory-content" id=inventory-content></div>
+        <div class="content code-content">
           <textarea class=code id=code spellcheck=false></textarea>
           <div class=code-buttons>
             <div class=multibutton>
@@ -666,6 +792,10 @@ header > .login-form.phase-3 > .phaseless-content
           <label class=switch-wrap id=reality-layers-switch-wrap>
             <div class=switch id=reality-layers-switch></div>
             Reality layers
+          </label>
+          <label class=switch-wrap id=mirror-mesh-switch-wrap>
+            <div class=switch id=mirror-mesh-switch></div>
+            Mirror enabled
           </label>
         </div>
         <div class="content details-content">
@@ -685,6 +815,18 @@ header > .login-form.phase-3 > .phaseless-content
               <nav class="button first last" id=unset-avatar-button>Unset avatar</nav>
             </div>
           </div>
+          <!-- <div class=parcel-details id=parcel-details>
+            <input type=text placeholder="Parcel name" id=parcel-name-input>
+            <div class=multibutton>
+              <nav class="button first last" id=save-parcel-button>Save parcel</nav>
+            </div>
+            <div class=multibutton>
+              <nav class="button first last" id=edit-parcel-button>Edit parcel</nav>
+            </div>
+            <div class=multibutton>
+              <nav class="button first last" id=stop-editing-button style="display: none">Stop editing</nav>
+            </div>
+          </div> -->
           <div class=placeholder-details id=placeholder-details>
             <h3>Nothing selected</h3>
           </div>
@@ -757,7 +899,6 @@ avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
   </nav>`;
 }).join('\n');
 
-const channelsContent = document.getElementById('channels-content');
 const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
 realityLayersSwitchWrap.addEventListener('click', async () => {
   realityLayersSwitchWrap.classList.toggle('on');
@@ -779,6 +920,7 @@ window.document.addEventListener('dragover', e => {
 });
 
 let xrEngine = null;
+const channelsContent = document.getElementById('channels-content');
 (async () => {
   const channels = await channelsPromise;
   channelsContent.innerHTML = channels.map(channel => {
@@ -825,240 +967,6 @@ let xrEngine = null;
 
     xrEngine.addEventListener('canvas', e => {
       // const canvas = e.data;
-
-      [
-        'set-avatar-button',
-        'unset-avatar-button',
-        'screenshot-button',
-        'firstperson-button',
-        'thirdperson-button',
-        'enter-xr-button',
-        'enable-mic-button',
-        'disable-mic-button',
-        'connect-button',
-        'disconnect-button',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el.addEventListener('click', () => {
-          el2.dispatchEvent(new MouseEvent('click'));
-        });
-      });
-
-      [
-        'channel-input',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el.addEventListener('input', e => {
-          el2.value = el.value;
-          el2.dispatchEvent(new CustomEvent('input'));
-        });
-        el.addEventListener('focus', e => {
-          el2.dispatchEvent(new CustomEvent('focus'));
-        });
-        el.addEventListener('blur', e => {
-          el2.dispatchEvent(new CustomEvent('blur'));
-        });
-        el2.addEventListener('change', () => {
-          el.value = el2.value;
-        });
-      });
-
-      [
-        'code',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el.value = el2.value;
-        el.addEventListener('change', () => {
-          el2.value = el.value;
-          el2.dispatchEvent(new CustomEvent('change'));
-        });
-        el2.addEventListener('change', () => {
-          el.value = el2.value;
-        });
-        el2.addEventListener('input', () => {
-          el.value = el2.value;
-        });
-      });
-
-      [
-        'upload-file-button',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el.addEventListener('change', e => {
-          el2.dispatchEvent(new CustomEvent('change'));
-        });
-      });
-
-      [
-        'site-urls-content',
-        'avatar-models-content',
-        'channels-content',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el2.innerHTML = el.innerHTML;
-      });
-      [
-        'connect-button',
-        'disconnect-button',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-
-        new MutationObserver(() => {
-          el.setAttribute('style', el2.getAttribute('style'));
-          const disabled = el2.getAttribute('disabled');
-          if (disabled !== null) {
-            el.setAttribute('disabled', disabled);
-          } else {
-            el.removeAttribute('disabled');
-          }
-          el.innerText = el2.innerText;
-        }).observe(el2, {
-          attributes: true,
-          childList: true,
-        });
-      });
-      [
-        'site-urls-content',
-      ].forEach(id => {
-        const container = document.getElementById(id);
-        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-
-        {
-          const className = '.a-site';
-          const els = Array.from(container.querySelectorAll(className));
-          const els2 = Array.from(container2.querySelectorAll(className));
-          els.forEach((el, i) => {
-            const el2 = els2[i];
-            el.addEventListener('dragstart', e => {
-              const {dataTransfer} = e;
-              el2.dispatchEvent(new DragEvent('dragstart', {
-                dataTransfer,
-              }));
-            });
-          });
-        }
-
-        {
-          const className = '.add-button';
-          const els = Array.from(container.querySelectorAll(className));
-          const els2 = Array.from(container2.querySelectorAll(className));
-          els.forEach((el, i) => {
-            const el2 = els2[i];
-            el.addEventListener('click', () => {
-              el2.dispatchEvent(new CustomEvent('click'));
-            });
-          });
-        }
-      });
-      [
-        'avatar-models-content',
-      ].forEach(id => {
-        const container = document.getElementById(id);
-        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-
-        {
-          const className = '.a-avatar';
-          const els = Array.from(container.querySelectorAll(className));
-          const els2 = Array.from(container2.querySelectorAll(className));
-          els.forEach((el, i) => {
-            const el2 = els2[i];
-            el.addEventListener('dragstart', e => {
-              const {dataTransfer} = e;
-              el2.dispatchEvent(new DragEvent('dragstart', {
-                dataTransfer,
-              }));
-            });
-          });
-        }
-
-        [
-          'add-button',
-          'wear-button',
-        ].forEach(b => {
-          const className = `.${b}`;
-          const els = Array.from(container.querySelectorAll(className));
-          const els2 = Array.from(container2.querySelectorAll(className));
-          els.forEach((el, i) => {
-            const el2 = els2[i];
-            el.addEventListener('click', () => {
-              el2.dispatchEvent(new CustomEvent('click'));
-            });
-          });
-        });
-      });
-      [
-        'channels-content',
-      ].forEach(id => {
-        const container = document.getElementById(id);
-        const container2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-
-        const _bindChannels = () => {
-          const className = '.a-channel';
-          const els = Array.from(container.querySelectorAll(className));
-          const els2 = Array.from(container2.querySelectorAll(className));
-          els.forEach((el, i) => {
-            const el2 = els2[i];
-            el.addEventListener('mousedown', e => {
-              el2.dispatchEvent(new CustomEvent('mousedown'));
-            });
-          });
-        };
-        _bindChannels();
-
-        new MutationObserver(() => {
-          container.setAttribute('style', container2.getAttribute('style'));
-          container.innerHTML = container2.innerHTML;
-
-          _bindChannels();
-        }).observe(container2, {
-          attributes: true,
-          childList: true,
-          subtree: true,
-        });
-      });
-
-      [
-        'chat-messages',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-
-        new MutationObserver(() => {
-          el.innerHTML = el2.innerHTML;
-        }).observe(el2, {
-          childList: true,
-          subtree: true,
-        });
-      });
-      [
-        'chat-input',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-
-        el.addEventListener('input', () => {
-          el2.value = el.value;
-          el2.dispatchEvent(new CustomEvent('input'));
-        });
-        el2.addEventListener('change', () => {
-          el.value = el2.value;
-        });
-
-        new MutationObserver(() => {
-          el.setAttribute('class', el2.getAttribute('class'));
-          if (el.classList.contains('open')) {
-            el.focus();
-          }
-        }).observe(el2, {
-          attributes: true,
-        });
-      });
 
       [
         'enable-mic-button',

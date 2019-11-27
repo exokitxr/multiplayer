@@ -1,7 +1,9 @@
 import './three.js';
+import './BufferGeometryUtils.js';
 import './OrbitControls.js';
 import './TransformControls.js';
 import './Reflector.js';
+import './land.js';
 import './bmfont.js';
 
 import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
@@ -11,16 +13,14 @@ import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import Avatar from 'https://avatars.exokit.org/avatars.js';
 import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
-import screenshot from 'https://screenshots.exokit.org/screenshot.js';
+import {parcelSize, colors} from './constants.js';
+import {ToolManager} from './tools.js';
+
+const {document: topDocument} = window.top;
 
 const peerPoseUpdateRate = 50;
-const walkSpeed = 0.025;
+const walkSpeed = 0.0015;
 const floorPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0));
-const colors = {
-  normal: 0x808080,
-  highlight: 0xAAAAAA,
-  select: 0x42a5f5,
-};
 
 const localVector = new THREE.Vector3();
 const localVector2 = new THREE.Vector3();
@@ -34,6 +34,7 @@ const localMatrix = new THREE.Matrix4();
 const localEuler = new THREE.Euler();
 const localRay = new THREE.Ray();
 const localRaycaster = new THREE.Raycaster();
+const localColor = new THREE.Color();
 
 const z180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 
@@ -57,35 +58,7 @@ scene.add(directionalLight);
 const gridHelper = new THREE.GridHelper(10, 10);
 container.add(gridHelper);
 
-const cubeGeometry = new THREE.ConeBufferGeometry(0.05, 0.2, 3)
-  .applyMatrix(new THREE.Matrix4().makeTranslation(0, 0.2/2, 0.05/2))
-  .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, -1))
-  ))
-  .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI*0.0375)
-  ));
-const materials ={};
-const _getCubeMaterial = color => {
-  let material = materials[color];
-  if (!material) {
-    material = new THREE.MeshPhongMaterial({
-      color,
-      flatShading: true,
-    });
-    materials[color] = material;
-  }
-  return material;
-}
-const _makeCubeMesh = (color = 0x0000FF) => {
-  const mesh = new THREE.Mesh(cubeGeometry, _getCubeMaterial(color));
-  mesh.frustumCulled = false;
-  if (color === 0x008000 || color === 0x808000) {
-    // mesh.add(new THREE.AxesHelper());
-  }
-  return mesh;
-};
-const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
+/* const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   // create a geometry of packed bitmap glyphs,
   // word wrapped to 300px and right-aligned
   var geometry = createTextGeometry({
@@ -124,9 +97,9 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
     }
   };
   return mesh;
-};
+}; */
 
-/* const mirrorMesh = (() => {
+const mirrorMesh = (() => {
   const mirrorWidth = 3;
   const mirrorHeight = 2;
   const geometry = new THREE.PlaneBufferGeometry(mirrorWidth, mirrorHeight)
@@ -163,10 +136,16 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
 
   return mesh;
 })();
-container.add(mirrorMesh); */
+container.add(mirrorMesh);
+const mirrorMeshSwitchWrap = topDocument.getElementById('mirror-mesh-switch-wrap');
+if (localStorage.getItem('mirrorMesh')) {
+  mirrorMesh.visible = true;
+  mirrorMeshSwitchWrap.classList.add('on');
+} else {
+  mirrorMesh.visible = false;
+}
 
 const renderer = new THREE.WebGLRenderer({
-  // canvas: document.getElementById('canvas'),
   // alpha: true,
   antialias: true,
 });
@@ -174,10 +153,11 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.sortObjects = false;
-document.getElementById('iframe-wrapper').appendChild(renderer.domElement);
+const iframeWrapper = document.getElementById('iframe-wrapper');
+iframeWrapper.appendChild(renderer.domElement);
 renderer.domElement.addEventListener('mousedown', e => {
-  if (document.activeElement) {
-    document.activeElement.blur();
+  if (topDocument.activeElement) {
+    topDocument.activeElement.blur();
   }
 });
 
@@ -208,20 +188,53 @@ const teleportMeshes = [
 container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
+const toolManager = new ToolManager({
+  domElement: renderer.domElement,
+  camera,
+  container,
+});
+toolManager.addEventListener('toolchange', e => {
+  const toolName = e.data;
+  const cameraSelected = toolName === 'camera';
+  const selectSelected = toolName === 'select';
+  const moveSelected = toolName === 'move';
+
+  orbitControls.enabled = cameraSelected;
+
+  Array.from(document.querySelectorAll('xr-iframe')).concat(Array.from(document.querySelectorAll('xr-model'))).forEach(xrNode => {
+    const {bindState: {model: {boundingBoxMesh}, control}} = xrNode;
+    boundingBoxMesh.visible = selectSelected;
+    control.visible = moveSelected;
+    control.enabled = moveSelected;
+  });
+  /* Array.from(document.querySelectorAll('xr-site')).forEach(xrSite => {
+    const toolName = toolManager.getSelectedToolName();
+    xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
+    xrSite.guardianMesh.visible = toolName === 'select';
+  }); */
+});
+toolManager.addEventListener('editchange', e => {
+  lastParcelKey = '';
+});
+
 const _bindXrIframe = xrIframe => {
   const model = new THREE.Object3D();
   container.add(model);
 
   const boundingBox = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1));
-  model.boundingBoxMesh = _makeBoundingBoxMesh(model, boundingBox);
+  const boundingBoxMesh = _makeBoundingBoxMesh(model, boundingBox);
+  boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
+  model.boundingBoxMesh = boundingBoxMesh;
   model.add(model.boundingBoxMesh);
   model.element = xrIframe;
 
   const control = new THREE.TransformControls(camera, renderer.domElement);
   control.setMode(transformMode);
   control.size = 3;
+  control.visible = toolManager.getSelectedToolName() === 'move';
+  control.enabled = control.visible;
   control.addEventListener('dragging-changed', e => {
-    orbitControls.enabled = !e.value;
+    orbitControls.enabled = !e.value && toolManager.getSelectedToolName() === 'camera';
   });
   control.addEventListener('mouseEnter', () => {
     control.draggable = true;
@@ -229,8 +242,8 @@ const _bindXrIframe = xrIframe => {
   control.addEventListener('mouseLeave', () => {
     control.draggable = false;
   });
-  scene.add(control);
   control.attach(model);
+  scene.add(control);
 
   const observer = new MutationObserver(mutationRecords => {
     for (let i = 0; i < mutationRecords.length; i++) {
@@ -299,6 +312,11 @@ const _bindXrIframe = xrIframe => {
   });
 
   control.addEventListener('change', e => {
+    const editedEl = toolManager.getEditedElement();
+    if (editedEl) {
+      toolManager.clampPositionToElementExtent(control.object.position, editedEl);
+    }
+
     xrIframe.position = control.object.position.toArray();
     xrIframe.orientation = control.object.quaternion.toArray();
     xrIframe.scale = control.object.scale.toArray();
@@ -313,26 +331,94 @@ const _unbindXrIframe = xrIframe => {
 
   xrIframe.bindState = null;
 };
+const _bindXrSite = xrSite => {
+  const _update = () => {
+    if (xrSite.guardianMesh) {
+      container.remove(xrSite.guardianMesh);
+      xrSite.guardianMesh = null;
+    }
+    if (xrSite.baseMesh) {
+      container.remove(xrSite.baseMesh);
+      xrSite.baseMesh = null;
+    }
+
+    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+    if (extents.length > 0) {
+      let color;
+      if (toolManager.getDirtyElement() === xrSite) {
+        color = colors.select4;
+      } else if (toolManager.getSelectedElement() === xrSite) {
+        color = colors.select3;
+      } else {
+        color = colors.select;
+      }
+
+      // const toolName = toolManager.getSelectedToolName();
+      xrSite.baseMesh = new THREE.Land(extents, color);
+      // xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
+      container.add(xrSite.baseMesh);
+      xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
+      // xrSite.guardianMesh.visible = toolName === 'select';
+      container.add(xrSite.guardianMesh);
+    }
+  };
+  _update();
+  const observer = new MutationObserver(_update);
+  observer.observe(xrSite, {
+    attributes: true,
+    attributeFilter: [
+      'extents',
+    ],
+  });
+  xrSite.bindState = {
+    observer,
+  };
+};
+const _unbindXrSite = xrSite => {
+  container.remove(xrSite.guardianMesh);
+  xrSite.guardianMesh = null;
+  container.remove(xrSite.baseMesh);
+  xrSite.baseMesh = null;
+
+  const {observer} = xrSite.bindState;
+  observer.disconnect();
+  xrSite.bindState = null;
+};
 new MutationObserver(mutationRecords => {
   for (let i = 0; i < mutationRecords.length; i++) {
     const {addedNodes, removedNodes} = mutationRecords[i];
 
     for (let j = 0; j < addedNodes.length; j++) {
       const node = addedNodes[j];
-      if (node.tagName === 'XR-SITE' && node.requestSession && !session) {
-        node.requestSession().then(_setSession);
+      if (node.tagName === 'XR-SITE' && !node.bindState) {
+        _bindXrSite(node);
+        Array.from(node.querySelectorAll('xr-iframe')).forEach(childNode => {
+          if (childNode.tagName === 'XR-IFRAME' && !childNode.bindState) {
+            _bindXrIframe(childNode);
+          }
+        });
+        if (node.requestSession && !session) {
+          node.requestSession().then(_setSession);
+        }
       } else if (node.tagName === 'XR-IFRAME' && !node.bindState) {
         _bindXrIframe(node);
       }
     }
     for (let j = 0; j < removedNodes.length; j++) {
       const node = removedNodes[j];
-      if (node.tagName === 'XR-IFRAME' && node.bindState) {
+      if (node.tagName === 'XR-SITE' && node.bindState) {
+        _unbindXrSite(node);
+        Array.from(node.querySelectorAll('xr-iframe')).forEach(childNode => {
+          if (childNode.tagName === 'XR-IFRAME' && childNode.bindState) {
+            _unbindXrIframe(childNode);
+          }
+        });
+      } else if (node.tagName === 'XR-IFRAME' && node.bindState) {
         _unbindXrIframe(node);
       }
     }
   }
-}).observe(window.document, {
+}).observe(document, {
   childList: true,
   subtree: true,
 });
@@ -427,8 +513,11 @@ class XRModel extends HTMLElement {
         // console.log('load 2', url, new Error().stack);
 
         const object = await _loadModelUrl(url);
+        if (!this.bindState) return;
         const model = object.scene;
-        model.boundingBoxMesh = _makeBoundingBoxMesh(model);
+        const boundingBoxMesh = _makeBoundingBoxMesh(model);
+        boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
+        model.boundingBoxMesh = boundingBoxMesh;
         model.add(model.boundingBoxMesh);
         model.element = this;
         model.position.fromArray(this.position);
@@ -481,13 +570,16 @@ class XRModel extends HTMLElement {
     console.log('connected', this, this.getAttribute('src'), this.getAttribute('orientation'), this.getAttribute('scale'));
 
     const model = new THREE.Object3D();
+    model.boundingBoxMesh = _makeBoundingBoxMesh(model);
     container.add(model);
 
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
     control.size = 3;
+    control.visible = toolManager.getSelectedToolName() === 'move';
+    control.enabled = control.visible;
     control.addEventListener('dragging-changed', e => {
-      orbitControls.enabled = !e.value;
+      orbitControls.enabled = !e.value && toolManager.getSelectedToolName() === 'camera';
     });
     control.addEventListener('mouseEnter', () => {
       control.draggable = true;
@@ -495,8 +587,8 @@ class XRModel extends HTMLElement {
     control.addEventListener('mouseLeave', () => {
       control.draggable = false;
     });
-    scene.add(control);
     control.attach(model);
+    scene.add(control);
     this.control = control;
 
     this.bindState = {
@@ -510,6 +602,11 @@ class XRModel extends HTMLElement {
     this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
 
     control.addEventListener('change', e => {
+      const editedEl = toolManager.getEditedElement();
+      if (editedEl) {
+        toolManager.clampPositionToElementExtent(control.object.position, editedEl);
+      }
+
       this.position = control.object.position.toArray();
       this.orientation = control.object.quaternion.toArray();
       this.scale = control.object.scale.toArray();
@@ -590,6 +687,16 @@ const _getHeightFactor = rigHeight => rigHeight / userHeight;
 let rig = null;
 let modelUrl = '';
 let heightFactor = 0;
+const _updateXrIframeMatrices = () => {
+  container.updateMatrix();
+  const xrIframes = document.querySelectorAll('xr-iframe');
+  const numXrIframes = xrIframes.length;
+  for (let i = 0; i < numXrIframes; i++) {
+    const xrIframe = xrIframes[i];
+    container.matrix.toArray(xrIframe.parentXrOffset.matrix);
+    xrIframe.parentXrOffset.flagUpdate();
+  }
+};
 const _setLocalModel = newModel => {
   if (rig) {
     container.remove(rig.model);
@@ -611,6 +718,7 @@ const _setLocalModel = newModel => {
   heightFactor = _getHeightFactor(rig.height);
 
   container.scale.set(1, 1, 1).divideScalar(heightFactor);
+  _updateXrIframeMatrices();
 };
 
 const lastPresseds = [false, false];
@@ -624,7 +732,20 @@ const dateOffset = Math.floor(Math.random() * 60 * 1000);
 const realDateNow = (now => () => dateOffset + now())(Date.now);
 let fakeXrDisplay = null;
 let possessRig = false;
+let lastTimestamp = Date.now();
 function animate(timestamp, frame, referenceSpace) {
+  const now = Date.now();
+  const timeDiff = now - lastTimestamp;
+
+  const editedEl = toolManager.getEditedElement();
+  if (editedEl && editedEl.tagName === 'XR-SITE') {
+    const {baseMesh, guardianMesh} = editedEl;
+    const f = 1 + Math.pow(1 - (now % 1000) / 1000, 2);
+    const c = localColor.setHex(colors.select3).multiplyScalar(f);
+    baseMesh.material.uniforms.uColor.value.copy(c);
+    guardianMesh.material.uniforms.uColor.value.copy(c);
+  }
+
   if (rig) {
     if (possessRig) {
       const vrCameras = renderer.vr.getCamera(camera).cameras;
@@ -646,7 +767,7 @@ function animate(timestamp, frame, referenceSpace) {
         if (inputSource && (pose = frame.getPose(inputSource.gripSpace, referenceSpace)) && (gamepad = inputSource.gamepad || gamepads[i])) {
           const {transform} = pose;
           const {position, orientation, matrix} = transform;
-          if (position) { // new WebXR api
+          if (position) {
             const rawP = localVector.copy(position);
             const p = localVector2.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
             const q = localQuaternion.copy(orientation);
@@ -677,42 +798,6 @@ function animate(timestamp, frame, referenceSpace) {
               b,
               lastB,
             };
-          /* } else if (matrix) { // old WebXR api
-            const rawP = localVector;
-            const p = localVector2;
-            const q = localQuaternion;
-            const s = localVector3;
-            localMatrix
-              .fromArray(transform.matrix)
-              .decompose(rawP, q, s);
-            p.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
-            const pressed = gamepad.buttons[0].pressed;
-            const lastPressed = lastPresseds[i];
-            const pointer = gamepad.buttons[0].value;
-            const grip = gamepad.buttons[1].value;
-            const pad = gamepad.axes[1] <= -0.5 || gamepad.axes[3] <= -0.5;
-            const padX = gamepad.axes[0] !== 0 ? gamepad.axes[0] : gamepad.axes[2];
-            const padY = gamepad.axes[1] !== 0 ? gamepad.axes[1] : gamepad.axes[3];
-            const stick = !!gamepad.buttons[3] && gamepad.buttons[3].pressed;
-            const a = !!gamepad.buttons[4] && gamepad.buttons[4].pressed;
-            const b = !!gamepad.buttons[5] && gamepad.buttons[5].pressed;
-            const lastB = lastBs[i];
-            return {
-              rawPosition: rawP,
-              position: p,
-              quaternion: q,
-              pressed,
-              lastPressed,
-              pointer,
-              grip,
-              pad,
-              padX,
-              padY,
-              stick,
-              a,
-              b,
-              lastB,
-            }; */
           } else {
             return null;
           }
@@ -756,27 +841,21 @@ function animate(timestamp, frame, referenceSpace) {
           const hmdEuler = localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
           localEuler.x = 0;
           localEuler.z = 0;
-          container.position.sub(localVector.multiplyScalar(walkSpeed * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
+          container.position.sub(localVector.multiplyScalar(walkSpeed * timeDiff * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
+
+          _updateXrIframeMatrices();
         }
       };
 
       const wasLastBd = lastBs[0] && lastBs[1];
 
       const lg = _getGamepad(1);
-      // let li = -1;
       if (lg) {
         const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, b} = lg;
         rig.inputs.leftGamepad.quaternion.copy(quaternion);
         rig.inputs.leftGamepad.position.copy(position);
         rig.inputs.leftGamepad.pointer = pointer;
         rig.inputs.leftGamepad.grip = grip;
-
-        /* li = mirrorMesh.getButtonIntersectionIndex(position);
-        if (pressed && !lastPressed) {
-          if (li !== -1) {
-            aAvatars[li].click();
-          }
-        } */
 
         _updateTeleportMesh(0, pad, lastPads[0], position, quaternion, 0, 0, false);
 
@@ -786,20 +865,12 @@ function animate(timestamp, frame, referenceSpace) {
         lastPositions[0].copy(rawPosition);
       }
       const rg = _getGamepad(0);
-      // let ri = -1;
       if (rg) {
         const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, padX, padY, stick, b} = rg;
         rig.inputs.rightGamepad.quaternion.copy(quaternion);
         rig.inputs.rightGamepad.position.copy(position);
         rig.inputs.rightGamepad.pointer = pointer;
         rig.inputs.rightGamepad.grip = grip;
-
-        /* ri = mirrorMesh.getButtonIntersectionIndex(position);
-        if (pressed && !lastPressed) {
-          if (ri !== -1) {
-            aAvatars[ri].click();
-          }
-        } */
 
         _updateTeleportMesh(1, false, false, position, quaternion, padX, padY, stick);
 
@@ -834,6 +905,8 @@ function animate(timestamp, frame, referenceSpace) {
           .multiply(localMatrix.makeTranslation(-currentGripPosition.x, -currentGripPosition.y, -currentGripPosition.z))
           .multiply(localMatrix.makeTranslation(positionDiff.x, positionDiff.y, positionDiff.z))
           .decompose(container.position, container.quaternion, container.scale);
+
+        _updateXrIframeMatrices();
 
         if (rig) {
           rig.inputs.hmd.scaleFactor = startModelScale / scaleFactor;
@@ -881,11 +954,11 @@ function animate(timestamp, frame, referenceSpace) {
         new THREE.Vector3(0.1, 0, -1).normalize().multiplyScalar(rig.leftArmLength*0.4).applyQuaternion(rig.inputs.leftGamepad.quaternion)
       );*/
 
-      rig.inputs.leftGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
-      rig.inputs.leftGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.leftGamepad.pointer = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.leftGamepad.grip = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
 
-      rig.inputs.rightGamepad.pointer = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
-      rig.inputs.rightGamepad.grip = (Math.sin((Date.now()%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.rightGamepad.pointer = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
+      rig.inputs.rightGamepad.grip = (Math.sin((now%10000)/10000*Math.PI*2) + 1) / 2;
 
       rig.update();
     }
@@ -928,7 +1001,7 @@ function animate(timestamp, frame, referenceSpace) {
       if (keys.down) {
         localVector.z += 1;
       }
-      rig.inputs.hmd.position.add(localVector.normalize().multiplyScalar(walkSpeed * (keys.shift ? 3 : 1) * rig.height).applyQuaternion(floorRotation));
+      rig.inputs.hmd.position.add(localVector.normalize().multiplyScalar(walkSpeed * timeDiff * (keys.shift ? 3 : 1) * rig.height).applyQuaternion(floorRotation));
       if (keys.space) {
         const lerpFactor = 0.3;
         rig.inputs.hmd.position.y = rig.inputs.hmd.position.y * (1-lerpFactor) + rig.height*1.1 * lerpFactor;
@@ -978,6 +1051,8 @@ function animate(timestamp, frame, referenceSpace) {
     fakeXrDisplay.quaternion.copy(camera.quaternion);
     fakeXrDisplay.pushUpdate();
   }
+
+  lastTimestamp = now;
 }
 renderer.setAnimationLoop(animate);
 
@@ -1008,15 +1083,15 @@ const keys = {
 };
 let controlsBound = null;
 let unbindControls = null;
-window.document.addEventListener('pointerlockchange', () => {
-  if (!window.document.pointerLockElement && unbindControls) {
+document.addEventListener('pointerlockchange', () => {
+  if (!document.pointerLockElement && unbindControls) {
     unbindControls();
     unbindControls = null;
   }
 });
 
-const chatMessages = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
+const chatMessages = topDocument.getElementById('chat-messages');
+const chatInput = topDocument.getElementById('chat-input');
 let transformMode = 'translate';
 const _keydown = e => {
   if (!controlsBound) {
@@ -1028,29 +1103,52 @@ const _keydown = e => {
     };
     switch (e.which) {
       case 87: { // W
-        if (!chatInput.classList.contains('open')) {
+        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
           _setMode('translate');
         }
         break;
       }
       case 69: { // E
-        if (!chatInput.classList.contains('open')) {
+        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
           _setMode('rotate');
         }
         break;
       }
       case 82: { // R
-        if (!chatInput.classList.contains('open')) {
+        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
           _setMode('scale');
         }
         break;
       }
+      case 83: { // S
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          saveDialog.classList.add('open');
+          saveNameInput.focus();
+        }
+        break;
+      }
+      case 49: // 1
+      case 50: // 2
+      case 51: // 3
+      case 52: // 4
+      {
+        toolManager.selectTool(e.which - 49);
+        break;
+      }
+      case 27: { // esc
+        if (!chatInput.classList.contains('open')) {
+          saveDialog.classList.remove('open');
+          toolManager.escape();
+        } else {
+          chatInput.classList.remove('open');
+          chatInput.value = '';
+        }
+        break;
+      }
       case 46: { // del
-        if (!chatInput.classList.contains('open') && selectedBoundingBoxMesh) {
-          const {target} = selectedBoundingBoxMesh;
-          const {element} = target;
-          element.parentNode.removeChild(element);
-          selectedBoundingBoxMesh = null;
+        if (!chatInput.classList.contains('open')) {
+          toolManager.delete();
         }
         break;
       }
@@ -1060,7 +1158,7 @@ const _keydown = e => {
           chatInput.focus();
         } else {
           if (chatInput.value) {
-            const messageEl = document.createElement('message');
+            const messageEl = topDocument.createElement('message');
             messageEl.classList.add('message');
             messageEl.innerHTML = `<div class=message><b>you</b>: <span class=text></span></div>`;
             const textEl = messageEl.querySelector('.text');
@@ -1082,113 +1180,280 @@ const _keydown = e => {
 };
 window.addEventListener('keydown', _keydown);
 
-let hoveredBoundingBoxMesh = null;
-let selectedBoundingBoxMesh = null;
-const _mousemove = e => {
-  hoveredBoundingBoxMesh = null;
+const header = topDocument.getElementById('header');
+const mainSelector = topDocument.getElementById('main-selector');
+mainSelector.addEventListener('focus', () => {
+  mainSelector.classList.add('open');
+});
+mainSelector.addEventListener('blur', () => {
+  mainSelector.classList.remove('open');
+});
+const mainOptions = Array.from(mainSelector.querySelectorAll('.option'));
+for (let i = 0; i < mainOptions.length; i++) {
+  const mainOption = mainOptions[i];
+  mainOption.addEventListener('click', e => {
+    if (!header.classList.contains(`main-${i+1}`)) {
+      for (let i = 0; i < mainOptions.length; i++) {
+        header.classList.remove(`main-${i+1}`);
+        mainOptions[i].classList.remove('open');
+      }
+      mainOption.classList.add('open');
+      mainSelector.blur();
+      mainSelector.dispatchEvent(new CustomEvent('blur'));
+      header.classList.add(`main-${i+1}`);
 
-  const rect = renderer.domElement.getBoundingClientRect();
-  const xFactor = (e.clientX - rect.left) / rect.width;
-  const yFactor = -(e.clientY - rect.top) / rect.height;
-  localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
+      if (channelConnection) {
+        channelConnection.disconnect();
+        channelConnection = null;
+      }
+      if (landConnection) {
+        landConnection.disconnect();
+        landConnection = null;
+      }
 
-  const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
-    .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
-    .filter(boundingBoxMesh => boundingBoxMesh);
-  if (intersectionCandidates.length > 0) {
-    for (let i = 0; i < intersectionCandidates.length; i++) {
-      const boundingBoxMesh = intersectionCandidates[i];
-      boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.normal);
+      switch (i) {
+        case 0: {
+          break;
+        }
+        case 1: {
+          break;
+        }
+        case 2: {
+          console.log('connect to land');
+          landConnection = _connectLand();
+          break;
+        }
+      }
     }
-    for (let i = 0; i < intersectionCandidates.length; i++) {
-      const boundingBoxMesh = intersectionCandidates[i];
-      const intersections = localRaycaster.intersectObject(boundingBoxMesh);
-      if (intersections.length > 0) {
-        hoveredBoundingBoxMesh = boundingBoxMesh;
-        boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.highlight);
-        break;
+  });
+}
+
+const saveDialog = topDocument.getElementById('save-dialog');
+const saveNameInput = topDocument.getElementById('save-name-input');
+saveDialog.addEventListener('submit', e => {
+  e.preventDefault();
+
+  const username = loginToken.name;
+  const filename = saveNameInput.value;
+  const headers = {
+    'Content-Type': 'text/html',
+  };
+  fetch(`https://upload.exokit.org/${username}/${filename}?email=${encodeURIComponent(loginToken.email)}&token=${encodeURIComponent(loginToken.token)}`, {
+    method: 'POST',
+    headers,
+  })
+    .then(res => {
+      if (res.ok) {
+        return res.text();
+      } else {
+        throw new Errors(`invalid status code: ${res.status}`);
+      }
+    })
+    .then(u => {
+      console.log('save result 1', u);
+      return fetch(u, {
+        method: 'PUT',
+        body: codeInput.value,
+        headers,
+      });
+    })
+    .then(res => {
+      if (res.ok) {
+        return res.text();
+      } else {
+        throw new Errors(`invalid status code: ${res.status}`);
+      }
+    })
+    .then(s => {
+      console.log('save result 2', `https://content.exokit.org/${username}/${filename}`);
+
+      saveDialog.classList.remove('open');
+      saveNameInput.value = '';
+    });
+});
+
+let landConnection = null;
+const _getCameraPosition = () => {
+  const position = (() => {
+    if (renderer.vr.enabled) {
+      const vrCameras = renderer.vr.getCamera(camera).cameras;
+      const vrCamera = vrCameras[0];
+      vrCamera.matrixWorld.decompose(vrCamera.position, vrCamera.quaternion, vrCamera.scale);
+      return vrCamera.position;
+    } else {
+      return camera.position;
+    }
+  })();
+  return [position.x, position.z];
+};
+const _getCurrentParcelCoords = () => {
+  const [x, z] = _getCameraPosition();
+  return [Math.floor(x/parcelSize), Math.floor(z/parcelSize)];
+};
+const _getRequiredParcelCoords = (x, z) => [
+  [x-1, z-1],
+  [x-1, z],
+  [x-1, z+1],
+  [x, z-1],
+  [x, z],
+  [x, z+1],
+  [x+1, z-1],
+  [x+1, z],
+  [x+1, z+1],
+];
+let lastParcelKey = '';
+const _getAllParcelXrSites = dom => {
+  const result = [];
+  const _recurse = node => {
+    if (node.tagName === 'xr-site') {
+      result.push(node);
+    }
+    if (node.childNodes) {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        _recurse(node.childNodes[i]);
+      }
+    }
+  };
+  _recurse(dom);
+  return result;
+};
+const _getParcelCoords = xrSite => {
+  const extentsValue = xrSite.attrs.extents ? xrSite.attrs.extents.value : '';
+  const extents = THREE.Land.parseExtents(extentsValue);
+  return extents.flatMap(extent => {
+    const [x1, y1, x2, y2] = extent;
+    const result = [];
+    for (let x = x1; x < x2; x += parcelSize) {
+      for (let y = y1; y < y2; y += parcelSize) {
+        result.push([x/parcelSize, y/parcelSize]);
+      }
+    }
+    return result;
+  });
+};
+const _removeParcelDomNode = (dom, removeNode) => {
+  const _recurse = node => {
+    if (node.childNodes) {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        const childNode = node.childNodes[i];
+        if (childNode === removeNode) {
+          node.childNodes.splice(i, 1);
+          break;
+        } else {
+          _recurse(childNode);
+        }
+      }
+    }
+  };
+  _recurse(dom);
+};
+const _getParcelXrSite = (dom, coord) => {
+  const xrSites = _getAllParcelXrSites(dom);
+  const ax = coord[0]*parcelSize;
+  const ay = coord[1]*parcelSize;
+  for (let i = 0; i < xrSites.length; i++) {
+    const xrSite = xrSites[i];
+    const extentsValue = xrSite.attrs.extents ? xrSite.attrs.extents.value : '';
+    const extents = THREE.Land.parseExtents(extentsValue);
+    for (let j = 0; j < extents.length; j++) {
+      const [x1, y1, x2, y2] = extents[j];
+      for (let x = x1; x < x2; x += parcelSize) {
+        for (let y = y1; y < y2; y += parcelSize) {
+          if (ax === x && ay === y) {
+            return xrSite;
+          }
+        }
       }
     }
   }
+  return null;
 };
-renderer.domElement.addEventListener('mousemove', _mousemove);
+const _connectLand = () => {
+  let running = false;
+  const _updateGrid = async () => {
+    if (!running) {
+      running = true;
 
-const selectedObjectDetails = document.getElementById('selected-object-details');
-const detailsContentTab = document.getElementById('details-content-tab');
-const _click = () => {
-  console.log('select', hoveredBoundingBoxMesh);
-  if (selectedBoundingBoxMesh) {
-    selectedBoundingBoxMesh.material.color.setHex(colors.normal);
-  }
-  selectedBoundingBoxMesh = hoveredBoundingBoxMesh;
-  if (selectedBoundingBoxMesh) {
-    selectedBoundingBoxMesh.material.color.setHex(colors.select);
-    selectedObjectDetails.classList.add('open');
+      if (!toolManager.getEditedElement()) {
+        const coord = _getCurrentParcelCoords();
+        const k = coord.join(':');
+        if (k !== lastParcelKey) {
+          const [x, z] = coord;
+          const dom = parseHtml(codeInput.value);
+          const requiredParcelCoords = _getRequiredParcelCoords(x, z);
+          const outrangedParcels = _getAllParcelXrSites(dom)
+            .filter(xrSite => // parcels where every coord is not required
+              _getParcelCoords(xrSite).every(coord => !requiredParcelCoords.some(coord2 => coord2[0] === coord[0] && coord2[1] === coord[1]))
+            );
+          if (outrangedParcels.length > 0) {
+            for (let i = 0; i < outrangedParcels.length; i++) {
+              _removeParcelDomNode(dom, outrangedParcels[i]);
+            }
+            codeInput.value = serializeHtml(dom);
+            codeInput.dispatchEvent(new CustomEvent('change'));
+          }
+          const missingParcelCoords = requiredParcelCoords.filter(coord => !_getParcelXrSite(dom, coord));
+          const seenCoords = {};
+          await Promise.all(missingParcelCoords.map(async coord => {
+            const [x, z] = coord;
+            const k = coord.join(':');
+            const res = await fetch(`https://grid.exokit.org/parcels/${x}/${z}`);
+            if (res.ok) {
+              let parcel = await res.json();
+              if (parcel) {
+                let minX = Infinity;
+                let minZ = Infinity;
+                let maxX = -Infinity;
+                let maxZ = -Infinity;
+                for (let i = 0; i < parcel.coords.length; i++) {
+                  const coord = parcel.coords[i];
+                  const k = coord.join(':');
+                  if (seenCoords[k]) { // already did this coord, so bail
+                    return;
+                  } else {
+                    const [px, pz] = coord;
+                    minX = Math.min(px, minX);
+                    minZ = Math.min(pz, minZ);
+                    maxX = Math.max(px, maxX);
+                    maxZ = Math.max(pz, maxZ);
+                  }
+                }
+                const extents = [[minX*parcelSize, minZ*parcelSize, (maxX+1)*parcelSize, (maxZ+1)*parcelSize]];
+                dom.childNodes.push(parseHtml(`<xr-site name="${encodeURIComponent(parcel.name)}" extents="${THREE.Land.serializeExtents(extents)}">${parcel.html}</xr-site>`).childNodes[0]);
+                codeInput.value = serializeHtml(dom);
+                codeInput.dispatchEvent(new CustomEvent('change'));
 
-    detailsContentTab.click();
-  } else {
-    selectedObjectDetails.classList.remove('open');
-  }
-};
-renderer.domElement.addEventListener('click', _click);
+                for (let i = 0; i < parcel.coords.length; i++) {
+                  const coord = parcel.coords[i];
+                  const k = coord.join(':');
+                  seenCoords[k] = true;
+                }
+              }
+            } else {
+              console.warn('failed to get parcels', res.status);
+            }
+          }));
+          lastParcelKey = k;
+        }
+      }
 
-const avatarDetails = document.getElementById('avatar-details');
-const setAvatarButton = document.getElementById('set-avatar-button');
-const unsetAvatarButton = document.getElementById('unset-avatar-button');
-const settingAvatarButton = document.getElementById('setting-avatar-button');
-setAvatarButton.addEventListener('click', async () => {
-  const {target} = selectedBoundingBoxMesh;
-  const {element} = target;
-  const {src} = element;
-
-  setAvatarButton.style.display = 'none';
-  settingAvatarButton.style.display = null;
-
-  if (src) {
-    console.log('set avatar', src);
-    const model = await _loadModelUrl(src);
-    _setLocalModel(model);
-    modelUrl = src;
-    avatarDetails.classList.add('open');
-  } else {
-    _setLocalModel(null);
-    modelUrl = null;
-    avatarDetails.classList.remove('open');
-  }
-
-  setAvatarButton.style.display = null;
-  settingAvatarButton.style.display = 'none';
-});
-unsetAvatarButton.addEventListener('click', () => {
-  _setLocalModel(null);
-  modelUrl = null;
-  _sendAllPeerConnections(JSON.stringify({
-    method: 'model',
-    url: modelUrl,
-  }));
-
-  avatarDetails.classList.remove('open');
-});
-
-const screenshotButton = document.getElementById('screenshot-button');
-const screenshotImage = document.getElementById('screenshot-image');
-screenshotButton.addEventListener('click', async () => {
-  const {target} = selectedBoundingBoxMesh;
-  const {element} = target;
-  const {model} = element;
-  console.log('screenshot', model);
-  if (model) {
-    const blob = await screenshot(model, {
-      width: 192,
-      height: 192,
-    });
-    const url = URL.createObjectURL(blob);
-    if (screenshotImage.src) {
-      URL.revokeObjectURL(screenshotImage.src);
+      running = false;
     }
-    screenshotImage.src = url;
   }
-});
+  _updateGrid();
+  const updateInterval = setInterval(_updateGrid, 500);
+
+  return {
+    disconnect() {
+      const selectedElement = toolManager.getSelectedElement();
+      if (selectedElement && selectedElement.tagName === 'XR-SITE') {
+        toolManager.deselect();
+      }
+
+      clearInterval(updateInterval);
+    },
+  };
+};
 
 const _bindControls = type => {
   const _keydown = e => {
@@ -1278,18 +1543,18 @@ const _bindControls = type => {
     window.addEventListener('keyup', _keyup);
     window.removeEventListener('mousemove', _mousemove);
     orbitControls.target.copy(camera.position).add(new THREE.Vector3(0, 0, -3).applyQuaternion(camera.quaternion));
-    orbitControls.enabled = true;
+    orbitControls.enabled = toolManager.getSelectedToolName() === 'camera';
     controlsBound = null;
   };
 };
-const firstpersonButton = document.getElementById('firstperson-button');
+const firstpersonButton = topDocument.getElementById('firstperson-button');
 firstpersonButton.addEventListener('click', async () => {
   if (rig) {
     await renderer.domElement.requestPointerLock();
     _bindControls('firstperson');
   }
 });
-const thirdpersonButton = document.getElementById('thirdperson-button');
+const thirdpersonButton = topDocument.getElementById('thirdperson-button');
 thirdpersonButton.addEventListener('click', async () => {
   if (rig) {
     await renderer.domElement.requestPointerLock();
@@ -1297,8 +1562,20 @@ thirdpersonButton.addEventListener('click', async () => {
   }
 });
 
+mirrorMeshSwitchWrap.addEventListener('click', async () => {
+  mirrorMeshSwitchWrap.classList.toggle('on');
+
+  const enabled = mirrorMeshSwitchWrap.classList.contains('on');
+  mirrorMesh.visible = enabled;
+  if (enabled) {
+    localStorage.setItem('mirrorMesh', true);
+  } else {
+    localStorage.removeItem('mirrorMesh');
+  }
+});
+
 let session = null;
-const enterXrButton = document.getElementById('enter-xr-button');
+const enterXrButton = topDocument.getElementById('enter-xr-button');
 const _setSession = async newSession => {
   session = newSession;
 
@@ -1369,8 +1646,8 @@ enterXrButton.addEventListener('click', async () => {
 });
 
 let microphoneMediaStream = null;
-const enableMicButton = document.getElementById('enable-mic-button');
-const disableMicButton = document.getElementById('disable-mic-button');
+const enableMicButton = topDocument.getElementById('enable-mic-button');
+const disableMicButton = topDocument.getElementById('disable-mic-button');
 enableMicButton.addEventListener('click', async () => {
   try {
     microphoneMediaStream  = await navigator.mediaDevices.getUserMedia({
@@ -1410,8 +1687,8 @@ disableMicButton.addEventListener('click', async () => {
   } */
 });
 
-const siteUrlsContent = document.getElementById('site-urls-content');
-const avatarModelsContent = document.getElementById('avatar-models-content');
+const siteUrlsContent = topDocument.getElementById('site-urls-content');
+const avatarModelsContent = topDocument.getElementById('avatar-models-content');
 Promise.resolve().then(() => {
   Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
     const src = aSite.getAttribute('src');
@@ -1426,10 +1703,12 @@ Promise.resolve().then(() => {
     addButton.addEventListener('click', () => {
       const dom = parseHtml(codeInput.value);
       const xrSite = _findNodeWithTagName(dom, 'xr-site');
-      if (xrSite) {
-        const position = camera.position.clone()
+      const editedEl = toolManager.getEditedElement();
+      if (xrSite && (!landConnection || editedEl)) {
+        const position = localVector.copy(camera.position)
           .divide(container.scale)
           .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+        position.y = 0;
         xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
         codeInput.value = serializeHtml(dom);
         codeInput.dispatchEvent(new CustomEvent('change'));
@@ -1452,7 +1731,8 @@ Promise.resolve().then(() => {
     addButton.addEventListener('click', () => {
       const dom = parseHtml(codeInput.value);
       const xrSite = _findNodeWithTagName(dom, 'xr-model');
-      if (xrSite) {
+      const editedEl = toolManager.getEditedElement();
+      if (xrSite && (!landConnection || editedEl)) {
         const position = camera.position.clone()
           .divide(container.scale)
           .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
@@ -1467,14 +1747,20 @@ Promise.resolve().then(() => {
     const wearButton = aAvatar.querySelector('.wear-button');
     wearButton.addEventListener('click', async () => {
       console.log('wear avatar', src);
+
       const model = await _loadModelUrl(src);
       _setLocalModel(model);
       modelUrl = src;
+
+      _sendAllPeerConnections(JSON.stringify({
+        method: 'model',
+        url: modelUrl,
+      }));
     });
   });
 });
 
-const channelsContent = document.getElementById('channels-content');
+const channelsContent = topDocument.getElementById('channels-content');
 const _getChannels = () => Array.from(channelsContent.querySelectorAll('.a-channel')).map(aChannel => aChannel.getAttribute('name'));
 const _updateChannelsContent = () => {
   Array.from(channelsContent.querySelectorAll('.a-channel')).forEach(aChannel => {
@@ -1488,7 +1774,7 @@ const _updateChannelsContent = () => {
 };
 _updateChannelsContent();
 
-const channelInput = document.getElementById('channel-input');
+const channelInput = topDocument.getElementById('channel-input');
 channelInput.addEventListener('input', () => {
   const inputText = channelInput.value;
   if (inputText) {
@@ -1537,7 +1823,7 @@ window._discordSendMessage = _discordSendMessage;
 window._discordSendAttachment = _discordSendAttachment;
 // src = 'https://dev.exokit.org/exobot.png'; fetch(src).then(res => res.blob()).then(b => { _discordSendAttachment(b, src); });
 
-const connectButton = document.getElementById('connect-button');
+const connectButton = topDocument.getElementById('connect-button');
 connectButton.addEventListener('click', () => {
   const channelName = channelInput.value;
 
@@ -1548,6 +1834,15 @@ connectButton.addEventListener('click', () => {
     channelConnection.channelName = channelName;
     channelConnection.addEventListener('open', () => {
       console.log('xr channel open');
+    });
+    channelConnection.addEventListener('close', () => {
+      console.log('xr channel close');
+
+      _resetCodeInput();
+
+      connectButton.style.display = null;
+      disconnectButton.style.display = 'none';
+      channelInput.disabled = false;
     });
     channelConnection.addEventListener('error', err => {
       console.warn('xr channel error', err);
@@ -1775,7 +2070,7 @@ connectButton.addEventListener('click', () => {
     disconnectButton.style.display = null;
     channelInput.disabled = true;
 
-    const uploadFileLabel = document.getElementById('upload-file-label');
+    const uploadFileLabel = topDocument.getElementById('upload-file-label');
     uploadFileLabel.style.display = null;
 
     if (!_getChannels().includes(channelName)) {
@@ -1787,19 +2082,13 @@ connectButton.addEventListener('click', () => {
     }
   }
 });
-const disconnectButton = document.getElementById('disconnect-button');
+const disconnectButton = topDocument.getElementById('disconnect-button');
 disconnectButton.addEventListener('click', () => {
   channelConnection.disconnect();
   channelConnection = null;
-
-  _resetCodeInput();
-
-  connectButton.style.display = null;
-  disconnectButton.style.display = 'none';
-  channelInput.disabled = false;
 });
 
-const codeInput = document.getElementById('code');
+const codeInput = topDocument.getElementById('code');
 codeInput.addEventListener('change', () => {
   const newText = codeInput.value;
   const normalizedNewText = htmlClient.pushUpdate(newText);
@@ -1873,10 +2162,11 @@ const _uploadFile = file => {
       body: file,
     })
       .then(res => {
-        if (res.status >= 200 && res.status < 300) {
+        if (res.ok) {
           return res.json();
         } else {
-          throw new Error(`invalid status code: ${res.status}`);
+          console.warn(`invalid status code: ${res.status}`);
+          return Promise.resolve([]);
         }
       })
       .then(j => {
@@ -1910,7 +2200,7 @@ const _bindUploadFileButton = inputFileEl => {
 
     const {parentNode} = inputFileEl;
     parentNode.removeChild(inputFileEl);
-    const newInputFileEl = document.createElement('input');
+    const newInputFileEl = topDocument.createElement('input');
     newInputFileEl.type = 'file';
     newInputFileEl.id = 'upload-file-button';
     newInputFileEl.style.display = 'none';
@@ -1918,7 +2208,7 @@ const _bindUploadFileButton = inputFileEl => {
     _bindUploadFileButton(newInputFileEl);
   });
 };
-_bindUploadFileButton(document.getElementById('upload-file-button'));
+_bindUploadFileButton(topDocument.getElementById('upload-file-button'));
 window.document.addEventListener('drop', async e => {
   e.preventDefault();
 
@@ -1941,7 +2231,8 @@ window.document.addEventListener('drop', async e => {
         const _loadElement = (tagName, src) => {
           const dom = parseHtml(codeInput.value);
           const xrSite = _findNodeWithTagName(dom, 'xr-site');
-          if (xrSite) {
+          const editedEl = toolManager.getEditedElement();
+          if (xrSite && (!landConnection || editedEl)) {
             const position = new THREE.Vector3();
             const rect = renderer.domElement.getBoundingClientRect();
             const xFactor = (e.clientX - rect.left) / rect.width;
@@ -1961,6 +2252,10 @@ window.document.addEventListener('drop', async e => {
                 position.copy(camera.position)
                   .divide(container.scale)
                   .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+              }
+
+              if (editedEl) {
+                toolManager.clampPositionToElementExtent(position, editedEl);
               }
 
               xrSite.childNodes.push(parseHtml(`<${tagName} src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></${tagName}>`).childNodes[0]);
@@ -1983,8 +2278,163 @@ window.document.addEventListener('drop', async e => {
   }
 });
 
+const inventoryContent = topDocument.getElementById('inventory-content');
+const _loadInventory = async () => {
+  const res = await fetch(`https://upload.exokit.org/${loginToken.name}`);
+  if (res.ok) {
+    const files = await res.json();
+    inventoryContent.innerHTML = files.map(filename => {
+      return `<nav class=a-file draggable=true src="${encodeURI(filename)}">
+        <div class=overlay>
+          <div class=multibutton>
+            <nav class="button first last add-button">Add</nav>
+          </div>
+        </div>
+        <i class="fas fa-file"></i>
+        <div class=name>${escape(filename)}</name>
+      </nav>`;
+    }).join('\n');
+  } else {
+    throw new Error(`invalid status code: ${res.status}`);
+  }
+};
+
+let loginToken = null;
+const loginUrl = 'https://login.exokit.org/';
+async function doLogin(email, code) {
+  const res = await fetch(`${loginUrl}?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
+    method: 'POST',
+  });
+  if (res.ok) {
+    const newLoginToken = await res.json();
+
+    await storage.set('loginToken', newLoginToken);
+
+    loginToken = newLoginToken;
+
+    // loginNameStatic.innerText = loginToken.name;
+    // loginEmailStatic.innerText = loginToken.email;
+
+    topDocument.body.classList.add('logged-in');
+    loginForm.classList.remove('phase-1');
+    loginForm.classList.remove('phase-2');
+    loginForm.classList.add('phase-3');
+
+    await _loadInventory();
+
+    return true;
+  } else {
+    return false;
+  }
+}
+const storage = {
+  async get(k) {
+    const s = localStorage.getItem(k);
+    if (typeof s === 'string') {
+      return JSON.parse(s);
+    } else {
+      return undefined;
+    }
+  },
+  async set(k, v) {
+    localStorage.setItem(k, JSON.stringify(v));
+  },
+  async remove(k) {
+    localStorage.removeItem(k);
+  },
+};
+
+// const loginButton = topDocument.getElementById('login-button');
+// const loginButton2 = topDocument.getElementById('login-button-2');
+// const loginPopdown = topDocument.getElementById('login-popdown');
+const loginForm = topDocument.getElementById('login-form');
+const loginEmail = topDocument.getElementById('login-email');
+const loginNameStatic = topDocument.getElementById('login-name-static');
+const loginEmailStatic = topDocument.getElementById('login-email-static');
+const statusNotConnected = topDocument.getElementById('status-not-connected');
+const statusConnected = topDocument.getElementById('status-connected');
+const loginVerificationCode = topDocument.getElementById('login-verification-code');
+const loginNotice = topDocument.getElementById('login-notice');
+const loginError = topDocument.getElementById('login-error');
+const logoutButton = topDocument.getElementById('logout-button');
+loginForm.onsubmit = async e => {
+  e.preventDefault();
+
+  if (loginForm.classList.contains('phase-1') && loginEmail.value) {
+    loginNotice.innerHTML = '';
+    loginError.innerHTML = '';
+    loginForm.classList.remove('phase-1');
+
+    const res = await fetch(`${loginUrl}?email=${encodeURIComponent(loginEmail.value)}`, {
+      method: 'POST',
+    })
+    if (res.ok) {
+      loginNotice.innerText = `Code sent to ${loginEmail.value}!`;
+      loginForm.classList.add('phase-2');
+
+      return res.blob();
+    } else if (res.status === 403) {
+      loginError.innerText = `${loginEmail.value} is not in the beta yet :(`;
+
+      loginForm.classList.add('phase-1');
+    } else {
+      throw new Error(`invalid status code: ${res.status}`);
+    }
+  } else if (loginForm.classList.contains('phase-2') && loginEmail.value && loginVerificationCode.value) {
+    loginNotice.innerHTML = '';
+    loginError.innerHTML = '';
+    loginForm.classList.remove('phase-2');
+
+    await doLogin(loginEmail.value, loginVerificationCode.value);
+  } else if (loginForm.classList.contains('phase-3')) {
+    await storage.remove('loginToken');
+
+    window.location.reload();
+
+    /* loginToken = null;
+    xrEngine.postMessage({
+      method: 'login',
+      loginToken,
+    });
+
+    loginNotice.innerHTML = '';
+    loginError.innerHTML = '';
+    topDocument.body.classList.remove('logged-in');
+    loginForm.classList.remove('phase-3');
+    loginForm.classList.add('phase-1'); */
+  }
+};
+
 (async () => {
-  const aAvatars = Array.from(document.querySelectorAll('.a-avatar'));
+  const localLoginToken = await storage.get('loginToken');
+  if (localLoginToken) {
+    const res = await fetch(`${loginUrl}?email=${encodeURIComponent(localLoginToken.email)}&token=${encodeURIComponent(localLoginToken.token)}`, {
+      method: 'POST',
+    })
+    if (res.ok) {
+      loginToken = await res.json();
+
+      await storage.set('loginToken', loginToken);
+
+      // loginNameStatic.innerText = loginToken.name;
+      // loginEmailStatic.innerText = loginToken.email;
+
+      topDocument.body.classList.add('logged-in');
+      loginForm.classList.remove('phase-1');
+      loginForm.classList.remove('phase-2');
+      loginForm.classList.add('phase-3');
+
+      await _loadInventory();
+    } else {
+      await storage.remove('loginToken');
+
+      console.warn(`invalid status code: ${res.status}`);
+    }
+  }
+})();
+
+(async () => {
+  const aAvatars = Array.from(topDocument.querySelectorAll('.a-avatar'));
   const aAvatar = aAvatars[0];
   const src = aAvatar.getAttribute('src');
   const model = await _loadModelUrl(src);
