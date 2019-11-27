@@ -188,6 +188,47 @@ const teleportMeshes = [
 container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
+{
+  const manager = new THREE.LoadingManager();
+  manager.setURLModifier(u => {
+    console.log('resource', u);
+    let match;
+    if (match = u.match(/^(.+?)\/([^\/]+?\.png)$/)) {
+      if (match[2] === 'PolygonNature.png') {
+        match[2] = 'PolygonNature_01.png';
+      }
+      // console.log('new u', [u, match[1], match[2], `${match[1]}/Textures/${match[2]}`]);
+      return `${match[1]}/Textures/${match[2]}`;
+    } else if (match = u.match(/^(.+?)\/([^\/]+?\.psd)$/)) {
+      if (match[2] === 'PolygonScifi_Texture.psd') {
+        match[2] = 'PolygonScifi_01_A.png';
+      } else if (match[2] === 'Dungeons_Texture.psd') {
+        match[2] = 'Dungeons_Texture_01.png';
+      }
+      // console.log('new u', [u, match[1], match[2], `${match[1]}/Textures/${match[2]}`]);
+      return `${match[1]}/Textures/${match[2]}`;
+    } else {
+      return u;
+    }
+  });
+  const loader = new THREE.FBXLoader(manager);
+  // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/nature/SM_Plant_01.fbx`, object => {
+  // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/scifi/SM_Prop_Crate_01.fbx`, object => {
+  // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/dungeon/SM_Env_Mushroom_Giant_01.fbx`, object => {
+  loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/town/SM_Bld_House_Preset_01.fbx`, object => {
+    console.log('got model', object);
+    object.traverse(o => {
+      if (o.isMesh && !Array.isArray(o.material)) {
+        o.material = new THREE.MeshPhongMaterial({
+          map: o.material.map,
+        });
+      }
+    });
+    object.scale.multiplyScalar(0.01);
+    scene.add(object);
+  });
+}
+
 const toolManager = new ToolManager({
   domElement: renderer.domElement,
   camera,
