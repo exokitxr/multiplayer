@@ -16,6 +16,7 @@ import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import {parcelSize, colors} from './constants.js';
 import {ToolManager} from './tools.js';
 import itemModels from 'https://item-models.exokit.org/item-models.js';
+import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 
 const {document: topDocument} = window.top;
 
@@ -190,26 +191,52 @@ container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
 (async () => {
+  // return;
+
+  const itemModelsHash = 'b842e4202af220d8394fe5d0dc7f84793ed6fc72';
+
+  const screenshotImage = document.createElement('img');
+  screenshotImage.style.position = 'absolute';
+  screenshotImage.style.bottom = '0px';
+  screenshotImage.style.right = '0px';
+  topDocument.body.appendChild(screenshotImage);
+
+  // const cameraPosition = new THREE.Vector3(0, 1, 0);
+
+  const ambientLight = new THREE.AmbientLight(0x808080);
+  const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 3);
+  directionalLight.position.set(0.5, 1, 0.5);
+  const lights = [
+    ambientLight,
+    directionalLight,
+  ];
+
   const manager = new THREE.LoadingManager();
   manager.setURLModifier(u => {
     console.log('resource', u);
     let match;
     if (match = u.match(/^(.+?)\/([^\/]+?\.png)$/)) {
       if (match[2] === 'PolygonNature.png') {
-        match[2] = 'PolygonNature_01.png';
+        if (/bush/i.test(manager.itemModel)) {
+          match[2] = 'Leaves/FlowerBush_Texture.png';
+        } else if (/fern/i.test(manager.itemModel)) {
+          match[2] = 'Leaves/Fern_Texture.png';
+        } else {
+          match[2] = 'PolygonNature_01.png';
+        }
       } else if (match[2] === 'FlowerPatch_02.png') {
         match[2] = 'Misc/FlowerPatch_02.png';
       } else if (match[2] === 'FernLeaf.png') {
         match[2] = 'Leaves/Fern_Texture.png';
       } else if (match[2] === 'PolygonSciFiCity_Texture_01_A.png') {
         match[2] = 'PolygonScifi_01_A.png';
-      } else if (match[2] === 'PolygonTown_Texture_03_A_House.png') {
-        match[2] = 'PolygonTown_Texture_03_A.png';
+      } else if (match[2] === 'PolygonTown_Texture_01_A_House.png') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
       } else if (match[2] === 'InteriorWallBake_baseTexBaked.png') {
         match[2] = 'PolygonTown_Texture_01_A.png';
       } else if (match[2] === 'PolygonCity_Road_01.png') {
-        if (/town/.test(match[1])) {
-          match[2] = 'PolygonTown_Texture_01_A.png';
+        if (/town/i.test(match[1])) {
+          match[2] = 'PolygonTown_Road_01.png';
         } else {
           match[2] = 'PolygonSciFi_Road_01.png';
         }
@@ -217,12 +244,20 @@ container.add(teleportMeshes[1]);
         match[2] = 'PolygonScifi_01_A.png';
       } else if (match[2] === 'churchbase3.png') {
         match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'PolygonTown_Texture_03_A_House.png') {
+        match[2] = 'PolygonTown_Texture_01_A.png';
       }
       // console.log('new u', `${match[1]}/Textures/${match[2]}`);
       return `${match[1]}/Textures/${match[2]}`;
     } else if (match = u.match(/^(.+?)\/([^\/]+?\.psd)$/)) {
       if (match[2] === 'PolygonScifi_Texture.psd' || match[2] === 'PolygonScifi_.psd') {
-        match[2] = 'PolygonScifi_01_A.png';
+        if (/icon/i.test(manager.itemModel) || /neon/i.test(manager.itemModel)) {
+          match[2] = 'NeonSigns.png';
+        /* } else if (/book/i.test(manager.itemModel)) {
+          match[2] = 'Gradient.png'; */
+        } else {
+          match[2] = 'PolygonScifi_04_A.png';
+        }
       } else if (match[2] === 'Sky.psd') {
         match[2] = 'SimpleSky.png';
       } else if (match[2] === 'Building_Window_Emissive.psd') {
@@ -236,25 +271,39 @@ container.add(teleportMeshes[1]);
       } else if (match[2] === 'PolygonScifi_Texture_Mike.psd') {
         match[2] = 'PolygonScifi_01_A.png';
       } else if (match[2] === 'Dungeons_Texture.psd') {
-        if (/scifi/.test(match[1])) {
+        if (/scifi/i.test(match[1])) {
           match[2] = 'PolygonScifi_01_A.png';
+        } else if (/wall/i.test(manager.itemModel)) {
+          match[2] = 'Dungeons_Texture_WallTiles_01.png';
         } else {
-          match[2] = 'Dungeons_Texture_01.png';
+          match[2] = 'Dungeons_Texture_01_B.png';
         }
       } else if (match[2] === 'PolygonTown_Texture_01_Mike.psd') {
         match[2] = 'PolygonTown_Texture_01_A.png';
       } else if (match[2] === 'PolygonWestern_Texture.psd') {
         match[2] = 'PolygonTown_Texture_01_A.png';
       } else if (match[2] === 'PolygonTown_Texture_01_A.psd') {
-        match[2] = 'PolygonTown_Texture_01_A.png';
+        if (/road/i.test(manager.itemModel)) {
+          match[2] = 'PolygonTown_Road_01.png';
+        } else {
+          match[2] = 'PolygonTown_Texture_01_A.png';
+        }
       } else if (match[2] === 'Windows.psd') {
-        match[2] = 'PolygonTown_Window_01.png';
-      } else if (match[2] === 'PolygonTown_Texture_01_Andrew.psd') {
         match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'PolygonTown_Texture_01_Andrew.psd') {
+        if (/road/i.test(manager.itemModel)) {
+          match[2] = 'PolygonTown_Road_01.png';
+        } else {
+          match[2] = 'PolygonTown_Texture_01_A.png';
+        }
       } else if (match[2] === 'PolygonWar_Texture.psd') {
         match[2] = 'PolygonTown_Texture_01_A.png';
       } else if (match[2] === 'noraml.psd') {
-        match[2] = 'PolygonTown_Texture_Normal_A.png';
+        if (/road/i.test(manager.itemModel)) {
+          match[2] = 'PolygonTown_Road_Normal.png';
+        } else {
+          match[2] = 'PolygonTown_Texture_Normal_A.png';
+        }
       }
       console.log('new u', `${match[1]}/Textures/${match[2]}`);
       return `${match[1]}/Textures/${match[2]}`;
@@ -262,43 +311,266 @@ container.add(teleportMeshes[1]);
       return u;
     }
   });
-  manager.onError = err => {
-    console.warn(err);
-    debugger;
-  };
+  manager.itemModel = '';
   let objects = [];
 
-  const startI = 0;
-  for (let i = 0; (startI + i) < itemModels.length; i++) {
+  const startI = 2228;
+  const numI = 1000;
+  for (let i = 0; (startI + i) < itemModels.length && i < numI; i++) {
     const itemModel = itemModels[startI + i];
+    console.log('load', startI + i);
     const loader = new THREE.FBXLoader(manager);
-    // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/nature/SM_Plant_01.fbx`, object => {
-    // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/scifi/SM_Prop_Crate_01.fbx`, object => {
-    // loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/dungeon/SM_Env_Mushroom_Giant_01.fbx`, object => {
     const object = await new Promise((accept, reject) => {
-      loader.load(`https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/${itemModel}`, accept, progress => {}, reject);
+      manager.itemModel = itemModel;
+      const managerLoadPromise = new Promise((accept, reject) => {
+        manager.onLoad = accept;
+        manager.onError = err => {
+          debugger;
+          reject(err);
+        };
+      });
+      loader.load(`https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/${itemModel}`, object => {
+        managerLoadPromise.then(() => {
+          accept(object);
+        });
+      }, progress => {}, reject);
     });
-    console.log('got model', object);
+    const boundingBox = new THREE.Box3().setFromObject(object);
+    const center = boundingBox.getCenter(new THREE.Vector3());
+    const size = boundingBox.getSize(new THREE.Vector3());
+    // console.log('got model', object);
+    // console.log('bounding box', boundingBox.min.y);
+    if (/dungeon/.test(itemModel)) {
+      object.position.set(-center.x, -boundingBox.min.y, -center.z);
+    } else if (/nature/.test(itemModel)) {
+      // object.position.set(0, boundingBox.min.y, 0);
+    } else {
+      // nothing
+    }
+    object.quaternion.set(0, 0, 0, 1);
+    object.scale.set(1, 1, 1);
+
+    object.boundingBoxMesh = new THREE.Object3D();
+    object.boundingBoxMesh.position.copy(center);
+    object.boundingBoxMesh.scale.copy(size);
+
+    // const parentObject = new THREE.Object3D();
+    // parentObject.add(object);
+
+    console.log('got o', object);
+
+    const promises = [];
     object.traverse(o => {
-      if (o.isMesh && !Array.isArray(o.material)) {
-        if (!o.material.map) {
-          console.log('missing material texture', o.material);
-          /* const img = new Image();
-          img.crossOrigin = true;
-          img.src = `https://rawcdn.githack.com/exokitxr/item-models/0e501a1a3057a6ab8de27f9312cbf3e0c259862b/nature/Textures/PolygonNature_01.png`;
-          o.material.map = new THREE.Texture(img);
-          img.onload = () => {
-            o.material.map.needsUpdate = true;
-          }; */
-        }
-        o.material = new THREE.MeshPhongMaterial({
-          map: o.material.map,
+      if (o.isMesh) {
+        const materials = Array.isArray(o.material) ? o.material : [o.material];
+        materials.forEach(m => {
+          console.log('check material', m.name, !!m.map);
+          if (!m.map) {
+            console.log('missing material texture', itemModel, o, m);
+            if (/nature/i.test(m.name)) {
+              promises.push((async () => {
+                console.log('loading nature...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/nature/Textures/PolygonNature_01.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } else if (/sphere/i.test(itemModel)) {
+              promises.push((async () => {
+                console.log('loading sphere...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/scifi/Textures/Signs.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } else if (/scifi/i.test(itemModel)) {
+              promises.push((async () => {
+                console.log('loading scifi...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/scifi/Textures/PolygonScifi_04_A.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } else if (/glass/i.test(m.name)) {
+              promises.push((async () => {
+                console.log('loading glass...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/town/Textures/PolygonTown_Window_01.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } else if (/road/i.test(itemModel)) {
+              promises.push((async () => {
+                console.log('loading road...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/town/Textures/PolygonTown_Road_01.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } else if (/town/i.test(itemModel)) {
+              promises.push((async () => {
+                console.log('loading town...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/town/Textures/PolygonTown_Texture_01_A.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            }
+            /* if (/trunk/i.test(m.name)) {
+              promises.push((async () => {
+                console.log('loading nature...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/nature/Textures/Leaves/Birch_Trunk_Texture.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } else if (/lea[fv]/i.test(m.name)) {
+              promises.push((async () => {
+                console.log('loading nature...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/nature/Textures/Leaves/Leaves_Pine_Texture.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.color = new THREE.Color(0, 0, 0);
+                // m.vertexColors = 0;
+              })());
+            } */
+          } else {
+            /* if (/window/i.test(o.name)) {
+              promises.push((async () => {
+                console.log('loading window...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/town/Textures/PolygonTown_Window_01.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } */
+            m.vertexColors = 0;
+          }
+          // console.log('got material', o.material);
+          // o.material.transparent = true;
+          // o.material.alphaTest = 0.5;
+          // o.material.color = new THREE.Color(0, 0, 0);
+          /* o.material = new THREE.MeshStandardMaterial({
+            map: o.material.map,
+          }); */
         });
       }
     });
-    object.position.x = (i%10)*2;
+    await Promise.all(promises);
+    {
+      const ab = await new Promise((accept, reject) => {
+        new THREE.GLTFExporter().parse(object, ab => {
+          accept(ab);
+        }, {
+          binary: true,
+        });
+      });
+      const u = `https://lol.exokit.org/${itemModel.replace(/\.fbx$/, '.glb')}`;
+      // console.log('uploading', u, ab);
+      await fetch(u, {
+        method: 'PUT',
+        body: ab,
+      })
+        .then(res => res.json());
+    }
+    {
+      const blob = await screenshot(object, {
+        width: 192,
+        height: 192,
+        // cameraPosition,
+        lights,
+      });
+
+      const url = URL.createObjectURL(blob);
+      if (screenshotImage.src) {
+        URL.revokeObjectURL(screenshotImage.src);
+      }
+      screenshotImage.src = url;
+
+      const u = `https://lol.exokit.org/${itemModel.replace(/\.fbx$/, '.png')}`;
+      await fetch(u, {
+        method: 'PUT',
+        body: blob,
+      })
+        .then(res => res.json());
+    }
+
+    object.position.x += (i%10)*2;
     // object.scale.multiplyScalar(0.01);
-    object.scale.multiplyScalar(0.1);
+    if (/dungeon/.test(itemModel)) {
+      // nothing
+    } else if (/nature/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/scifi/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/town/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else {
+      object.scale.multiplyScalar(0.1);
+    }
     scene.add(object);
     objects.push(object);
 
