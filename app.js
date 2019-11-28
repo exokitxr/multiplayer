@@ -193,7 +193,7 @@ container.add(teleportMeshes[1]);
 (async () => {
   // return;
 
-  const itemModelsHash = 'b842e4202af220d8394fe5d0dc7f84793ed6fc72';
+  const itemModelsHash = 'b88982a0b7972ef92022b66c9d87b30e45a5949d';
 
   const screenshotImage = document.createElement('img');
   screenshotImage.style.position = 'absolute';
@@ -216,7 +216,33 @@ container.add(teleportMeshes[1]);
     console.log('resource', u);
     let match;
     if (match = u.match(/^(.+?)\/([^\/]+?\.png)$/)) {
-      if (match[2] === 'PolygonNature.png') {
+      if (match[2] === 'PolygonMilitary_Texture_01_A.png') {
+        if (/battleroyale/i.test(manager.itemModel)) {
+          match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+        }
+      } else if (match[2] === 'PolygonMilitary_Texture_01_B.png') {
+        if (/battleroyale/i.test(manager.itemModel)) {
+          match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+        }
+      } else if (match[2] === 'PolygonMilitary_Texture_01_C.png') {
+        if (/battleroyale/i.test(manager.itemModel)) {
+          match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+        }
+      } else if (match[2] === 'PolygonMilitary_Texture_01_D.png') {
+        if (/battleroyale/i.test(manager.itemModel)) {
+          match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+        }
+      } else if (match[2] === 'Fence_Alpha.png') {
+        match[2] = 'PolygonBattleRoyale_Fence_Alpha.png';
+      } else if (match[2] === 'Land_Vehicle_Master_Destroyed_01.png' || match[2] === 'Air_Vehicle_Damaged_01.png') {
+        match[2] = 'PolygonBattleRoyale_Vehicles_01_Damaged.png';
+      } else if (match[2] === 'Weapon_Skin_01.png') {
+        match[2] = 'Weapons/Wep_Skin_01.png';
+      } else if (match[2] === 'Dungeons_Texture_01.png') {
+        if (/battleroyale/i.test(manager.itemModel)) {
+          match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+        }
+      } else if (match[2] === 'PolygonNature.png') {
         if (/bush/i.test(manager.itemModel)) {
           match[2] = 'Leaves/FlowerBush_Texture.png';
         } else if (/fern/i.test(manager.itemModel)) {
@@ -234,6 +260,12 @@ container.add(teleportMeshes[1]);
         match[2] = 'PolygonTown_Texture_01_A.png';
       } else if (match[2] === 'InteriorWallBake_baseTexBaked.png') {
         match[2] = 'PolygonTown_Texture_01_A.png';
+      } else if (match[2] === 'PolygonTown_Road_01.png') {
+        if (/battleroyale/i.test(match[1])) {
+          match[2] = 'PolygonBattleRoyale_Road_01.png';
+        } else {
+          match[2] = 'PolygonTown_Road_01.png';
+        }
       } else if (match[2] === 'PolygonCity_Road_01.png') {
         if (/town/i.test(match[1])) {
           match[2] = 'PolygonTown_Road_01.png';
@@ -249,8 +281,31 @@ container.add(teleportMeshes[1]);
       }
       // console.log('new u', `${match[1]}/Textures/${match[2]}`);
       return `${match[1]}/Textures/${match[2]}`;
+    } else if (match = u.match(/^(.+?)\/([^\/]+?\.tif)$/)) {
+      if (match[2] === 'Weapon_Skins_Master_07.tif') {
+        match[2] = 'Weapons/Wep_Skin_07.png';
+      }
+      return `${match[1]}/Textures/${match[2]}`;
     } else if (match = u.match(/^(.+?)\/([^\/]+?\.psd)$/)) {
-      if (match[2] === 'PolygonScifi_Texture.psd' || match[2] === 'PolygonScifi_.psd') {
+      if (match[2] === 'PolygonCity_Texture.psd') {
+        match[2] = 'PolygonBattleRoyale_Road_01.png';
+      } else if (match[2] === 'PolygonMilitary_Texture_01_A.psd') {
+        if (/road/i.test(manager.itemModel)) {
+          match[2] = 'PolygonBattleRoyale_Road_01.png';
+        } else {
+          match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+        }
+      } else if (match[2] === 'PolygonWar_Texture_GoodVersion.psd') {
+        match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+      } else if (match[2] === 'Land_Vehicle_Master_01.psd' || match[2] === 'Air_Vehicle_Master_01.psd') {
+        match[2] = 'PolygonBattleRoyale_Vehicles_01.png';
+      } else if (match[2] === 'Land_Vehicle_Master_Destroyed_01.psd') {
+        match[2] = 'PolygonBattleRoyale_Vehicles_01_Damaged.png';
+      } else if (match[2] === 'track2.psd') {
+        match[2] = 'PolygonBattleRoyale_Tank_Tracks.png';
+      } else if (match[2] === 'Weapon_Skins_Master_01.psd') {
+        match[2] = 'Weapons/Wep_Skin_01.png';
+      } else if (match[2] === 'PolygonScifi_Texture.psd' || match[2] === 'PolygonScifi_.psd') {
         if (/icon/i.test(manager.itemModel) || /neon/i.test(manager.itemModel)) {
           match[2] = 'NeonSigns.png';
         /* } else if (/book/i.test(manager.itemModel)) {
@@ -283,7 +338,9 @@ container.add(teleportMeshes[1]);
       } else if (match[2] === 'PolygonWestern_Texture.psd') {
         match[2] = 'PolygonTown_Texture_01_A.png';
       } else if (match[2] === 'PolygonTown_Texture_01_A.psd') {
-        if (/road/i.test(manager.itemModel)) {
+        if (/battleroyale/i.test(match[1])) {
+          match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
+        } else if (/road/i.test(manager.itemModel)) {
           match[2] = 'PolygonTown_Road_01.png';
         } else {
           match[2] = 'PolygonTown_Texture_01_A.png';
@@ -340,7 +397,10 @@ container.add(teleportMeshes[1]);
     const size = boundingBox.getSize(new THREE.Vector3());
     // console.log('got model', object);
     // console.log('bounding box', boundingBox.min.y);
-    if (/dungeon/.test(itemModel)) {
+    if (/battleroyale/.test(itemModel)) {
+      console.log('offset', boundingBox.min.y);
+      object.position.set(0, -boundingBox.min.y/100, 0);
+    } else if (/dungeon/.test(itemModel)) {
       object.position.set(-center.x, -boundingBox.min.y, -center.z);
     } else if (/nature/.test(itemModel)) {
       // object.position.set(0, boundingBox.min.y, 0);
@@ -367,7 +427,22 @@ container.add(teleportMeshes[1]);
           console.log('check material', m.name, !!m.map);
           if (!m.map) {
             console.log('missing material texture', itemModel, o, m);
-            if (/nature/i.test(m.name)) {
+            if (/battleroyale/i.test(itemModel)) {
+              promises.push((async () => {
+                console.log('loading battleroyale...');
+                const img = new Image();
+                img.crossOrigin = true;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/battleroyale/Textures/PolygonBattleRoyale_Texture_01_A.png`;
+                await new Promise((accept, reject) => {
+                  img.onload = accept;
+                  img.onerror = reject;
+                });
+                o.material.map = new THREE.Texture(img);
+                o.material.map.needsUpdate = true;
+                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                // m.vertexColors = 0;
+              })());
+            } else if (/nature/i.test(m.name)) {
               promises.push((async () => {
                 console.log('loading nature...');
                 const img = new Image();
@@ -558,9 +633,11 @@ container.add(teleportMeshes[1]);
         .then(res => res.json());
     }
 
-    object.position.x += (i%10)*2;
+    object.position.x += (i%50)*2;
     // object.scale.multiplyScalar(0.01);
-    if (/dungeon/.test(itemModel)) {
+    if (/battleroyale/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/dungeon/.test(itemModel)) {
       // nothing
     } else if (/nature/.test(itemModel)) {
       object.scale.multiplyScalar(0.01);
@@ -574,7 +651,7 @@ container.add(teleportMeshes[1]);
     scene.add(object);
     objects.push(object);
 
-    while (objects.length > 10) {
+    while (objects.length > 50) {
       const object = objects.shift();
       scene.remove(object);
     }
