@@ -53,7 +53,7 @@ camera.position.z = 2;
 const ambientLight = new THREE.AmbientLight(0x808080);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 4);
+const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 3);
 directionalLight.position.set(0.5, 1, 0.5);
 scene.add(directionalLight);
 
@@ -208,10 +208,10 @@ container.add(teleportMeshes[1]);
   // const cameraPosition = new THREE.Vector3(0, 1, 0);
 
   const ambientLight = new THREE.AmbientLight(0x808080);
-  const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 4);
+  const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 3);
   directionalLight.position.set(0.5, 1, 0.5);
-  const directionalLight2 = new THREE.DirectionalLight(0xFFFFFF, 4);
-  directionalLight2.position.set(-0.5, 1, -0.5);
+  // const directionalLight2 = new THREE.DirectionalLight(0xFFFFFF, 4);
+  // directionalLight2.position.set(-0.5, 1, -0.5);
   const lights = [
     ambientLight,
     directionalLight,
@@ -463,7 +463,7 @@ container.add(teleportMeshes[1]);
             color: m.color,
             vertexColors: m.vertexColors,
             roughness: 1,
-            // metalness: 0,
+            metalness: 0,
           });
           if (!m.map) {
             console.log('missing material texture', itemModel, o, m);
