@@ -2377,6 +2377,23 @@ Promise.resolve().then(() => {
         src,
       }));
     });
+    const addButton = aPrefab.querySelector('.add-button');
+    addButton.addEventListener('click', () => {
+      const dom = parseHtml(codeInput.value);
+      const xrSite = _findNodeWithTagName(dom, 'xr-site');
+      const editedEl = toolManager.getEditedElement();
+      if (xrSite && (!landConnection || editedEl)) {
+        const position = localVector.copy(camera.position)
+          .divide(container.scale)
+          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+        position.y = 0;
+        xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
+        codeInput.value = serializeHtml(dom);
+        codeInput.dispatchEvent(new CustomEvent('change'));
+      } else {
+        console.warn('no xr-site to add to');
+      }
+    });
     prefabIntersectionObserver.observe(aPrefab);
   });
 });
