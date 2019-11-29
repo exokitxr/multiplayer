@@ -2425,6 +2425,7 @@ disableMicButton.addEventListener('click', async () => {
 const siteUrlsContent = topDocument.getElementById('site-urls-content');
 const avatarModelsContent = topDocument.getElementById('avatar-models-content');
 const prefabsContent = topDocument.getElementById('prefabs-content');
+const prefabsContentEnd = prefabsContent.querySelector('.end');
 Promise.resolve().then(() => {
   Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
     const src = aSite.getAttribute('src');
@@ -2495,15 +2496,56 @@ Promise.resolve().then(() => {
     });
   });
 
+  let lastPrefab = 0;
   const prefabIntersectionObserver = new IntersectionObserver(entries => {
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       if (entry.isIntersecting) {
-        const aPrefab = entry.target;
-        const img = aPrefab.querySelector('img');
-        if (!img.src) {
-          const src = aPrefab.getAttribute('src');
-          img.src = src.replace(/\.glb$/, '.png');
+        const numPrefabs = Math.ceil(prefabsContent.getBoundingClientRect().height/80);
+        for (let i = 0; i < numPrefabs && lastPrefab < itemModels.length; i++) {
+          let itemModel = itemModels[lastPrefab++];
+          itemModel = itemModel.replace(/([^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/glb/$1.glb');
+          const src = itemModel;
+
+          const aPrefab = document.createElement('nav');
+          aPrefab.classList.add('a-prefab');
+          aPrefab.setAttribute('draggable', 'true');
+          aPrefab.setAttribute('src', encodeURI(src));
+          aPrefab.innerHTML = `<div class=overlay>
+            <div class=multibutton>
+              <nav class="button first last add-button">Add</nav>
+            </div>
+          </div>
+          <img src="${encodeURI(src.replace(/\.glb$/, '.png'))}" width=80 height=80>
+          <div class=wrap>
+            <div class=label>${itemModel}</div>
+          </div>`;
+
+          aPrefab.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text', JSON.stringify({
+              type: 'avatar',
+              src,
+            }));
+          });
+          const addButton = aPrefab.querySelector('.add-button');
+          addButton.addEventListener('click', () => {
+            const dom = parseHtml(codeInput.value);
+            const xrSite = _findNodeWithTagName(dom, 'xr-site');
+            const editedEl = toolManager.getEditedElement();
+            if (xrSite && (!landConnection || editedEl)) {
+              const position = localVector.copy(camera.position)
+                .divide(container.scale)
+                .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+              position.y = 0;
+              xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
+              codeInput.value = serializeHtml(dom);
+              codeInput.dispatchEvent(new CustomEvent('change'));
+            } else {
+              console.warn('no xr-site to add to');
+            }
+          });
+
+          prefabsContent.insertBefore(aPrefab, prefabsContentEnd);
         }
       }
     }
@@ -2511,34 +2553,7 @@ Promise.resolve().then(() => {
     root: prefabsContent,
     // threshold: 0.001,
   });
-  const aPrefabs = Array.from(prefabsContent.querySelectorAll('.a-prefab'));
-  aPrefabs.forEach(aPrefab => {
-    const src = aPrefab.getAttribute('src');
-    aPrefab.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text', JSON.stringify({
-        type: 'avatar',
-        src,
-      }));
-    });
-    const addButton = aPrefab.querySelector('.add-button');
-    addButton.addEventListener('click', () => {
-      const dom = parseHtml(codeInput.value);
-      const xrSite = _findNodeWithTagName(dom, 'xr-site');
-      const editedEl = toolManager.getEditedElement();
-      if (xrSite && (!landConnection || editedEl)) {
-        const position = localVector.copy(camera.position)
-          .divide(container.scale)
-          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-        position.y = 0;
-        xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
-      } else {
-        console.warn('no xr-site to add to');
-      }
-    });
-    prefabIntersectionObserver.observe(aPrefab);
-  });
+  prefabIntersectionObserver.observe(prefabsContentEnd);
 });
 
 const channelsContent = topDocument.getElementById('channels-content');

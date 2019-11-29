@@ -494,6 +494,10 @@ a:active {
 {
   visibility: visible;
 }
+.prefabs-content .end {
+  width: 100%;
+  height: 1px;
+}
 .selected-object-details,
 .avatar-details,
 /* .parcel-details, */
@@ -790,7 +794,9 @@ header > .login-form.phase-3 > .phaseless-content
         </div>
         <div class="content site-urls-content open" id=site-urls-content></div>
         <div class="content avatar-models-content" id=avatar-models-content></div>
-        <div class="content prefabs-content" id=prefabs-content></div>
+        <div class="content prefabs-content" id=prefabs-content>
+          <div class=end></div>
+        </div>
         <div class="content inventory-content" id=inventory-content></div>
         <div class="content code-content">
           <textarea class=code id=code spellcheck=false></textarea>
@@ -915,7 +921,7 @@ avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
   </nav>`;
 }).join('\n');
 
-const prefabsContent = document.getElementById('prefabs-content');
+/* const prefabsContent = document.getElementById('prefabs-content');
 prefabsContent.innerHTML = itemModels.map(itemModel => {
   itemModel = itemModel.replace(/([^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/glb/$1.glb');
   return `<nav class=a-prefab draggable=true src="${encodeURI(itemModel)}"">
@@ -929,7 +935,7 @@ prefabsContent.innerHTML = itemModels.map(itemModel => {
       <div class=label>${itemModel}</div>
     </div>
   </nav>`;
-}).join('\n');
+}).join('\n'); */
 
 const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
 realityLayersSwitchWrap.addEventListener('click', async () => {
