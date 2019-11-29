@@ -419,8 +419,26 @@ container.add(teleportMeshes[1]);
   manager.itemModel = '';
   let objects = [];
 
-  const startI = 0;
-  const numI = 20;
+  const _flipImage = (() => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    return async image => {
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      ctx.clearRect(0, 0, image.naturalWidth, image.naturalHeight);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.translate(0, image.naturalHeight);
+      ctx.scale(1, -1);
+      ctx.drawImage(image, 0, 0);
+      const b = await new Promise((accept, reject) => {
+        canvas.toBlob(accept, 'image/png');
+      });
+      return b;
+    };
+  })();
+
+  const startI = 1800;
+  const numI = 1000;
   for (let i = 0; (startI + i) < itemModels.length && i < numI; i++) {
     const itemModel = itemModels[startI + i];
     console.log('load', startI + i);
