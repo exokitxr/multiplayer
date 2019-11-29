@@ -424,9 +424,9 @@ container.add(teleportMeshes[1]);
     const boundingBox = new THREE.Box3().setFromObject(object);
     const center = boundingBox.getCenter(new THREE.Vector3());
     const size = boundingBox.getSize(new THREE.Vector3());
-    // console.log('got model', object);
-    // console.log('bounding box', boundingBox.min.y);
-    if (/battleroyale/.test(itemModel)) {
+    if (/apocalypse/.test(itemModel)) {
+      object.position.set(0, 0/*-boundingBox.min.y*0.01*/, 0);
+    } else if (/battleroyale/.test(itemModel)) {
       object.position.set(0, 0/*-boundingBox.min.y*0.01*/, 0);
     } else if (/dungeon/.test(itemModel)) {
       object.position.set(-center.x, 0, -center.z);
