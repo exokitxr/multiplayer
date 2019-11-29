@@ -232,7 +232,8 @@ container.add(teleportMeshes[1]);
       accept(t);
     };
     img.onerror = reject;
-    img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    img.crossOrigin = 'Anonymous';
+    img.src = 'https://item-models.exokit.org/misc/Textures/transparent.png';
   });
 
   const manager = new THREE.LoadingManager();
