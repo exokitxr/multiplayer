@@ -480,7 +480,7 @@ container.add(teleportMeshes[1]);
                   });
                   m.map = new THREE.Texture(img);
                   m.map.needsUpdate = true;
-                  // m.color.set(0, 0, 0);
+                  m.color.set(0, 0, 0);
                   // m.vertexColors = 0; */
                   m.transparent = true;
                   m.opacity = 0;
@@ -498,7 +498,7 @@ container.add(teleportMeshes[1]);
                   m.map = new THREE.Texture(img);
                   m.map.needsUpdate = true; */
                   // m.map = null;
-                  // m.color.set(0, 0, 0);
+                  m.color.set(0, 0, 0);
                   // m.vertexColors = 0;
                   // m.transparent = true;
                   // m.alphaTest = 0.5;
