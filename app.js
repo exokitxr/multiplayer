@@ -687,7 +687,10 @@ container.add(teleportMeshes[1]);
           /* o.material = new THREE.MeshStandardMaterial({
             map: o.material.map,
           }); */
+
+          return m;
         });
+        o.material = materials.length > 1 ? materials : materials[0];
       }
     });
     await Promise.all(promises);
