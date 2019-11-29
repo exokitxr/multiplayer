@@ -193,7 +193,7 @@ container.add(teleportMeshes[1]);
 (async () => {
   // return;
 
-  const itemModelsHash = 'b88982a0b7972ef92022b66c9d87b30e45a5949d';
+  const itemModelsHash = '121b5f4a400e528cd5f58d0c6a7e73b76d707a17';
 
   const screenshotImage = document.createElement('img');
   screenshotImage.style.position = 'absolute';
@@ -216,7 +216,15 @@ container.add(teleportMeshes[1]);
     console.log('resource', u);
     let match;
     if (match = u.match(/^(.+?)\/([^\/]+?\.png)$/)) {
-      if (match[2] === 'PolygonMilitary_Texture_01_A.png') {
+      if (match[2] === 'PolygonApocalypse_Texture_01.png') {
+        match[2] = 'PolygonApocalypse_Texture_01_A.png';
+      } else if (match[2] === 'PolygonApocalypse_Vehicle_Texture_01.png') {
+        match[2] = 'Veh/PolygonApocalypse_Vehicle_Texture_01.png';
+      } else if (match[2] === 'Overgrowth.png') {
+        match[2] = 'Misc/Overgrowth.png';
+      } else if (match[2] === 'PolygonApocalyse_Road_01.png') {
+        match[2] = 'Misc/PolygonApocalyse_Road_01.png';
+      } else if (match[2] === 'PolygonMilitary_Texture_01_A.png') {
         if (/battleroyale/i.test(manager.itemModel)) {
           match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
         }
@@ -281,16 +289,27 @@ container.add(teleportMeshes[1]);
       }
       // console.log('new u', `${match[1]}/Textures/${match[2]}`);
       return `${match[1]}/Textures/${match[2]}`;
+    } else if (match = u.match(/^(.+?)\/([^\/]+?\.tga)$/)) {
+      if (match[2] === 'Wire_Alpha.tga') {
+        match[2] = 'Misc/Wire_Alpha.png';
+      }
+      return `${match[1]}/Textures/${match[2]}`;
     } else if (match = u.match(/^(.+?)\/([^\/]+?\.tif)$/)) {
       if (match[2] === 'Weapon_Skins_Master_07.tif') {
         match[2] = 'Weapons/Wep_Skin_07.png';
       }
       return `${match[1]}/Textures/${match[2]}`;
     } else if (match = u.match(/^(.+?)\/([^\/]+?\.psd)$/)) {
-      if (match[2] === 'PolygonCity_Texture.psd') {
+      if (match[2] === 'PolygonApocalypse_Texture_01_Cleaned.psd' || match[2] === 'PolygonApocalypse_Texture_01_Cleaned_jason.psd') {
+        match[2] = 'PolygonApocalypse_Texture_01_A.png';
+      } else if (match[2] === 'PolygonFarm_Texture_01_A_2k.psd') {
+        match[2] = 'PolygonApocalypse_Texture_01_A.png';
+      } else if (match[2] === 'PolygonCity_Texture.psd') {
         match[2] = 'PolygonBattleRoyale_Road_01.png';
       } else if (match[2] === 'PolygonMilitary_Texture_01_A.psd') {
-        if (/road/i.test(manager.itemModel)) {
+        if (/apocalypse/i.test(manager.itemModel)) {
+          match[2] = 'PolygonApocalypse_Texture_01_A.png';
+        } else if (/battleroyale/i.test(manager.itemModel) && /road/i.test(manager.itemModel)) {
           match[2] = 'PolygonBattleRoyale_Road_01.png';
         } else {
           match[2] = 'PolygonBattleRoyale_Texture_01_A.png';
@@ -371,8 +390,8 @@ container.add(teleportMeshes[1]);
   manager.itemModel = '';
   let objects = [];
 
-  const startI = 2228;
-  const numI = 1000;
+  const startI = 860;
+  const numI = 20;
   for (let i = 0; (startI + i) < itemModels.length && i < numI; i++) {
     const itemModel = itemModels[startI + i];
     console.log('load', startI + i);
@@ -398,14 +417,17 @@ container.add(teleportMeshes[1]);
     // console.log('got model', object);
     // console.log('bounding box', boundingBox.min.y);
     if (/battleroyale/.test(itemModel)) {
-      console.log('offset', boundingBox.min.y);
-      object.position.set(0, -boundingBox.min.y/100, 0);
+      object.position.set(0, 0/*-boundingBox.min.y*0.01*/, 0);
     } else if (/dungeon/.test(itemModel)) {
-      object.position.set(-center.x, -boundingBox.min.y, -center.z);
+      object.position.set(-center.x, 0, -center.z);
     } else if (/nature/.test(itemModel)) {
-      // object.position.set(0, boundingBox.min.y, 0);
-    } else {
-      // nothing
+      object.position.set(-center.x*0.01, 0, -center.z*0.01);
+    } else if (/samurai/.test(itemModel)) {
+      object.position.set(-center.x, 0, -center.z);
+    } else if (/scifi/.test(itemModel)) {
+      object.position.set(-center.x*0.01, 0, -center.z*0.01);
+    } else if (/town/.test(itemModel)) {
+      object.position.set(-center.x*0.01, 0, -center.z*0.01);
     }
     object.quaternion.set(0, 0, 0, 1);
     object.scale.set(1, 1, 1);
@@ -427,7 +449,61 @@ container.add(teleportMeshes[1]);
           console.log('check material', m.name, !!m.map);
           if (!m.map) {
             console.log('missing material texture', itemModel, o, m);
-            if (/battleroyale/i.test(itemModel)) {
+            if (/apocalypse/i.test(itemModel)) {
+              if (m.name === 'lambert3' || m.name === 'pasted__lambert3' || m.name === 'lambert122') {
+                // promises.push((async () => {
+                  console.log('elide bld');
+                  /* const img = new Image();
+                  img.crossOrigin = true;               
+                  img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/apocalypse/Textures/Misc/Overgrowth.png`;
+                  await new Promise((accept, reject) => {
+                    img.onload = accept;
+                    img.onerror = reject;
+                  });
+                  m.map = new THREE.Texture(img);
+                  m.map.needsUpdate = true;
+                  // m.color.set(0, 0, 0);
+                  // m.vertexColors = 0; */
+                  m.transparent = true;
+                  m.opacity = 0;
+                // })());
+              } else if (/veh/i.test(o.name) && /glass/i.test(o.name)) {
+                // promises.push((async () => {
+                  console.log('elide vehicle glass');
+                  /* const img = new Image();
+                  img.crossOrigin = true;               
+                  img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/apocalypse/Textures/Veh/PolygonApocalypse_Vehicle_Texture_01.png`;
+                  await new Promise((accept, reject) => {
+                    img.onload = accept;
+                    img.onerror = reject;
+                  });
+                  m.map = new THREE.Texture(img);
+                  m.map.needsUpdate = true; */
+                  // m.map = null;
+                  // m.color.set(0, 0, 0);
+                  // m.vertexColors = 0;
+                  // m.transparent = true;
+                  // m.alphaTest = 0.5;
+                  m.transparent = true;
+                  m.opacity = 0;
+                // })());
+              } else {
+                promises.push((async () => {
+                  console.log('loading apocalypse...');
+                  const img = new Image();
+                  img.crossOrigin = true;               
+                  img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/apocalypse/Textures/PolygonApocalypse_Texture_01_A.png`;
+                  await new Promise((accept, reject) => {
+                    img.onload = accept;
+                    img.onerror = reject;
+                  });
+                  m.map = new THREE.Texture(img);
+                  m.map.needsUpdate = true;
+                  // m.color.setHSL(m.color.r,m.color.g,m.color.b);
+                  // m.vertexColors = 0;
+                })());
+              }
+            } else if (/battleroyale/i.test(itemModel)) {
               promises.push((async () => {
                 console.log('loading battleroyale...');
                 const img = new Image();
@@ -437,8 +513,8 @@ container.add(teleportMeshes[1]);
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
@@ -452,8 +528,8 @@ container.add(teleportMeshes[1]);
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
@@ -467,8 +543,8 @@ container.add(teleportMeshes[1]);
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
@@ -482,8 +558,8 @@ container.add(teleportMeshes[1]);
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
@@ -497,8 +573,8 @@ container.add(teleportMeshes[1]);
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
@@ -512,8 +588,8 @@ container.add(teleportMeshes[1]);
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
@@ -527,8 +603,8 @@ container.add(teleportMeshes[1]);
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
@@ -566,23 +642,25 @@ container.add(teleportMeshes[1]);
               })());
             } */
           } else {
-            /* if (/window/i.test(o.name)) {
+            if (/apocalypse/i.test(itemModel) && /motorway/i.test(itemModel)) {
+              // m.map = null;
               promises.push((async () => {
-                console.log('loading window...');
+                console.log('loading town...');
                 const img = new Image();
                 img.crossOrigin = true;
-                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/town/Textures/PolygonTown_Window_01.png`;
+                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/apocalypse/Textures/Misc/PolygonApocalyse_Road_01.png`;
                 await new Promise((accept, reject) => {
                   img.onload = accept;
                   img.onerror = reject;
                 });
-                o.material.map = new THREE.Texture(img);
-                o.material.map.needsUpdate = true;
+                m.map = new THREE.Texture(img);
+                m.map.needsUpdate = true;
                 // m.color.setHSL(m.color.r,m.color.g,m.color.b);
                 // m.vertexColors = 0;
               })());
-            } */
-            m.vertexColors = 0;
+            } else {
+              m.vertexColors = 0;
+            }
           }
           // console.log('got material', o.material);
           // o.material.transparent = true;
@@ -633,25 +711,26 @@ container.add(teleportMeshes[1]);
         .then(res => res.json());
     }
 
-    object.position.x += (i%50)*2;
-    // object.scale.multiplyScalar(0.01);
-    if (/battleroyale/.test(itemModel)) {
+    object.position.x += (i%10)*2;
+    if (/apocalypse/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/battleroyale/.test(itemModel)) {
       object.scale.multiplyScalar(0.01);
     } else if (/dungeon/.test(itemModel)) {
       // nothing
     } else if (/nature/.test(itemModel)) {
       object.scale.multiplyScalar(0.01);
+    } else if (/samurai/.test(itemModel)) {
+      // object.scale.multiplyScalar(0.01);
     } else if (/scifi/.test(itemModel)) {
       object.scale.multiplyScalar(0.01);
     } else if (/town/.test(itemModel)) {
       object.scale.multiplyScalar(0.01);
-    } else {
-      object.scale.multiplyScalar(0.1);
     }
     scene.add(object);
     objects.push(object);
 
-    while (objects.length > 50) {
+    while (objects.length > 10) {
       const object = objects.shift();
       scene.remove(object);
     }
