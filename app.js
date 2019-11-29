@@ -53,9 +53,13 @@ camera.position.z = 2;
 const ambientLight = new THREE.AmbientLight(0x808080);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 4);
 directionalLight.position.set(0.5, 1, 0.5);
 scene.add(directionalLight);
+
+/* const directionalLight2 = new THREE.DirectionalLight(0xFFFFFF, 4);
+directionalLight2.position.set(-0.5, 1, -0.5);
+scene.add(directionalLight2); */
 
 const gridHelper = new THREE.GridHelper(10, 10);
 container.add(gridHelper);
@@ -204,8 +208,10 @@ container.add(teleportMeshes[1]);
   // const cameraPosition = new THREE.Vector3(0, 1, 0);
 
   const ambientLight = new THREE.AmbientLight(0x808080);
-  const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 3);
+  const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 4);
   directionalLight.position.set(0.5, 1, 0.5);
+  const directionalLight2 = new THREE.DirectionalLight(0xFFFFFF, 4);
+  directionalLight2.position.set(-0.5, 1, -0.5);
   const lights = [
     ambientLight,
     directionalLight,
@@ -448,9 +454,17 @@ container.add(teleportMeshes[1]);
     const promises = [];
     object.traverse(o => {
       if (o.isMesh) {
-        const materials = Array.isArray(o.material) ? o.material : [o.material];
-        materials.forEach(m => {
+        let materials = Array.isArray(o.material) ? o.material : [o.material];
+        materials = materials.map(m => {
           console.log('check material', m.name, !!m.map);
+          m = new THREE.MeshStandardMaterial({
+            name: m.name,
+            map: m.map,
+            color: m.color,
+            vertexColors: m.vertexColors,
+            roughness: 1,
+            // metalness: 0,
+          });
           if (!m.map) {
             console.log('missing material texture', itemModel, o, m);
             if (/apocalypse/i.test(itemModel)) {
