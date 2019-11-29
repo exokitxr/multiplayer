@@ -2242,6 +2242,7 @@ disableMicButton.addEventListener('click', async () => {
 
 const siteUrlsContent = topDocument.getElementById('site-urls-content');
 const avatarModelsContent = topDocument.getElementById('avatar-models-content');
+const prefabsContent = topDocument.getElementById('prefabs-content');
 Promise.resolve().then(() => {
   Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
     const src = aSite.getAttribute('src');
@@ -2310,6 +2311,35 @@ Promise.resolve().then(() => {
         url: modelUrl,
       }));
     });
+  });
+
+  const prefabIntersectionObserver = new IntersectionObserver(entries => {
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.isIntersecting) {
+        const aPrefab = entry.target;
+        const img = aPrefab.querySelector('img');
+        if (!img.src) {
+          const src = aPrefab.getAttribute('src');
+          // console.log('got src', src.replace(/^.*(\/[^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/lol/$1.png'));
+          img.src = src.replace(/^.*(\/[^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/lol/$1.png');
+        }
+      }
+    }
+  }, {
+    root: prefabsContent,
+    // threshold: 0.001,
+  });
+  const aPrefabs = Array.from(prefabsContent.querySelectorAll('.a-prefab'));
+  aPrefabs.forEach(aPrefab => {
+    const src = aPrefab.getAttribute('src');
+    aPrefab.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text', JSON.stringify({
+        type: 'avatar',
+        src,
+      }));
+    });
+    prefabIntersectionObserver.observe(aPrefab);
   });
 });
 

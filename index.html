@@ -775,7 +775,7 @@ header > .login-form.phase-3 > .phaseless-content
         </div>
         <div class="content site-urls-content open" id=site-urls-content></div>
         <div class="content avatar-models-content" id=avatar-models-content></div>
-        <div class="content prefabs-conent"></div>
+        <div class="content prefabs-content" id=prefabs-content></div>
         <div class="content inventory-content" id=inventory-content></div>
         <div class="content code-content">
           <textarea class=code id=code spellcheck=false></textarea>
@@ -837,6 +837,7 @@ header > .login-form.phase-3 > .phaseless-content
 import ew from 'https://web2.exokit.org/ew.js';
 import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
 import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
+import itemModels from 'https://item-models.exokit.org/item-models.js';
 
 const channelsPromise = (async () => {
   const res = await fetch('https://presence.exokit.org/channels');
@@ -875,7 +876,7 @@ siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
         <nav class="button first last add-button">Add</nav>
       </div>
     </div>
-    <img src="${icon}">
+    <img src="${icon}" width=80 height=80>
     <div class=wrap>
       <div class=label>${label}</div>
       <div class=url>${encodeURI(url)}</div>
@@ -892,12 +893,29 @@ avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
         <nav class="button last wear-button">Wear</nav>
       </div>
     </div>
-    <img src="${icon}">
+    <img src="${icon}" width=80 height=80>
     <div class=wrap>
       <div class=label>${label}</div>
     </div>
   </nav>`;
 }).join('\n');
+
+const prefabsContent = document.getElementById('prefabs-content');
+prefabsContent.innerHTML = itemModels.map(itemModel => {
+  return `<nav class=a-prefab draggable=true src="${encodeURI(`https://item-models.exokit.org/${itemModel}`)}"">
+    <div class=overlay>
+      <div class=multibutton>
+        <nav class="button first last add-button">Add</nav>
+      </div>
+    </div>
+    <img width=80 height=80>
+    <div class=wrap>
+      <div class=label>${itemModel}</div>
+    </div>
+  </nav>`;
+}).join('\n');
+
+console.log('go');
 
 const realityLayersSwitchWrap = document.getElementById('reality-layers-switch-wrap');
 realityLayersSwitchWrap.addEventListener('click', async () => {
