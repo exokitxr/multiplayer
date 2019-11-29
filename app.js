@@ -631,20 +631,26 @@ container.add(teleportMeshes[1]);
                 // m.vertexColors = 0;
               })());
             } else if (/glass/i.test(m.name)) {
-              promises.push((async () => {
-                console.log('loading glass...');
-                const img = new Image();
-                img.crossOrigin = true;
-                img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/town/Textures/PolygonTown_Window_01.png`;
-                await new Promise((accept, reject) => {
-                  img.onload = accept;
-                  img.onerror = reject;
-                });
-                m.map = new THREE.Texture(img);
-                m.map.needsUpdate = true;
-                // m.color.setHSL(m.color.r,m.color.g,m.color.b);
-                // m.vertexColors = 0;
-              })());
+              // promises.push((async () => {
+                  console.log('elide glass');
+                  /* const img = new Image();
+                  img.crossOrigin = true;               
+                  img.src = `https://rawcdn.githack.com/exokitxr/item-models/${itemModelsHash}/apocalypse/Textures/Misc/Overgrowth.png`;
+                  await new Promise((accept, reject) => {
+                    img.onload = accept;
+                    img.onerror = reject;
+                  });
+                  m.map = new THREE.Texture(img);
+                  m.map.needsUpdate = true;
+                  // m.vertexColors = 0; */
+                  // m.transparent = true;
+                  m.color.set(0, 0, 0);
+                  // m.opacity = 0;
+                  m.map = alphaMap;
+                  m.map.flipY = false;
+                  m.transparent = true;
+                  // m.alphaMap = alphaMap;
+                // })());
             } else if (/road/i.test(itemModel)) {
               promises.push((async () => {
                 console.log('loading road...');
