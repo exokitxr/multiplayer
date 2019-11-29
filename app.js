@@ -2340,8 +2340,7 @@ Promise.resolve().then(() => {
         const img = aPrefab.querySelector('img');
         if (!img.src) {
           const src = aPrefab.getAttribute('src');
-          // console.log('got src', src.replace(/^.*(\/[^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/lol/$1.png'));
-          img.src = src.replace(/^.*(\/[^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/lol/$1.png');
+          img.src = src.replace(/\.glb$/, '.png');
         }
       }
     }
