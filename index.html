@@ -917,7 +917,7 @@ avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
 
 const prefabsContent = document.getElementById('prefabs-content');
 prefabsContent.innerHTML = itemModels.map(itemModel => {
-  itemModel = itemModel.replace(/([^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/lol/$1.glb');
+  itemModel = itemModel.replace(/([^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/glb/$1.glb');
   return `<nav class=a-prefab draggable=true src="${encodeURI(itemModel)}"">
     <div class=overlay>
       <div class=multibutton>

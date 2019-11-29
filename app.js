@@ -522,6 +522,7 @@ container.add(teleportMeshes[1]);
                   m.color.set(0, 0, 0);
                   // m.opacity = 0;
                   m.map = alphaMap;
+                  m.map.flipY = false;
                   m.transparent = true;
                   // m.alphaMap = alphaMap;
                 // })());
@@ -545,6 +546,7 @@ container.add(teleportMeshes[1]);
                   // m.transparent = true;
                   // m.opacity = 0;
                   m.map = alphaMap;
+                  m.map.flipY = false;
                   m.transparent = true;
                   // m.alphaMap = alphaMap;
                 // })());
@@ -737,6 +739,84 @@ container.add(teleportMeshes[1]);
       }
     });
     await Promise.all(promises);
+    promises.length = 0;
+
+    object.traverse(o => {
+      if (o.isMesh) {
+        let materials = Array.isArray(o.material) ? o.material : [o.material];
+        materials.forEach(m => {
+          if (m.map) {
+            const imageDst = 'https://lol.exokit.org/' + m.map.image.src.replace(/^.*\/([^\/]+?\/)(Textures)(\/.*?)$/, '$1TexturesY$3');
+            console.log('got image dst', m.map.image.src, imageDst);
+            const imageSrc = m.map.image.src.replace(/^.*\/([^\/]+?\/)(Textures)(\/.*?)$/, 'https://item-models.exokit.org/glb/$1TexturesY$3');
+            // console.log('got image src', m.map.image.src, imageSrc);
+
+            promises.push((async () => {
+              if (m.map.flipY) {
+                if (!m.map.image.oldSrc) {
+                  const b = await _flipImage(m.map.image);
+                  await fetch(imageDst, {
+                    method: 'PUT',
+                    body: b,
+                  })
+                    .then(res => res.json());
+
+                  if (!m.map.image.oldSrc) {
+                    /* await new Promise((accept, reject) => {
+                      m.map.image.onload = accept;
+                      m.map.image.onerror = err => {
+                        accept();
+                      }; */
+                      m.map.image.oldSrc = m.map.image.src;
+                      // m.map.image.src = imageSrc;
+                      Object.defineProperty(m.map.image, 'src', {
+                        get() {
+                          return imageSrc;
+                        },
+                      });
+                      m.map.image.needsUpdate = true;
+                    // });
+                  }
+                }
+                m.map.flipY = false;
+              } else {
+                if (!m.map.image.oldSrc) {
+                  // console.log('no flip!', m.map.image.src, imageDst);
+
+                  m.map.image.oldSrc = m.map.image.src;
+
+                  const res = await fetch(m.map.image.src);
+                  const b = await res.blob();
+
+                  await fetch(imageDst, {
+                    method: 'PUT',
+                    body: b,
+                  })
+                    .then(res => res.json());
+
+                  /* await new Promise((accept, reject) => {
+                    m.map.image.onload = accept;
+                    m.map.image.onerror = err => {
+                      accept();
+                    }; */
+                    m.map.image.oldSrc = m.map.image.src;
+                    // m.map.image.src = imageSrc;
+                    Object.defineProperty(m.map.image, 'src', {
+                      get() {
+                        return imageSrc;
+                      },
+                    });
+                    m.map.image.needsUpdate = true;
+                  // });
+                }
+              }
+            })());
+          }
+        });
+      }
+    });
+    await Promise.all(promises);
+    promises.length = 0;
 
     if (/apocalypse/.test(itemModel)) {
       object.scale.multiplyScalar(0.01);
@@ -760,6 +840,7 @@ container.add(teleportMeshes[1]);
           accept(ab);
         }, {
           binary: true,
+          embedImages: false,
         });
       });
       const u = `https://lol.exokit.org/${itemModel.replace(/\.fbx$/, '.glb')}`;
@@ -770,6 +851,35 @@ container.add(teleportMeshes[1]);
       })
         .then(res => res.json());
     }
+
+    object.traverse(o => {
+      if (o.isMesh) {
+        let materials = Array.isArray(o.material) ? o.material : [o.material];
+        materials.forEach(m => {
+          if (m.map && m.map.image.oldSrc) {
+            // console.log('back to old', m.map.image.oldSrc);
+            promises.push((async () => {
+              // console.log('trigger 1');
+              await new Promise((accept, reject) => {
+                // console.log('trigger 2');
+                const image = new Image();
+                image.onload = accept;
+                image.onerror = reject;
+                image.crossOrigin = 'Anonymous';
+                image.src = m.map.image.oldSrc;
+                m.map.image = image;
+              });
+              m.map.image.needsUpdate = true;
+              m.map.flipY = true;
+              // console.log('trigger 3');
+            })());
+          }
+        });
+      }
+    });
+    await Promise.all(promises);
+    promises.length = 0;
+
     {
       const blob = await screenshot(object, {
         width: 192,
@@ -2410,7 +2520,7 @@ Promise.resolve().then(() => {
           .divide(container.scale)
           .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
         position.y = 0;
-        xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
+        xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
         codeInput.value = serializeHtml(dom);
         codeInput.dispatchEvent(new CustomEvent('change'));
       } else {
