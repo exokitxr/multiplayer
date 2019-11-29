@@ -694,6 +694,23 @@ container.add(teleportMeshes[1]);
       }
     });
     await Promise.all(promises);
+
+    if (/apocalypse/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/battleroyale/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/dungeon/.test(itemModel)) {
+      // nothing
+    } else if (/nature/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/samurai/.test(itemModel)) {
+      // object.scale.multiplyScalar(0.01);
+    } else if (/scifi/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    } else if (/town/.test(itemModel)) {
+      object.scale.multiplyScalar(0.01);
+    }
+
     {
       const ab = await new Promise((accept, reject) => {
         new THREE.GLTFExporter().parse(object, ab => {
@@ -733,21 +750,6 @@ container.add(teleportMeshes[1]);
     }
 
     object.position.x += (i%10)*2;
-    if (/apocalypse/.test(itemModel)) {
-      object.scale.multiplyScalar(0.01);
-    } else if (/battleroyale/.test(itemModel)) {
-      object.scale.multiplyScalar(0.01);
-    } else if (/dungeon/.test(itemModel)) {
-      // nothing
-    } else if (/nature/.test(itemModel)) {
-      object.scale.multiplyScalar(0.01);
-    } else if (/samurai/.test(itemModel)) {
-      // object.scale.multiplyScalar(0.01);
-    } else if (/scifi/.test(itemModel)) {
-      object.scale.multiplyScalar(0.01);
-    } else if (/town/.test(itemModel)) {
-      object.scale.multiplyScalar(0.01);
-    }
     scene.add(object);
     objects.push(object);
 
