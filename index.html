@@ -388,7 +388,7 @@ a:active {
   color: #5c6bc0;
 }
 .sidebar .content-tabs .content-tab .sub {
-  display: none;
+  display: flex;
   position: absolute;
   width: 100px;
   height: 50px;
@@ -397,9 +397,10 @@ a:active {
   color: #FFF;
   justify-content: center;
   align-items: center;
+  visibility: hidden;
 }
 .sidebar .content-tabs .content-tab:hover .sub {
-  display: flex;
+  visibility: visible;
 }
 .sidebar .content {
   flex: 1;
@@ -474,28 +475,24 @@ a:active {
 .prefabs-content .a-prefab .overlay,
 .inventory-content .a-file .overlay
 {
-  display: none;
+  display: flex;
   position: absolute;
   top: -3px;
   bottom: -3px;
   left: 0;
   right: 0;
-  /* border: 0;
-  border-top-width: 3px;
-  border-bottom-width: 3px;
-  border-style: solid;
-  border-color: #000; */
   padding: 10px;
   background-image: linear-gradient(to right, transparent, #FFF 50%);
   justify-content: flex-end;
   align-items: center;
+  visibility: hidden;
 }
 .site-urls-content .a-site:hover .overlay,
 .avatar-models-content .a-avatar:hover .overlay,
 .prefabs-content .a-prefab:hover .overlay,
 .inventory-content .a-file:hover .overlay
 {
-  display: flex;
+  visibility: visible;
 }
 .selected-object-details,
 .avatar-details,
