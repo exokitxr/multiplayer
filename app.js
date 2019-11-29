@@ -400,8 +400,8 @@ container.add(teleportMeshes[1]);
   manager.itemModel = '';
   let objects = [];
 
-  const startI = 2460;
-  const numI = 100;
+  const startI = 0;
+  const numI = 20;
   for (let i = 0; (startI + i) < itemModels.length && i < numI; i++) {
     const itemModel = itemModels[startI + i];
     console.log('load', startI + i);
