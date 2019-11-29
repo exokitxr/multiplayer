@@ -218,6 +218,8 @@ container.add(teleportMeshes[1]);
     if (match = u.match(/^(.+?)\/([^\/]+?\.png)$/)) {
       if (match[2] === 'PolygonApocalypse_Texture_01.png') {
         match[2] = 'PolygonApocalypse_Texture_01_A.png';
+      } else if (match[2] === 'Billboard.png') {
+        match[2] = 'Misc/Billboard.png';
       } else if (match[2] === 'PolygonApocalypse_Vehicle_Texture_01.png') {
         match[2] = 'Veh/PolygonApocalypse_Vehicle_Texture_01.png';
       } else if (match[2] === 'Overgrowth.png') {
@@ -304,6 +306,8 @@ container.add(teleportMeshes[1]);
         match[2] = 'PolygonApocalypse_Texture_01_A.png';
       } else if (match[2] === 'PolygonFarm_Texture_01_A_2k.psd') {
         match[2] = 'PolygonApocalypse_Texture_01_A.png';
+      } else if (match[2] === 'Andrew_Rubble_01.psd') {
+        match[2] = 'Misc/PolygonApocalypse_Rubble_01.png';
       } else if (match[2] === 'PolygonCity_Texture.psd') {
         match[2] = 'PolygonBattleRoyale_Road_01.png';
       } else if (match[2] === 'PolygonMilitary_Texture_01_A.psd') {
@@ -390,8 +394,8 @@ container.add(teleportMeshes[1]);
   manager.itemModel = '';
   let objects = [];
 
-  const startI = 860;
-  const numI = 20;
+  const startI = 2460;
+  const numI = 100;
   for (let i = 0; (startI + i) < itemModels.length && i < numI; i++) {
     const itemModel = itemModels[startI + i];
     console.log('load', startI + i);
