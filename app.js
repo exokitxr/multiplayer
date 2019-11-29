@@ -494,10 +494,13 @@ container.add(teleportMeshes[1]);
                   });
                   m.map = new THREE.Texture(img);
                   m.map.needsUpdate = true;
-                  m.color.set(0, 0, 0);
                   // m.vertexColors = 0; */
+                  // m.transparent = true;
+                  m.color.set(0, 0, 0);
+                  // m.opacity = 0;
+                  m.map = alphaMap;
                   m.transparent = true;
-                  m.opacity = 0;
+                  // m.alphaMap = alphaMap;
                 // })());
               } else if (/veh/i.test(o.name) && /glass/i.test(o.name)) {
                 // promises.push((async () => {
@@ -516,8 +519,11 @@ container.add(teleportMeshes[1]);
                   // m.vertexColors = 0;
                   // m.transparent = true;
                   // m.alphaTest = 0.5;
+                  // m.transparent = true;
+                  // m.opacity = 0;
+                  m.map = alphaMap;
                   m.transparent = true;
-                  m.opacity = 0;
+                  // m.alphaMap = alphaMap;
                 // })());
               } else {
                 promises.push((async () => {
