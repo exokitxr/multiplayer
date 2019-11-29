@@ -217,6 +217,20 @@ container.add(teleportMeshes[1]);
     directionalLight,
   ];
 
+  const alphaMap = await new Promise((accept, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const t = new THREE.Texture(
+        img// ,
+        // THREE.UVMapping, THREE.ClampToEdgeWrapping, THREE.ClampToEdgeWrapping, THREE.LinearFilter, THREE.LinearFilter, THREE.UnsignedByteType, THREE.UnsignedByteType
+      );
+      t.needsUpdate = true;
+      accept(t);
+    };
+    img.onerror = reject;
+    img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+  });
+
   const manager = new THREE.LoadingManager();
   manager.setURLModifier(u => {
     console.log('resource', u);
