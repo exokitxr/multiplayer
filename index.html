@@ -408,21 +408,24 @@ a:active {
 .sidebar .content:not(.open) {
   display: none;
 }
-.site-urls-content,
+/* .site-urls-content,
 .avatar-models-content,
+.prefabs-content,
 .inventory-content
 {
-  display: flex;
-  flex-direction: column;
-}
+  // display: flex;
+  // flex-direction: column;
+} */
 .site-urls-content .a-site,
 .avatar-models-content .a-avatar,
+.prefabs-content .a-prefab,
 .inventory-content .a-file
 {
   display: flex;
   position: relative;
   padding: 5px 0;
   cursor: pointer;
+  overflow: hidden;
 }
 /* .site-urls-content .a-site:hover,
 .avatar-models-content .a-avatar:hover
@@ -431,6 +434,7 @@ a:active {
 } */
 .site-urls-content .a-site img,
 .avatar-models-content .a-avatar img,
+.prefabs-content .a-prefab img,
 .inventory-content .a-file i
 {
   display: flex;
@@ -441,10 +445,13 @@ a:active {
   justify-content: center;
   align-items: center;
 }
+.site-urls-content .a-site img:not([src]),
+.avatar-models-content .a-avatar img:not([src]),
+.prefabs-content .a-prefab img:not([src]) {
+  visibility: hidden;
+}
 .site-urls-content .a-site .wrap {
-  display: flex;
   flex: 1;
-  flex-direction: column;
   overflow: hidden;
 }
 .site-urls-content .a-site .url {
@@ -453,8 +460,18 @@ a:active {
   text-overflow: ellipsis;
   overflow: hidden;
 }
+.prefabs-content .a-prefab .wrap {
+  flex: 1;
+  overflow: hidden;
+}
+.site-urls-content .a-site .wrap .label {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 .site-urls-content .a-site .overlay,
 .avatar-models-content .a-avatar .overlay,
+.prefabs-content .a-prefab .overlay,
 .inventory-content .a-file .overlay
 {
   display: none;
@@ -475,6 +492,7 @@ a:active {
 }
 .site-urls-content .a-site:hover .overlay,
 .avatar-models-content .a-avatar:hover .overlay,
+.prefabs-content .a-prefab:hover .overlay,
 .inventory-content .a-file:hover .overlay
 {
   display: flex;
