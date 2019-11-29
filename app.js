@@ -201,7 +201,7 @@ container.add(teleportMeshes[1]);
 (async () => {
   // return;
 
-  const itemModelsHash = '121b5f4a400e528cd5f58d0c6a7e73b76d707a17';
+  const itemModelsHash = '5909a65454c065fcba320fd6cd6c21c904989b7a';
 
   const screenshotImage = document.createElement('img');
   screenshotImage.style.position = 'absolute';
