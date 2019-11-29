@@ -328,7 +328,11 @@ container.add(teleportMeshes[1]);
       return `${match[1]}/Textures/${match[2]}`;
     } else if (match = u.match(/^(.+?)\/([^\/]+?\.psd)$/)) {
       if (match[2] === 'PolygonApocalypse_Texture_01_Cleaned.psd' || match[2] === 'PolygonApocalypse_Texture_01_Cleaned_jason.psd') {
-        match[2] = 'PolygonApocalypse_Texture_01_A.png';
+        if (/apocalypse/i.test(manager.itemModel) && /veh/i.test(manager.itemModel)) {
+          match[2] = 'Veh/PolygonApocalypse_Vehicle_Texture_01.png';
+        } else {
+          match[2] = 'PolygonApocalypse_Texture_01_A.png';
+        }
       } else if (match[2] === 'PolygonFarm_Texture_01_A_2k.psd') {
         match[2] = 'PolygonApocalypse_Texture_01_A.png';
       } else if (match[2] === 'Andrew_Rubble_01.psd') {
