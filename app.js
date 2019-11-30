@@ -2316,7 +2316,7 @@ connectButton.addEventListener('click', () => {
             visemes: true,
             microphoneMediaStream: peerConnection.mediaStream,
             muted: false,
-            debug: !model,
+            // debug: !model,
           });
           container.add(peerConnection.rig.model);
 
