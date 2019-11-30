@@ -603,45 +603,16 @@ const _makeBoundingBoxMesh = target => {
     select = newSelect;
     _updateColor();
   };
-  mesh.intersect = raycaster => {
-    return raycaster.intersectObject(mesh);
-  };
+  mesh.intersect = raycaster => raycaster.intersectObject(mesh);
 
   return mesh;
 };
 const _makeBoundingModelMesh = target => {
-  const material = new THREE.MeshPhongMaterial({
-    color: colors.normal,
-    transparent: true,
-    opacity: 0.3,
-  });
-  const mesh = new THREE.Mesh(boundingBoxGeometry, material);
+  const mesh = new THREE.Object3D();
   mesh.target = target;
-  let hover = false;
-  let select = false;
-  const _updateColor = () => {
-    let color;
-    if (select) {
-      color = colors.select;
-    } else if (hover) {
-      color = colors.highlight;
-    } else {
-      color = colors.normal;
-    }
-    mesh.material.color.setHex(color);
-  };
-  mesh.setHover = newHover => {
-    hover = newHover;
-    _updateColor();
-  };
-  mesh.setSelect = newSelect => {
-    select = newSelect;
-    _updateColor();
-  };
-  mesh.intersect = raycaster => {
-    return raycaster.intersectObject(target, true);
-  };
-
+  mesh.setHover = hover => {};
+  mesh.setSelect = select => {};
+  mesh.intersect = raycaster => raycaster.intersectObject(target, true);
   return mesh;
 };
 class XRModel extends HTMLElement {
