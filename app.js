@@ -2019,7 +2019,7 @@ Promise.resolve().then(() => {
   const _updatePrefabs = () => {
     const numPrefabs = Math.ceil(prefabsContent.getBoundingClientRect().height/80);
     for (let i = 0; i < numPrefabs && lastPrefab < prefabSearchResults.length; i++) {
-      let itemModel = prefabSearchResults[lastPrefab++];
+      const itemModel = prefabSearchResults[lastPrefab++];
       const src = itemModel.replace(/^([^\/]+?\/[^\/]+?)\.fbx$/, 'https://item-models.exokit.org/glb/$1.glb');
 
       const aPrefab = document.createElement('nav');
