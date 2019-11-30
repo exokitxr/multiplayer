@@ -16,7 +16,7 @@ import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import {parcelSize, colors} from './constants.js';
 import {ToolManager} from './tools.js';
 import itemModels from 'https://item-models.exokit.org/item-models.js';
-import renderItems from './render-items.js';
+// import renderItems from './render-items.js';
 
 const {document: topDocument} = window.top;
 
@@ -42,7 +42,7 @@ const z180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3
 
 const scene = new THREE.Scene();
 
-renderItems(scene);
+// renderItems(scene);
 
 const container = new THREE.Object3D();
 scene.add(container);
