@@ -17,6 +17,7 @@ import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import {parcelSize, colors} from './constants.js';
 import {ToolManager} from './tools.js';
 import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
+import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
 import itemModels from 'https://item-models.exokit.org/item-models.js';
 // import renderItems from './render-items.js';
 
@@ -1818,7 +1819,9 @@ disableMicButton.addEventListener('click', async () => {
 const siteUrlsContent = topDocument.getElementById('site-urls-content');
 const siteUrlsSearch = topDocument.getElementById('site-urls-search');
 const siteUrlsContentEnd = siteUrlsContent.querySelector('.end');
+const avatarModelsSearch = topDocument.getElementById('avatar-models-search');
 const avatarModelsContent = topDocument.getElementById('avatar-models-content');
+const avatarModelsContentEnd = avatarModelsContent.querySelector('.end');
 const prefabsContent = topDocument.getElementById('prefabs-content');
 const prefabsSearch = topDocument.getElementById('prefabs-search');
 const prefabsContentEnd = prefabsContent.querySelector('.end');
@@ -1905,46 +1908,99 @@ Promise.resolve().then(() => {
     // threshold: 0.001,
   }).observe(siteUrlsContentEnd);
 
-  Array.from(avatarModelsContent.querySelectorAll('.a-avatar')).forEach(aAvatar => {
-    const src = aAvatar.getAttribute('src');
-    aAvatar.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text', JSON.stringify({
-        type: 'avatar',
-        src,
-      }));
-    });
+  let avatarModelSearchResults = avatarModels;
+  let lastAvatarModel = 0;
+  avatarModelsSearch.addEventListener('input', e => {
+    const regex = new RegExp(_escapeRegExp(e.target.value), 'i');
+    avatarModelSearchResults = avatarModels.filter(({label, url}) => regex.test(label) || regex.test(url));
+    lastAvatarModel = 0;
 
-    const addButton = aAvatar.querySelector('.add-button');
-    addButton.addEventListener('click', () => {
-      const dom = parseHtml(codeInput.value);
-      const xrSite = _findNodeWithTagName(dom, 'xr-model');
-      const editedEl = toolManager.getEditedElement();
-      if (xrSite && (!landConnection || editedEl)) {
-        const position = camera.position.clone()
-          .divide(container.scale)
-          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-        xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
-      } else {
-        console.warn('no xr-site to add to');
-      }
-    });
+    const aAvatars = Array.from(avatarModelsContent.querySelectorAll('.a-avatar'));
+    for (let i = 0; i < aAvatars.length; i++) {
+      avatarModelsContent.removeChild(aAvatars[i]);
+    }
 
-    const wearButton = aAvatar.querySelector('.wear-button');
-    wearButton.addEventListener('click', async () => {
-      console.log('wear avatar', src);
-
-      const model = await _loadModelUrl(src);
-      _setLocalModel(model);
-      modelUrl = src;
-
-      _sendAllPeerConnections(JSON.stringify({
-        method: 'model',
-        url: modelUrl,
-      }));
-    });
+    _updateAvatarModels();
   });
+  const _updateAvatarModels = () => {
+    const numAvatarModels = Math.ceil(avatarModelsContent.getBoundingClientRect().height/80);
+    for (let i = 0; i < numAvatarModels && lastAvatarModel < avatarModelSearchResults.length; i++) {
+      const avatarModel = avatarModelSearchResults[lastAvatarModel++];
+      const {label, url, icon} = avatarModel;
+      const src = `https://avatar-models.exokit.org/${url}`;
+
+      const aAvatar = document.createElement('nav');
+      aAvatar.classList.add('a-avatar');
+      aAvatar.setAttribute('draggable', 'true');
+      aAvatar.setAttribute('src', encodeURI(src));
+      aAvatar.innerHTML = `<div class=overlay>
+        <div class=multibutton>
+          <nav class="button first add-button">Add</nav>
+          <nav class="button last wear-button">Wear</nav>
+        </div>
+      </div>
+      <img src="${icon}" width=80 height=80>
+      <div class=wrap>
+        <div class=label>${label}</div>
+      </div>`;
+
+      aAvatar.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text', JSON.stringify({
+          type: 'avatar',
+          src,
+        }));
+      });
+
+      const addButton = aAvatar.querySelector('.add-button');
+      addButton.addEventListener('click', () => {
+        const dom = parseHtml(codeInput.value);
+        const xrSite = _findNodeWithTagName(dom, 'xr-model');
+        const editedEl = toolManager.getEditedElement();
+        if (xrSite && (!landConnection || editedEl)) {
+          const position = camera.position.clone()
+            .divide(container.scale)
+            .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+          xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
+          codeInput.value = serializeHtml(dom);
+          codeInput.dispatchEvent(new CustomEvent('change'));
+        } else {
+          console.warn('no xr-site to add to');
+        }
+      });
+
+      const wearButton = aAvatar.querySelector('.wear-button');
+      wearButton.addEventListener('click', async () => {
+        console.log('wear avatar', src);
+
+        const model = await _loadModelUrl(src);
+        _setLocalModel(model);
+        modelUrl = src;
+
+        _sendAllPeerConnections(JSON.stringify({
+          method: 'model',
+          url: modelUrl,
+        }));
+      });
+
+      avatarModelsContent.insertBefore(aAvatar, avatarModelsContentEnd);
+    }
+  };
+  new IntersectionObserver(entries => {
+    let needsUpdate = false;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.isIntersecting) {
+        needsUpdate = true;
+        break;
+      }
+    }
+    if (needsUpdate) {
+      _updateAvatarModels();
+    }
+  }, {
+    root: avatarModelsContent,
+    // threshold: 0.001,
+  }).observe(avatarModelsContentEnd);
 
   let prefabSearchResults = itemModels;
   let lastPrefab = 0;
@@ -2674,9 +2730,8 @@ loginForm.onsubmit = async e => {
 })();
 
 (async () => {
-  const aAvatars = Array.from(topDocument.querySelectorAll('.a-avatar'));
-  const aAvatar = aAvatars[0];
-  const src = aAvatar.getAttribute('src');
+  const {url} = avatarModels[0];
+  const src = `https://avatar-models.exokit.org/${url}`;
   const model = await _loadModelUrl(src);
   _setLocalModel(model);
   modelUrl = src;

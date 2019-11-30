@@ -456,6 +456,7 @@ a:active {
   overflow: hidden;
 }
 .site-urls-content > input[type=text],
+.avatar-models-content > input[type=text],
 .prefabs-content > input[type=text]
 {
   width: 100%;
@@ -793,7 +794,10 @@ header > .login-form.phase-3 > .phaseless-content
           <input type=text placeholder="Enter a url..." id=site-urls-search>
           <div class=end></div>
         </div>
-        <div class="content avatar-models-content" id=avatar-models-content></div>
+        <div class="content avatar-models-content" id=avatar-models-content>
+          <input type=text placeholder="Find an avatar..." id=avatar-models-search>
+          <div class=end></div>
+        </div>
         <div class="content prefabs-content" id=prefabs-content>
           <input type=text placeholder="Find a model..." id=prefabs-search>
           <div class=end></div>
@@ -866,7 +870,7 @@ header > .login-form.phase-3 > .phaseless-content
     <script type=module>
 import ew from 'https://web2.exokit.org/ew.js';
 // import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
-import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
+// import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
 // import itemModels from 'https://item-models.exokit.org/item-models.js';
 
 const channelsPromise = (async () => {
@@ -912,7 +916,7 @@ siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
       <div class=url>${encodeURI(url)}</div>
     </div>
   </nav>`;
-}).join('\n'); */
+}).join('\n');
 
 const avatarModelsContent = document.getElementById('avatar-models-content');
 avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
@@ -930,7 +934,7 @@ avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {
   </nav>`;
 }).join('\n');
 
-/* const prefabsContent = document.getElementById('prefabs-content');
+const prefabsContent = document.getElementById('prefabs-content');
 prefabsContent.innerHTML = itemModels.map(itemModel => {
   itemModel = itemModel.replace(/([^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/glb/$1.glb');
   return `<nav class=a-prefab draggable=true src="${encodeURI(itemModel)}"">
