@@ -153,6 +153,11 @@ if (localStorage.getItem('mirrorMesh')) {
   mirrorMesh.visible = false;
 }
 
+const backgroundColorInput = topDocument.getElementById('background-color-input');
+backgroundColorInput.addEventListener('change', e => {
+  renderer.getContext().canvas.style.backgroundColor = e.target.value;
+});
+
 const renderer = new THREE.WebGLRenderer({
   alpha: true,
   antialias: true,
@@ -161,7 +166,7 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.sortObjects = false;
-renderer.context.canvas.addEventListener('webglcontextlost', e => {
+renderer.getContext().canvas.addEventListener('webglcontextlost', e => {
   console.log('webglcontextlost', e);
   debugger;
 });
