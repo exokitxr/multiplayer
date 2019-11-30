@@ -1,5 +1,6 @@
 import './three.js';
 import './BufferGeometryUtils.js';
+import './OutlineEffect.js';
 import './OrbitControls.js';
 import './TransformControls.js';
 import './Reflector.js';
@@ -187,6 +188,20 @@ renderer.domElement.addEventListener('mousedown', e => {
     topDocument.activeElement.blur();
   }
 });
+
+const outlineEffect = new THREE.OutlineEffect(renderer, {
+   defaultThickness: 0.01,
+   defaultColor: [0, 0, 1],
+   defaultAlpha: 1,
+   defaultKeepAlive: true // keeps outline material in cache even if material is removed from scene
+});
+let renderingOutline = false;
+scene.onAfterRender = () => {
+  if (renderingOutline) return;
+  renderingOutline = true;
+  outlineEffect.renderOutline(scene, camera);
+  renderingOutline = false;
+};
 
 const orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
 orbitControls.screenSpacePanning = true;
@@ -511,7 +526,8 @@ if (typeof XRIFrame === 'undefined') {
 }
 
 const boundingBoxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
-const _makeBoundingBoxMesh = (target, boundingBox = new THREE.Box3().setFromObject(target)) => {
+const _makeBoundingBoxMesh = target => {
+  const boundingBox = new THREE.Box3().setFromObject(target);
   const material = new THREE.MeshPhongMaterial({
     color: colors.normal,
     transparent: true,
@@ -537,16 +553,51 @@ const _makeBoundingBoxMesh = (target, boundingBox = new THREE.Box3().setFromObje
     }
     mesh.material.color.setHex(color);
   };
-  mesh.setHover = newSelect => {
-    select = newSelect;
+  mesh.setHover = newHover => {
+    hover = newHover;
     _updateColor();
   };
-  mesh.setSelect = newHover => {
-    hover = newHover;
+  mesh.setSelect = newSelect => {
+    select = newSelect;
     _updateColor();
   };
   mesh.intersect = raycaster => {
     return raycaster.intersectObject(mesh);
+  };
+
+  return mesh;
+};
+const _makeBoundingModelMesh = target => {
+  const material = new THREE.MeshPhongMaterial({
+    color: colors.normal,
+    transparent: true,
+    opacity: 0.3,
+  });
+  const mesh = new THREE.Mesh(boundingBoxGeometry, material);
+  mesh.target = target;
+  let hover = false;
+  let select = false;
+  const _updateColor = () => {
+    let color;
+    if (select) {
+      color = colors.select;
+    } else if (hover) {
+      color = colors.highlight;
+    } else {
+      color = colors.normal;
+    }
+    mesh.material.color.setHex(color);
+  };
+  mesh.setHover = newHover => {
+    hover = newHover;
+    _updateColor();
+  };
+  mesh.setSelect = newSelect => {
+    select = newSelect;
+    _updateColor();
+  };
+  mesh.intersect = raycaster => {
+    return raycaster.intersectObject(target, true);
   };
 
   return mesh;
@@ -567,8 +618,7 @@ class XRModel extends HTMLElement {
         const object = await _loadModelUrl(url);
         if (!this.bindState) return;
         const model = object.scene;
-        const boundingBoxMesh = _makeBoundingBoxMesh(model);
-        boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
+        const boundingBoxMesh = _makeBoundingModelMesh(model);
         model.boundingBoxMesh = boundingBoxMesh;
         model.add(model.boundingBoxMesh);
         model.element = this;
