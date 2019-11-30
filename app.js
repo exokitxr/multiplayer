@@ -2737,16 +2737,6 @@ loginForm.onsubmit = async e => {
   modelUrl = src;
 })();
 
-/* window.addEventListener('message', async e => {
-  const {method} = e.data;
-  switch (method) {
-    default: {
-      console.warn(`unknown window method: ${method}`);
-      break;
-    }
-  }
-}); */
-
 window.addEventListener('resize', e => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
