@@ -1847,11 +1847,12 @@ Promise.resolve().then(() => {
     for (let i = 0; i < numSiteUrls && lastSiteUrl < siteUrlSearchResults.length; i++) {
       const siteUrl = siteUrlSearchResults[lastSiteUrl++];
       const {label, url, icon} = siteUrl;
+      const src = url;
 
       const aSite = document.createElement('nav');
       aSite.classList.add('a-site');
       aSite.setAttribute('draggable', 'true');
-      aSite.setAttribute('src', encodeURI(url));
+      aSite.setAttribute('src', encodeURI(src));
       aSite.innerHTML = `<div class=overlay>
         <div class=multibutton>
           <nav class="button first last add-button">Add</nav>
