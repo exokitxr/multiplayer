@@ -63,9 +63,6 @@ scene.add(directionalLight);
 directionalLight2.position.set(-0.5, 1, -0.5);
 scene.add(directionalLight2); */
 
-const gridHelper = new THREE.GridHelper(10, 10);
-container.add(gridHelper);
-
 /* const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   // create a geometry of packed bitmap glyphs,
   // word wrapped to 300px and right-aligned
@@ -106,6 +103,16 @@ container.add(gridHelper);
   };
   return mesh;
 }; */
+
+const gridHelper = new THREE.GridHelper(10, 10);
+container.add(gridHelper);
+const gridMeshSwitchWrap = topDocument.getElementById('grid-mesh-switch-wrap');
+if (localStorage.getItem('gridHelper') !== 'false') {
+  gridHelper.visible = true;
+  gridMeshSwitchWrap.classList.add('on');
+} else {
+  gridHelper.visible = false;
+}
 
 const mirrorMesh = (() => {
   const mirrorWidth = 3;
@@ -152,6 +159,7 @@ if (localStorage.getItem('mirrorMesh')) {
 } else {
   mirrorMesh.visible = false;
 }
+container.add(mirrorMesh);
 
 const backgroundColorInput = topDocument.getElementById('background-color-input');
 backgroundColorInput.addEventListener('change', e => {
@@ -1578,6 +1586,18 @@ thirdpersonButton.addEventListener('click', async () => {
   if (rig) {
     await renderer.domElement.requestPointerLock();
     _bindControls('thirdperson');
+  }
+});
+
+gridMeshSwitchWrap.addEventListener('click', async () => {
+  gridMeshSwitchWrap.classList.toggle('on');
+
+  const enabled = gridMeshSwitchWrap.classList.contains('on');
+  gridHelper.visible = enabled;
+  if (enabled) {
+    localStorage.removeItem('gridHelper');
+  } else {
+    localStorage.setItem('gridHelper', false);
   }
 });
 
