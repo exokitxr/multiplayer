@@ -546,7 +546,14 @@ domElement.addEventListener('mousemove', _mousemove);
       const {target} = selectedBoundingBoxMesh;
       const {element} = target;
       element.parentNode.removeChild(element);
+
+      if (hoveredBoundingBoxMesh === selectedBoundingBoxMesh) {
+        hoveredBoundingBoxMesh.setHover(false);
+        hoveredBoundingBoxMesh = null;
+      }
+      selectedBoundingBoxMesh.setSelect(false);
       selectedBoundingBoxMesh = null;
+
       selectedObjectDetails.classList.remove('open');
     } else if (selectedXrSite) {
       const extents = THREE.Land.parseExtents(selectedXrSite.getAttribute('extents'));
