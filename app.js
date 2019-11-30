@@ -307,8 +307,7 @@ const _bindXrIframe = xrIframe => {
   const model = new THREE.Object3D();
   container.add(model);
 
-  const boundingBox = new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1));
-  const boundingBoxMesh = _makeBoundingBoxMesh(model, boundingBox);
+  const boundingBoxMesh = _makeBoundingBoxMesh(model);
   boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
   model.boundingBoxMesh = boundingBoxMesh;
   model.add(model.boundingBoxMesh);
@@ -571,7 +570,11 @@ if (typeof XRIFrame === 'undefined') {
 
 const boundingBoxGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
 const _makeBoundingBoxMesh = target => {
-  const boundingBox = new THREE.Box3().setFromObject(target);
+  const boundingBox = target.type === 'Object3D' ?
+    new THREE.Box3().setFromCenterAndSize(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 1))
+  :
+    new THREE.Box3().setFromObject(target);
+  ;
   const material = new THREE.MeshPhongMaterial({
     color: colors.normal,
     transparent: true,
