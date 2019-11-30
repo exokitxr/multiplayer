@@ -455,13 +455,35 @@ a:active {
   flex: 1;
   overflow: hidden;
 }
-.site-urls-content > input[type=text],
-.avatar-models-content > input[type=text],
-.prefabs-content > input[type=text]
+.site-urls-content > .wrap {
+  display: flex;
+}
+.site-urls-content input[type=text],
+.avatar-models-content input[type=text],
+.prefabs-content input[type=text]
 {
   width: 100%;
+  margin: 0;
   padding: 15px;
   border-radius: 0;
+}
+.site-urls-content .input-button {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  background-color: #CCC;
+  color: #333;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+.site-urls-content .input-button:hover {
+  background-color: #5c6bc0;
+  color: #FFF;
+}
+.site-urls-content .input-button:active {
+  background-color: #3949ab;
+  color: #FFF;
 }
 .site-urls-content .a-site .wrap .label {
   white-space: nowrap;
@@ -791,7 +813,12 @@ header > .login-form.phase-3 > .phaseless-content
           </nav>
         </div>
         <div class="content site-urls-content open" id=site-urls-content>
-          <input type=text placeholder="Enter a url..." id=site-urls-search>
+          <div class=wrap>
+            <input type=text placeholder="Enter a url..." id=site-urls-search>
+            <nav class=input-button id=add-site-button>
+              <i class="fas fa-plus"></i>
+            </nav>
+          </div>
           <div class=end></div>
         </div>
         <div class="content avatar-models-content" id=avatar-models-content>
