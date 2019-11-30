@@ -127,6 +127,7 @@ const mirrorMesh = (() => {
     textureWidth: 1024 * window.devicePixelRatio,
     textureHeight: 2048 * window.devicePixelRatio,
     color: 0x889999,
+    backgroundColor: 0x000000,
     recursion: 1,
     transparent: true,
   });
@@ -169,6 +170,7 @@ backgroundColorInput.addEventListener('change', e => {
   const xrEngine = topDocument.querySelector('xr-engine');
   const canvas = xrEngine ? xrEngine.canvas : renderer.getContext().canvas;
   canvas.style.backgroundColor = e.target.value;
+  mirrorMesh.setBackgroundColor(e.target.value);
 });
 
 const renderer = new THREE.WebGLRenderer({
