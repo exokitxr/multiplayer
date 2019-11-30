@@ -1259,12 +1259,6 @@ const _keydown = e => {
         }
         break;
       }
-      case 71: { // G
-        if (!e.ctrlKey && !e.metaKey) {
-          topBody.classList.toggle('fullscreen');
-        }
-        break;
-      }
       case 49: // 1
       case 50: // 2
       case 51: // 3
@@ -1315,6 +1309,14 @@ const _keydown = e => {
         }
         break;
       }
+    }
+  }
+  switch (e.which) {
+    case 71: { // G
+      if (!e.ctrlKey && !e.metaKey) {
+        topBody.classList.toggle('fullscreen');
+      }
+      break;
     }
   }
 };
