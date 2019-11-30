@@ -455,7 +455,9 @@ a:active {
   flex: 1;
   overflow: hidden;
 }
-.prefabs-content > input[type=text] {
+.site-urls-content > input[type=text],
+.prefabs-content > input[type=text]
+{
   width: 100%;
   padding: 15px;
   border-radius: 0;
@@ -787,7 +789,10 @@ header > .login-form.phase-3 > .phaseless-content
             <i class="fas fa-info-circle"></i>
           </nav>
         </div>
-        <div class="content site-urls-content open" id=site-urls-content></div>
+        <div class="content site-urls-content open" id=site-urls-content>
+          <input type=text placeholder="Enter a url..." id=site-urls-search>
+          <div class=end></div>
+        </div>
         <div class="content avatar-models-content" id=avatar-models-content></div>
         <div class="content prefabs-content" id=prefabs-content>
           <input type=text placeholder="Find a model..." id=prefabs-search>
@@ -860,9 +865,9 @@ header > .login-form.phase-3 > .phaseless-content
     </div>
     <script type=module>
 import ew from 'https://web2.exokit.org/ew.js';
-import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
+// import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
 import avatarModels from 'https://avatar-models.exokit.org/avatar-models.js';
-import itemModels from 'https://item-models.exokit.org/item-models.js';
+// import itemModels from 'https://item-models.exokit.org/item-models.js';
 
 const channelsPromise = (async () => {
   const res = await fetch('https://presence.exokit.org/channels');
@@ -893,7 +898,7 @@ for (let i = 0; i < contentTabs.length; i++) {
   });
 }
 
-const siteUrlsContent = document.getElementById('site-urls-content');
+/* const siteUrlsContent = document.getElementById('site-urls-content');
 siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
   return `<nav class=a-site draggable=true src="${encodeURI(url)}">
     <div class=overlay>
@@ -907,7 +912,7 @@ siteUrlsContent.innerHTML = siteUrls.map(({label, url, icon}) => {
       <div class=url>${encodeURI(url)}</div>
     </div>
   </nav>`;
-}).join('\n');
+}).join('\n'); */
 
 const avatarModelsContent = document.getElementById('avatar-models-content');
 avatarModelsContent.innerHTML = avatarModels.map(({label, url, icon}) => {

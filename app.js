@@ -16,6 +16,7 @@ import MicrophoneWorker from 'https://avatars.exokit.org/microphone-worker.js';
 import ModelLoader from 'https://model-loader.exokit.org/model-loader.js';
 import {parcelSize, colors} from './constants.js';
 import {ToolManager} from './tools.js';
+import siteUrls from 'https://site-urls.exokit.org/site-urls.js';
 import itemModels from 'https://item-models.exokit.org/item-models.js';
 // import renderItems from './render-items.js';
 
@@ -1815,38 +1816,94 @@ disableMicButton.addEventListener('click', async () => {
 });
 
 const siteUrlsContent = topDocument.getElementById('site-urls-content');
+const siteUrlsSearch = topDocument.getElementById('site-urls-search');
+const siteUrlsContentEnd = siteUrlsContent.querySelector('.end');
 const avatarModelsContent = topDocument.getElementById('avatar-models-content');
 const prefabsContent = topDocument.getElementById('prefabs-content');
 const prefabsSearch = topDocument.getElementById('prefabs-search');
 const prefabsContentEnd = prefabsContent.querySelector('.end');
+const _escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 Promise.resolve().then(() => {
-  Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
-    const src = aSite.getAttribute('src');
-    aSite.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('text', JSON.stringify({
-        type: 'site',
-        src,
-      }));
-    });
+  siteUrlsSearch.addEventListener('input', e => {
+    const regex = new RegExp(_escapeRegExp(e.target.value), 'i');
+    siteUrlSearchResults = siteUrls.filter(({label, url}) => regex.test(label) || regex.test(url));
+    lastSiteUrl = 0;
 
-    const addButton = aSite.querySelector('.add-button');
-    addButton.addEventListener('click', () => {
-      const dom = parseHtml(codeInput.value);
-      const xrSite = _findNodeWithTagName(dom, 'xr-site');
-      const editedEl = toolManager.getEditedElement();
-      if (xrSite && (!landConnection || editedEl)) {
-        const position = localVector.copy(camera.position)
-          .divide(container.scale)
-          .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-        position.y = 0;
-        xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
-      } else {
-        console.warn('no xr-site to add to');
-      }
-    });
+    const aSites = Array.from(siteUrlsContent.querySelectorAll('.a-site'));
+    for (let i = 0; i < aSites.length; i++) {
+      siteUrlsContent.removeChild(aSites[i]);
+    }
+
+    _updateSiteUrls();
   });
+
+  let siteUrlSearchResults = siteUrls;
+  let lastSiteUrl = 0;
+  const _updateSiteUrls = () => {
+    const numSiteUrls = Math.ceil(siteUrlsContent.getBoundingClientRect().height/80);
+    for (let i = 0; i < numSiteUrls && lastSiteUrl < siteUrlSearchResults.length; i++) {
+      const siteUrl = siteUrlSearchResults[lastSiteUrl++];
+      const {label, url, icon} = siteUrl;
+
+      const aSite = document.createElement('nav');
+      aSite.classList.add('a-site');
+      aSite.setAttribute('draggable', 'true');
+      aSite.setAttribute('src', encodeURI(url));
+      aSite.innerHTML = `<div class=overlay>
+        <div class=multibutton>
+          <nav class="button first last add-button">Add</nav>
+        </div>
+      </div>
+      <img src="${icon}" width=80 height=80>
+      <div class=wrap>
+        <div class=label>${label}</div>
+        <div class=url>${encodeURI(url)}</div>
+      </div>`;
+
+      aSite.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text', JSON.stringify({
+          type: 'site',
+          src: url,
+        }));
+      });
+      const addButton = aSite.querySelector('.add-button');
+      addButton.addEventListener('click', () => {
+        const dom = parseHtml(codeInput.value);
+        const xrSite = _findNodeWithTagName(dom, 'xr-site');
+        const editedEl = toolManager.getEditedElement();
+        if (xrSite && (!landConnection || editedEl)) {
+          const position = localVector.copy(camera.position)
+            .divide(container.scale)
+            .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+          position.y = 0;
+          xrSite.childNodes.push(parseHtml(`<xr-iframe src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-iframe>`).childNodes[0]);
+          codeInput.value = serializeHtml(dom);
+          codeInput.dispatchEvent(new CustomEvent('change'));
+        } else {
+          console.warn('no xr-site to add to');
+        }
+      });
+
+      siteUrlsContent.insertBefore(aSite, siteUrlsContentEnd);
+    }
+  };
+  new IntersectionObserver(entries => {
+    let needsUpdate = false;
+    for (let i = 0; i < entries.length; i++) {
+      const entry = entries[i];
+      if (entry.isIntersecting) {
+        console.log('got entry');
+        needsUpdate = true;
+        break;
+      }
+    }
+    if (needsUpdate) {
+      _updateSiteUrls();
+    }
+  }, {
+    root: siteUrlsContent,
+    // threshold: 0.001,
+  }).observe(siteUrlsContentEnd);
 
   Array.from(avatarModelsContent.querySelectorAll('.a-avatar')).forEach(aAvatar => {
     const src = aAvatar.getAttribute('src');
@@ -1891,7 +1948,6 @@ Promise.resolve().then(() => {
 
   let prefabSearchResults = itemModels;
   let lastPrefab = 0;
-  const _escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   prefabsSearch.addEventListener('input', e => {
     const regex = new RegExp(_escapeRegExp(e.target.value), 'i');
     prefabSearchResults = itemModels.filter(itemModel => regex.test(itemModel));
@@ -1951,18 +2007,22 @@ Promise.resolve().then(() => {
       prefabsContent.insertBefore(aPrefab, prefabsContentEnd);
     }
   };
-  const prefabIntersectionObserver = new IntersectionObserver(entries => {
+  new IntersectionObserver(entries => {
+    let needsUpdate = false;
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       if (entry.isIntersecting) {
-        _updatePrefabs();
+        needsUpdate = true;
+        break;
       }
+    }
+    if (needsUpdate) {
+      _updatePrefabs();
     }
   }, {
     root: prefabsContent,
     // threshold: 0.001,
-  });
-  prefabIntersectionObserver.observe(prefabsContentEnd);
+  }).observe(prefabsContentEnd);
 });
 
 const channelsContent = topDocument.getElementById('channels-content');
