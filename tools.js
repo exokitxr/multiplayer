@@ -518,8 +518,11 @@ domElement.addEventListener('mousemove', _mousemove);
   getSelectedToolName() {
     return toolNames[toolIndex];
   }
+  getHoveredElement() {
+    return hoveredXrSite || hoveredBoundingBoxMesh;
+  }
   getSelectedElement() {
-    return selectedXrSite;
+    return selectedXrSite || selectedBoundingBoxMesh;
   }
   getEditedElement() {
     return editedXrSite;
