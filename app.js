@@ -192,14 +192,56 @@ renderer.domElement.addEventListener('mousedown', e => {
 const outlineEffect = new THREE.OutlineEffect(renderer, {
    defaultThickness: 0.01,
    defaultColor: [0, 0, 1],
-   defaultAlpha: 1,
-   defaultKeepAlive: true // keeps outline material in cache even if material is removed from scene
+   defaultAlpha: 0.5,
+   defaultKeepAlive: false,//true,
 });
+const outlineScene = new THREE.Scene();
 let renderingOutline = false;
 scene.onAfterRender = () => {
   if (renderingOutline) return;
   renderingOutline = true;
-  outlineEffect.renderOutline(scene, camera);
+
+  const selectedEl = toolManager.getSelectedElement();
+  const hoveredEl = toolManager.getHoveredElement();
+  const outlineBoundingBoxEl = selectedEl || hoveredEl;
+  const outlineEl = outlineBoundingBoxEl && outlineBoundingBoxEl.target;
+  let oldParent = null;
+  if (outlineEl) {
+    oldParent = outlineEl.parent;
+    outlineScene.add(outlineEl);
+
+    const color = localColor.setHex(colors.normal).toArray();
+    if (outlineBoundingBoxEl === selectedEl) {
+      localColor.setHex(colors.select6).toArray(color);
+    } else if (outlineBoundingBoxEl === hoveredEl) {
+      localColor.setHex(colors.select5).toArray(color);
+    }
+    outlineEl.traverse(o => {
+      if (o.isMesh) {
+        if (!o.material.userData) {
+          o.material.userData = {};
+        }
+        if (!o.material.userData.outlineParameters) {
+          o.material.userData.outlineParameters = {};
+        }
+        o.material.userData.outlineParameters.color = color;
+        /* o.material.userData.outlineParameters = {
+         // thickness: 0.01,
+         color,
+         // alpha: 0.8,
+         // visible: true,
+         // keepAlive: true,
+        }; */
+      }
+    });
+  }
+
+  outlineEffect.renderOutline(outlineScene, camera);
+
+  if (oldParent) {
+    oldParent.add(outlineEl);
+  }
+
   renderingOutline = false;
 };
 
