@@ -1817,6 +1817,7 @@ disableMicButton.addEventListener('click', async () => {
 const siteUrlsContent = topDocument.getElementById('site-urls-content');
 const avatarModelsContent = topDocument.getElementById('avatar-models-content');
 const prefabsContent = topDocument.getElementById('prefabs-content');
+const prefabsSearch = topDocument.getElementById('prefabs-search');
 const prefabsContentEnd = prefabsContent.querySelector('.end');
 Promise.resolve().then(() => {
   Array.from(siteUrlsContent.querySelectorAll('.a-site')).forEach(aSite => {
@@ -1888,56 +1889,73 @@ Promise.resolve().then(() => {
     });
   });
 
+  let prefabSearchResults = itemModels;
   let lastPrefab = 0;
+  const _escapeRegExp = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  prefabsSearch.addEventListener('input', e => {
+    const regex = new RegExp(_escapeRegExp(e.target.value), 'i');
+    prefabSearchResults = itemModels.filter(itemModel => regex.test(itemModel));
+    lastPrefab = 0;
+
+    const aPrefabs = Array.from(prefabsContent.querySelectorAll('.a-prefab'));
+    for (let i = 0; i < aPrefabs.length; i++) {
+      prefabsContent.removeChild(aPrefabs[i]);
+    }
+
+    _updatePrefabs();
+  });
+  const _updatePrefabs = () => {
+    const numPrefabs = Math.ceil(prefabsContent.getBoundingClientRect().height/80);
+    for (let i = 0; i < numPrefabs && lastPrefab < prefabSearchResults.length; i++) {
+      let itemModel = prefabSearchResults[lastPrefab++];
+      const src = itemModel.replace(/^([^\/]+?\/[^\/]+?)\.fbx$/, 'https://item-models.exokit.org/glb/$1.glb');
+
+      const aPrefab = document.createElement('nav');
+      aPrefab.classList.add('a-prefab');
+      aPrefab.setAttribute('draggable', 'true');
+      aPrefab.setAttribute('src', encodeURI(src));
+      aPrefab.innerHTML = `<div class=overlay>
+        <div class=multibutton>
+          <nav class="button first last add-button">Add</nav>
+        </div>
+      </div>
+      <img src="${encodeURI(src.replace(/\.glb$/, '.png'))}" width=80 height=80>
+      <div class=wrap>
+        <div class=label>${itemModel}</div>
+      </div>`;
+
+      aPrefab.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text', JSON.stringify({
+          type: 'avatar',
+          src,
+        }));
+      });
+      const addButton = aPrefab.querySelector('.add-button');
+      addButton.addEventListener('click', () => {
+        const dom = parseHtml(codeInput.value);
+        const xrSite = _findNodeWithTagName(dom, 'xr-site');
+        const editedEl = toolManager.getEditedElement();
+        if (xrSite && (!landConnection || editedEl)) {
+          const position = localVector.copy(camera.position)
+            .divide(container.scale)
+            .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
+          position.y = 0;
+          xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
+          codeInput.value = serializeHtml(dom);
+          codeInput.dispatchEvent(new CustomEvent('change'));
+        } else {
+          console.warn('no xr-site to add to');
+        }
+      });
+
+      prefabsContent.insertBefore(aPrefab, prefabsContentEnd);
+    }
+  };
   const prefabIntersectionObserver = new IntersectionObserver(entries => {
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       if (entry.isIntersecting) {
-        const numPrefabs = Math.ceil(prefabsContent.getBoundingClientRect().height/80);
-        for (let i = 0; i < numPrefabs && lastPrefab < itemModels.length; i++) {
-          let itemModel = itemModels[lastPrefab++];
-          const src = itemModel.replace(/^([^\/]+?\/[^\/]+?)\.fbx$/, 'https://item-models.exokit.org/glb/$1.glb');
-
-          const aPrefab = document.createElement('nav');
-          aPrefab.classList.add('a-prefab');
-          aPrefab.setAttribute('draggable', 'true');
-          aPrefab.setAttribute('src', encodeURI(src));
-          aPrefab.innerHTML = `<div class=overlay>
-            <div class=multibutton>
-              <nav class="button first last add-button">Add</nav>
-            </div>
-          </div>
-          <img src="${encodeURI(src.replace(/\.glb$/, '.png'))}" width=80 height=80>
-          <div class=wrap>
-            <div class=label>${itemModel}</div>
-          </div>`;
-
-          aPrefab.addEventListener('dragstart', e => {
-            e.dataTransfer.setData('text', JSON.stringify({
-              type: 'avatar',
-              src,
-            }));
-          });
-          const addButton = aPrefab.querySelector('.add-button');
-          addButton.addEventListener('click', () => {
-            const dom = parseHtml(codeInput.value);
-            const xrSite = _findNodeWithTagName(dom, 'xr-site');
-            const editedEl = toolManager.getEditedElement();
-            if (xrSite && (!landConnection || editedEl)) {
-              const position = localVector.copy(camera.position)
-                .divide(container.scale)
-                .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
-              position.y = 0;
-              xrSite.childNodes.push(parseHtml(`<xr-model src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></xr-model>`).childNodes[0]);
-              codeInput.value = serializeHtml(dom);
-              codeInput.dispatchEvent(new CustomEvent('change'));
-            } else {
-              console.warn('no xr-site to add to');
-            }
-          });
-
-          prefabsContent.insertBefore(aPrefab, prefabsContentEnd);
-        }
+        _updatePrefabs();
       }
     }
   }, {
