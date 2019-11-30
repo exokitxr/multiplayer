@@ -406,21 +406,23 @@ const _mousemove = e => {
   localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
 
   const _checkElementIntersections = () => {
-    const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
-      .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
-      .filter(boundingBoxMesh => boundingBoxMesh);
-    if (intersectionCandidates.length > 0) {
-      for (let i = 0; i < intersectionCandidates.length; i++) {
-        const boundingBoxMesh = intersectionCandidates[i];
-        boundingBoxMesh.setHover(false);
-      }
-      for (let i = 0; i < intersectionCandidates.length; i++) {
-        const boundingBoxMesh = intersectionCandidates[i];
-        const intersections = boundingBoxMesh.intersect(localRaycaster);
-        if (intersections.length > 0) {
-          hoveredBoundingBoxMesh = boundingBoxMesh;
-          hoveredBoundingBoxMesh.setHover(true);
-          return true;
+    if (toolIndex === 1) {
+      const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
+        .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
+        .filter(boundingBoxMesh => boundingBoxMesh);
+      if (intersectionCandidates.length > 0) {
+        for (let i = 0; i < intersectionCandidates.length; i++) {
+          const boundingBoxMesh = intersectionCandidates[i];
+          boundingBoxMesh.setHover(false);
+        }
+        for (let i = 0; i < intersectionCandidates.length; i++) {
+          const boundingBoxMesh = intersectionCandidates[i];
+          const intersections = boundingBoxMesh.intersect(localRaycaster);
+          if (intersections.length > 0) {
+            hoveredBoundingBoxMesh = boundingBoxMesh;
+            hoveredBoundingBoxMesh.setHover(true);
+            return true;
+          }
         }
       }
     }
@@ -434,6 +436,7 @@ const _mousemove = e => {
         return true;
       }
     }
+    return false;
   };
   const _checkToolIntersections = () => {
     if (toolIndex === 3) {
