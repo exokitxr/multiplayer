@@ -545,6 +545,9 @@ const _makeBoundingBoxMesh = (target, boundingBox = new THREE.Box3().setFromObje
     hover = newHover;
     _updateColor();
   };
+  mesh.intersect = raycaster => {
+    return raycaster.intersectObject(mesh);
+  };
 
   return mesh;
 };

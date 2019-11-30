@@ -416,7 +416,7 @@ const _mousemove = e => {
       }
       for (let i = 0; i < intersectionCandidates.length; i++) {
         const boundingBoxMesh = intersectionCandidates[i];
-        const intersections = localRaycaster.intersectObject(boundingBoxMesh);
+        const intersections = boundingBoxMesh.intersect(localRaycaster);
         if (intersections.length > 0) {
           hoveredBoundingBoxMesh = boundingBoxMesh;
           hoveredBoundingBoxMesh.setHover(true);
