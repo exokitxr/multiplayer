@@ -117,6 +117,7 @@ if (localStorage.getItem('gridHelper') !== 'false') {
   gridHelper.visible = false;
 }
 
+let renderingMirror = false;
 const mirrorMesh = (() => {
   const mirrorWidth = 3;
   const mirrorHeight = 2;
@@ -146,11 +147,13 @@ const mirrorMesh = (() => {
     if (rig) {
       rig.undecapitate();
     }
+    renderingMirror = true;
   };
   mesh.onAfterRender2 = () => {
     if (rig && possessRig) {
       rig.decapitate();
     }
+    renderingMirror = false;
   };
 
   return mesh;
@@ -202,7 +205,7 @@ const outlineEffect = new THREE.OutlineEffect(renderer, {
 const outlineScene = new THREE.Scene();
 let renderingOutline = false;
 scene.onAfterRender = () => {
-  if (renderingOutline) return;
+  if (renderingOutline || renderingMirror) return;
   renderingOutline = true;
 
   const selectedEl = toolManager.getSelectedElement();
