@@ -155,7 +155,9 @@ if (localStorage.getItem('mirrorMesh')) {
 
 const backgroundColorInput = topDocument.getElementById('background-color-input');
 backgroundColorInput.addEventListener('change', e => {
-  renderer.getContext().canvas.style.backgroundColor = e.target.value;
+  const xrEngine = topDocument.querySelector('xr-engine');
+  const canvas = xrEngine ? xrEngine.canvas : renderer.getContext().canvas;
+  canvas.style.backgroundColor = e.target.value;
 });
 
 const renderer = new THREE.WebGLRenderer({
