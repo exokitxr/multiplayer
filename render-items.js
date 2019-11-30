@@ -561,8 +561,8 @@ const renderItems = async scene => {
         let materials = Array.isArray(o.material) ? o.material : [o.material];
         materials.forEach(m => {
           if (m.map) {
-            const imageDst = 'https://lol.exokit.org/' + m.map.image.src.replace(/^.*\/([^\/]+?\/)(Textures)(\/.*?)$/, '$1TexturesY$3');
-            console.log('got image dst', m.map.image.src, imageDst);
+            const imageDst = 'https://raw.exokit.org/' + m.map.image.src.replace(/^.*\/([^\/]+?\/)(Textures)(\/.*?)$/, '$1TexturesY$3');
+            // console.log('got image dst', m.map.image.src, imageDst);
             const imageSrc = m.map.image.src.replace(/^.*\/([^\/]+?\/)(Textures)(\/.*?)$/, 'https://item-models.exokit.org/glb/$1TexturesY$3');
             // console.log('got image src', m.map.image.src, imageSrc);
 
@@ -658,7 +658,7 @@ const renderItems = async scene => {
           embedImages: false,
         });
       });
-      const u = `https://lol.exokit.org/${itemModel.replace(/\.fbx$/, '.glb')}`;
+      const u = `https://raw.exokit.org/${itemModel.replace(/\.fbx$/, '.glb')}`;
       // console.log('uploading', u, ab);
       await fetch(u, {
         method: 'PUT',
@@ -709,7 +709,7 @@ const renderItems = async scene => {
       }
       screenshotImage.src = url;
 
-      const u = `https://lol.exokit.org/${itemModel.replace(/\.fbx$/, '.png')}`;
+      const u = `https://raw.exokit.org/${itemModel.replace(/\.fbx$/, '.png')}`;
       await fetch(u, {
         method: 'PUT',
         body: blob,
