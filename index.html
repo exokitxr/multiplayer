@@ -455,6 +455,11 @@ a:active {
   flex: 1;
   overflow: hidden;
 }
+.prefabs-content > input[type=text] {
+  width: 100%;
+  padding: 15px;
+  border-radius: 0;
+}
 .site-urls-content .a-site .wrap .label {
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -785,6 +790,7 @@ header > .login-form.phase-3 > .phaseless-content
         <div class="content site-urls-content open" id=site-urls-content></div>
         <div class="content avatar-models-content" id=avatar-models-content></div>
         <div class="content prefabs-content" id=prefabs-content>
+          <input type=text placeholder="Find a model..." id=prefabs-search>
           <div class=end></div>
         </div>
         <div class="content inventory-content" id=inventory-content></div>
