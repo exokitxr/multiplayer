@@ -1259,6 +1259,12 @@ const _keydown = e => {
         }
         break;
       }
+      case 71: { // G
+        if (!e.ctrlKey && !e.metaKey) {
+          topBody.classList.toggle('fullscreen');
+        }
+        break;
+      }
       case 49: // 1
       case 50: // 2
       case 51: // 3
@@ -1270,40 +1276,41 @@ const _keydown = e => {
       case 27: { // esc
         if (saveDialog.classList.contains('open')) {
           saveDialog.classList.remove('open');
-          toolManager.escape();
         } else if (chatInput.classList.contains('open')) {
           chatInput.classList.remove('open');
           chatInput.value = '';
         } else {
-          topBody.classList.toggle('fullscreen');
+          toolManager.escape();
         }
         break;
       }
       case 46: { // del
-        if (!chatInput.classList.contains('open')) {
+        if (!chatInput.classList.contains('open') && !saveDialog.classList.contains('open')) {
           toolManager.delete();
         }
         break;
       }
       case 13: { // enter
-        chatInput.classList.toggle('open');
-        if (chatInput.classList.contains('open')) {
-          chatInput.focus();
-        } else {
-          if (chatInput.value) {
-            const messageEl = topDocument.createElement('message');
-            messageEl.classList.add('message');
-            messageEl.innerHTML = `<div class=message><b>you</b>: <span class=text></span></div>`;
-            const textEl = messageEl.querySelector('.text');
-            textEl.innerText = chatInput.value;
-            chatMessages.appendChild(messageEl);
+        if (!saveDialog.classList.contains('open')) {
+          chatInput.classList.toggle('open');
+          if (chatInput.classList.contains('open')) {
+            chatInput.focus();
+          } else {
+            if (chatInput.value) {
+              const messageEl = topDocument.createElement('message');
+              messageEl.classList.add('message');
+              messageEl.innerHTML = `<div class=message><b>you</b>: <span class=text></span></div>`;
+              const textEl = messageEl.querySelector('.text');
+              textEl.innerText = chatInput.value;
+              chatMessages.appendChild(messageEl);
 
-            chatInput.value = '';
-            chatInput.dispatchEvent(new CustomEvent('change'));
+              chatInput.value = '';
+              chatInput.dispatchEvent(new CustomEvent('change'));
 
-            setTimeout(() => {
-              chatMessages.removeChild(messageEl);
-            }, 10000);
+              setTimeout(() => {
+                chatMessages.removeChild(messageEl);
+              }, 10000);
+            }
           }
         }
         break;
