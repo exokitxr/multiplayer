@@ -1781,8 +1781,7 @@ Promise.resolve().then(() => {
         const numPrefabs = Math.ceil(prefabsContent.getBoundingClientRect().height/80);
         for (let i = 0; i < numPrefabs && lastPrefab < itemModels.length; i++) {
           let itemModel = itemModels[lastPrefab++];
-          itemModel = itemModel.replace(/([^\/]+?\/[^\/]+?)\.fbx$/, 'https://dev.exokit.org:444/glb/$1.glb');
-          const src = itemModel;
+          const src = itemModel.replace(/^([^\/]+?\/[^\/]+?)\.fbx$/, 'https://item-models.exokit.org/glb/$1.glb');
 
           const aPrefab = document.createElement('nav');
           aPrefab.classList.add('a-prefab');
