@@ -372,11 +372,11 @@ const _mouseup = e => {
 domElement.addEventListener('mouseup', _mouseup);
 const _click = () => {
   if (selectedBoundingBoxMesh) {
-    selectedBoundingBoxMesh.material.color.setHex(colors.normal);
+    selectedBoundingBoxMesh.setSelect(false);
   }
   selectedBoundingBoxMesh = hoveredBoundingBoxMesh;
   if (selectedBoundingBoxMesh) {
-    selectedBoundingBoxMesh.material.color.setHex(colors.select);
+    selectedBoundingBoxMesh.setSelect(true);
     selectedObjectDetails.classList.add('open');
 
     detailsContentTab.click();
@@ -412,14 +412,14 @@ const _mousemove = e => {
     if (intersectionCandidates.length > 0) {
       for (let i = 0; i < intersectionCandidates.length; i++) {
         const boundingBoxMesh = intersectionCandidates[i];
-        boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.normal);
+        boundingBoxMesh.setHover(false);
       }
       for (let i = 0; i < intersectionCandidates.length; i++) {
         const boundingBoxMesh = intersectionCandidates[i];
         const intersections = localRaycaster.intersectObject(boundingBoxMesh);
         if (intersections.length > 0) {
           hoveredBoundingBoxMesh = boundingBoxMesh;
-          boundingBoxMesh.material.color.setHex(boundingBoxMesh === selectedBoundingBoxMesh ? colors.select : colors.highlight);
+          hoveredBoundingBoxMesh.setHover(true);
           return true;
         }
       }

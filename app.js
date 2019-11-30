@@ -524,6 +524,28 @@ const _makeBoundingBoxMesh = (target, boundingBox = new THREE.Box3().setFromObje
     mesh.visible = false;
   }
   mesh.target = target;
+  let hover = false;
+  let select = false;
+  const _updateColor = () => {
+    let color;
+    if (select) {
+      color = colors.select;
+    } else if (hover) {
+      color = colors.highlight;
+    } else {
+      color = colors.normal;
+    }
+    mesh.material.color.setHex(color);
+  };
+  mesh.setHover = newSelect => {
+    select = newSelect;
+    _updateColor();
+  };
+  mesh.setSelect = newHover => {
+    hover = newHover;
+    _updateColor();
+  };
+
   return mesh;
 };
 class XRModel extends HTMLElement {
