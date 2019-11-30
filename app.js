@@ -154,7 +154,7 @@ if (localStorage.getItem('mirrorMesh')) {
 }
 
 const renderer = new THREE.WebGLRenderer({
-  // alpha: true,
+  alpha: true,
   antialias: true,
 });
 // console.log('set size', window.innerWidth, window.innerHeight);
