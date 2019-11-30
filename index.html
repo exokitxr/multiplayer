@@ -19,6 +19,16 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+.body.fullscreen .header,
+.body.fullscreen .sidebar,
+.body.fullscreen .tools,
+.body.fullscreen .iframe-buttons
+{
+  display: none;
+}
+.body.fullscreen .iframe-wrapper {
+  margin-top: 0;
+}
 header {
   position: absolute;
   display: flex;
@@ -858,6 +868,7 @@ header > .login-form.phase-3 > .phaseless-content
             <input type=color value="#000000" id=background-color-input>
             Background color
           </label>
+          <input type=button value="Fullscreen [ESC]" id=go-fullscreen-button>
         </div>
         <div class="content details-content">
           <div class=selected-object-details id=selected-object-details>

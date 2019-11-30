@@ -176,6 +176,12 @@ backgroundColorInput.addEventListener('change', e => {
   mirrorMesh.setBackgroundColor(e.target.value);
 });
 
+const goFullscreenButton = topDocument.getElementById('go-fullscreen-button');
+const topBody = topDocument.querySelector('.body');
+goFullscreenButton.addEventListener('click', () => {
+  topBody.classList.toggle('fullscreen');
+});
+
 const renderer = new THREE.WebGLRenderer({
   alpha: true,
   antialias: true,
@@ -1262,12 +1268,14 @@ const _keydown = e => {
         break;
       }
       case 27: { // esc
-        if (!chatInput.classList.contains('open')) {
+        if (saveDialog.classList.contains('open')) {
           saveDialog.classList.remove('open');
           toolManager.escape();
-        } else {
+        } else if (chatInput.classList.contains('open')) {
           chatInput.classList.remove('open');
           chatInput.value = '';
+        } else {
+          topBody.classList.toggle('fullscreen');
         }
         break;
       }
