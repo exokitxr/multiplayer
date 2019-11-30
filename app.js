@@ -176,6 +176,11 @@ backgroundColorInput.addEventListener('change', e => {
   mirrorMesh.setBackgroundColor(e.target.value);
 });
 
+const clearAvatarButton = topDocument.getElementById('clear-avatar-button');
+clearAvatarButton.addEventListener('click', () => {
+  _setLocalModel(null);
+});
+
 const goFullscreenButton = topDocument.getElementById('go-fullscreen-button');
 const topBody = topDocument.querySelector('.body');
 goFullscreenButton.addEventListener('click', () => {
@@ -841,7 +846,7 @@ const _setLocalModel = newModel => {
     visemes: true,
     decapitate: possessRig,
     microphoneMediaStream,
-    debug: !newModel,
+    // debug: !newModel,
   });
   container.add(rig.model);
   window.model = newModel;
