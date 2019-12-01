@@ -136,6 +136,9 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
 const _makeNametagMesh = textMesh => {
   const o = new THREE.Object3D();
   o.add(textMesh);
+  o.setName = name => {
+    textMesh.setText(name);
+  };
   return o;
 };
 
