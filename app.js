@@ -2779,6 +2779,14 @@ const _loadInventory = async () => {
 
 let loginToken = null;
 const loginUrl = 'https://login.exokit.org/';
+const _setLoginToken = newLoginToken => {
+  loginToken = newLoginToken;
+
+  const {name} = loginToken;
+  if (rig && rig.nametagMesh) {
+    rig.nametagMesh.setName(name);
+  }
+};
 async function doLogin(email, code) {
   const res = await fetch(`${loginUrl}?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
     method: 'POST',
@@ -2788,7 +2796,7 @@ async function doLogin(email, code) {
 
     await storage.set('loginToken', newLoginToken);
 
-    loginToken = newLoginToken;
+    _setLoginToken(newLoginToken);
 
     // loginNameStatic.innerText = loginToken.name;
     // loginEmailStatic.innerText = loginToken.email;
@@ -2878,9 +2886,11 @@ loginForm.onsubmit = async e => {
       method: 'POST',
     })
     if (res.ok) {
-      loginToken = await res.json();
+      const newLoginToken = await res.json();
 
-      await storage.set('loginToken', loginToken);
+      await storage.set('loginToken', newLoginToken);
+
+      _setLoginToken(newLoginToken);
 
       // loginNameStatic.innerText = loginToken.name;
       // loginEmailStatic.innerText = loginToken.email;
