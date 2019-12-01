@@ -1794,6 +1794,14 @@ const enterXrButton = topDocument.getElementById('enter-xr-button');
 const _setSession = async newSession => {
   session = newSession;
 
+  const _end = () => {
+    session.removeEventListener('end', _end);
+    session = null;
+
+    clearInterval(loadReferenceSpaceInterval);
+  };
+  session.addEventListener('end', _end);
+
   let referenceSpace;
   let referenceSpaceType = '';
   const _loadReferenceSpace = async () => {
