@@ -169,13 +169,26 @@ if (localStorage.getItem('mirrorMesh')) {
 container.add(mirrorMesh);
 
 const backgroundColorInput = topDocument.getElementById('background-color-input');
-backgroundColorInput.addEventListener('change', e => {
+backgroundColorInput.addEventListener('change', () => {
+  const c = backgroundColorInput.value;
+
   const xrEngine = topDocument.querySelector('xr-engine');
-  scene.background = new THREE.Color().setStyle(e.target.value);
+  scene.background = new THREE.Color().setStyle(c);
+  console.log('scene background', scene.background);
   if (xrEngine) {
     xrEngine.setClearColor(scene.background.r, scene.background.g, scene.background.b, 1);
   }
-  mirrorMesh.setBackgroundColor(e.target.value);
+  mirrorMesh.setBackgroundColor(c);
+});
+const greenScreenButton = topDocument.getElementById('green-screen-button');
+greenScreenButton.addEventListener('click', e => {
+  backgroundColorInput.value = '#00FF00';
+  backgroundColorInput.dispatchEvent(new CustomEvent('change'));
+});
+const blackScreenButton = topDocument.getElementById('black-screen-button');
+blackScreenButton.addEventListener('click', e => {
+  backgroundColorInput.value = '#000000';
+  backgroundColorInput.dispatchEvent(new CustomEvent('change'));
 });
 
 const clearAvatarButton = topDocument.getElementById('clear-avatar-button');
