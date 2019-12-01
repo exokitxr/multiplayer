@@ -1064,23 +1064,11 @@ const channelsContent = document.getElementById('channels-content');
       // const canvas = e.data;
 
       [
-        'enable-mic-button',
-        'disable-mic-button',
-      ].forEach(id => {
-        const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
-        el.addEventListener('click', () => {
-          el2.dispatchEvent(new CustomEvent('click'));
-        });
-      });
-      [
         'enter-xr-button',
       ].forEach(id => {
         const el = document.getElementById(id);
-        const el2 = xrEngine.contentWindow.iframe.contentDocument.getElementById(id);
         el.addEventListener('click', async () => {
           await xrEngine.enterXr();
-          el2.dispatchEvent(new CustomEvent('click'));
         });
       });
     });
