@@ -919,6 +919,11 @@ const _setLocalModel = newModel => {
     microphoneMediaStream,
     // debug: !newModel,
   });
+  rig.nametagMesh = null;
+  fontPromise.then(() => {
+    rig.nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
+    container.add(rig.nametagMesh);
+  });
   container.add(rig.model);
   window.model = newModel;
 
@@ -1171,9 +1176,9 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
-  if (nametagMesh && rig) {
-    nametagMesh.position.copy(rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
-    nametagMesh.quaternion.copy(camera.quaternion);
+  if (rig && rig.nametagMesh) {
+    rig.nametagMesh.position.copy(rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
+    rig.nametagMesh.quaternion.copy(camera.quaternion);
   }
 
   renderer.render(scene, camera);
@@ -1269,7 +1274,6 @@ function animate(timestamp, frame, referenceSpace) {
 renderer.setAnimationLoop(animate);
 
 let fontJson, fontTexture;
-let nametagMesh = null;
 const fontPromise = Promise.all([
   fetch('DejaVu-sdf.json').then(res => res.json()),
   new Promise((accept, reject) => {
@@ -1278,9 +1282,6 @@ const fontPromise = Promise.all([
 ]).then(results => {
   fontJson = results[0];
   fontTexture = results[1];
-
-  nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
-  container.add(nametagMesh);
 });
 
 const mouse = {
