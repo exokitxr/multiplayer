@@ -1180,6 +1180,13 @@ function animate(timestamp, frame, referenceSpace) {
     rig.nametagMesh.position.copy(rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
     rig.nametagMesh.quaternion.copy(camera.quaternion);
   }
+  for (let i = 0; i < peerConnections.length; i++) {
+    const peerConnection = peerConnections[i];
+    if (peerConnection.rig && peerConnection.rig.nametagMesh) {
+      peerConnection.rig.nametagMesh.position.copy(peerConnection.rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
+      peerConnection.rig.nametagMesh.quaternion.copy(camera.quaternion);
+    }
+  }
 
   renderer.render(scene, camera);
 
@@ -2419,6 +2426,11 @@ connectButton.addEventListener('click', () => {
             microphoneMediaStream: peerConnection.mediaStream,
             muted: false,
             // debug: !model,
+          });
+          peerConnection.rig.nametagMesh = null;
+          fontPromise.then(() => {
+            peerConnection.rig.nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
+            container.add(peerConnection.rig.nametagMesh);
           });
           container.add(peerConnection.rig.model);
 
