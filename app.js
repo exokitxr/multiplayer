@@ -922,6 +922,7 @@ const _setLocalModel = newModel => {
   rig.nametagMesh = null;
   fontPromise.then(() => {
     rig.nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
+    rig.nametagMesh.visible = nameTagsSwitchWrap.classList.contains('on');
     container.add(rig.nametagMesh);
   });
   container.add(rig.model);
@@ -2457,6 +2458,7 @@ connectButton.addEventListener('click', () => {
           peerConnection.rig.nametagMesh = null;
           fontPromise.then(() => {
             peerConnection.rig.nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
+            peerConnection.rig.nametagMesh.visible = nameTagsSwitchWrap.classList.contains('on');
             container.add(peerConnection.rig.nametagMesh);
           });
           container.add(peerConnection.rig.model);
