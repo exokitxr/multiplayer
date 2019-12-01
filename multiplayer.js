@@ -386,6 +386,10 @@ class XRPeerConnection extends EventTarget {
         this.open = false;
         this.dispatchEvent(new CustomEvent('close'));
       }
+      if (this.token !== -1) {
+        clearTimeout(this.token);
+        this.token = -1;
+      }
       if (pingInterval) {
         clearInterval(pingInterval);
         pingInterval = 0;
