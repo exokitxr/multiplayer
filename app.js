@@ -109,10 +109,18 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
     side: THREE.DoubleSide,
   }));
 
+  const _getWidth = () => {
+    const lastGlyph = geometry.layout.glyphs[geometry.layout.glyphs.length - 1];
+    return lastGlyph.x + lastGlyph.width;
+  };
+  const _updatePosition = () => {
+    mesh.position.set(-_getWidth() * 0.002, 0, 0);
+  };
   const scaleFactor = 0.002 * size;
 
-  const mesh = new THREE.Mesh(geometry, material)
-  mesh.position.set(0, -geometry.layout.lineHeight * 0.001, 0);
+  const mesh = new THREE.Mesh(geometry, material);
+
+  _updatePosition();
   mesh.scale.set(scaleFactor, -scaleFactor, -scaleFactor);
   mesh.frustumCulled = false;
   mesh.getText = () => s;
@@ -120,9 +128,15 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
     if (newS !== s) {
       s = newS;
       geometry.update(s);
+      _updatePosition();
     }
   };
   return mesh;
+};
+const _makeNametagMesh = textMesh => {
+  const o = new THREE.Object3D();
+  o.add(textMesh);
+  return o;
 };
 
 const gridHelper = new THREE.GridHelper(10, 10);
@@ -1265,7 +1279,7 @@ const fontPromise = Promise.all([
   fontJson = results[0];
   fontTexture = results[1];
 
-  nametagMesh = _makeTextMesh('avaer', 0xFFFFFF, 2);
+  nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
   container.add(nametagMesh);
 });
 

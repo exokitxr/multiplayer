@@ -503,7 +503,8 @@ TextLayout.prototype.update = function(opt) {
           data: glyph,
           index: i,
           line: lineIndex,
-          x
+          x,
+          width: glyph.xadvance,
         })  
 
         //move pen forward
