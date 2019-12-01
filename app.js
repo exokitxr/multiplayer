@@ -1176,13 +1176,13 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
-  if (rig && rig.nametagMesh) {
+  if (rig && rig.nametagMesh && rig.nametagMesh.visible) {
     rig.nametagMesh.position.copy(rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
     rig.nametagMesh.quaternion.copy(camera.quaternion);
   }
   for (let i = 0; i < peerConnections.length; i++) {
     const peerConnection = peerConnections[i];
-    if (peerConnection.rig && peerConnection.rig.nametagMesh) {
+    if (peerConnection.rig && peerConnection.rig.nametagMesh && peerConnection.rig.nametagMesh.visible) {
       peerConnection.rig.nametagMesh.position.copy(peerConnection.rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
       peerConnection.rig.nametagMesh.quaternion.copy(camera.quaternion);
     }
@@ -1831,6 +1831,33 @@ mirrorMeshSwitchWrap.addEventListener('click', () => {
     localStorage.setItem('mirrorMesh', true);
   } else {
     localStorage.removeItem('mirrorMesh');
+  }
+});
+
+const nameTagsSwitchWrap = topDocument.getElementById('name-tags-switch-wrap');
+const _setNameTagsVisibility = visible => {
+  if (rig && rig.nametagMesh) {
+    rig.nametagMesh.visible = visible;
+  }
+  for (let i = 0; i < peerConnections.length; i++) {
+    const peerConnection = peerConnections[i];
+    if (peerConnection.rig && peerConnection.rig.nametagMesh) {
+      peerConnection.rig.nametagMesh.visible = visible;
+    }
+  }
+};
+if (localStorage.getItem('nameTags') !== 'false') {
+  nameTagsSwitchWrap.classList.add('on');
+}
+nameTagsSwitchWrap.addEventListener('click', () => {
+  nameTagsSwitchWrap.classList.toggle('on');
+
+  const enabled = nameTagsSwitchWrap.classList.contains('on');
+  _setNameTagsVisibility(enabled);
+  if (enabled) {
+    localStorage.removeItem('nameTags');
+  } else {
+    localStorage.setItem('nameTags', false);
   }
 });
 
