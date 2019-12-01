@@ -171,8 +171,10 @@ container.add(mirrorMesh);
 const backgroundColorInput = topDocument.getElementById('background-color-input');
 backgroundColorInput.addEventListener('change', e => {
   const xrEngine = topDocument.querySelector('xr-engine');
-  const canvas = xrEngine ? xrEngine.canvas : renderer.getContext().canvas;
-  canvas.style.backgroundColor = e.target.value;
+  scene.background = new THREE.Color().setStyle(e.target.value);
+  if (xrEngine) {
+    xrEngine.setClearColor(scene.background.r, scene.background.g, scene.background.b, 1);
+  }
   mirrorMesh.setBackgroundColor(e.target.value);
 });
 
