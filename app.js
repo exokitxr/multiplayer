@@ -2892,7 +2892,7 @@ loginForm.onsubmit = async e => {
   } else if (loginForm.classList.contains('phase-3')) {
     await storage.remove('loginToken');
 
-    window.location.reload();
+    window.top.location.reload();
   }
 };
 
