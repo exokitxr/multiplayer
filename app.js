@@ -43,6 +43,23 @@ const localColor = new THREE.Color();
 
 const z180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 
+const _patchModel = object => {
+  object.scene.traverse(o => {
+    if (o.isMesh) {
+      o.frustumCulled = false;
+
+      if (o.material.opacity === 0) {
+        o.material.opacity = 1;
+      }
+    }
+  });
+};
+const _loadModelUrl = async (url, filename) => {
+  const model = await ModelLoader.loadModelUrl(url, filename);
+  _patchModel(model);
+  return model;
+};
+
 const scene = new THREE.Scene();
 
 // renderItems(scene);
@@ -2507,23 +2524,6 @@ const _resetCodeInput = () => {
   codeInput.dispatchEvent(new CustomEvent('change'));
 };
 _resetCodeInput();
-
-const _patchModel = object => {
-  object.scene.traverse(o => {
-    if (o.isMesh) {
-      o.frustumCulled = false;
-
-      if (o.material.opacity === 0) {
-        o.material.opacity = 1;
-      }
-    }
-  });
-};
-const _loadModelUrl = async (url, filename) => {
-  const model = await ModelLoader.loadModelUrl(url, filename);
-  _patchModel(model);
-  return model;
-};
 
 const _findNodeWithTagName = (node, tagName) => {
   const _recurse = node => {
