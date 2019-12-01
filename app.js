@@ -114,6 +114,7 @@ const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   const mesh = new THREE.Mesh(geometry, material)
   mesh.position.set(0, -geometry.layout.lineHeight * 0.001, 0);
   mesh.scale.set(scaleFactor, -scaleFactor, -scaleFactor);
+  mesh.frustumCulled = false;
   mesh.getText = () => s;
   mesh.setText = newS => {
     if (newS !== s) {
