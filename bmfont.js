@@ -852,7 +852,7 @@ function setIndex (geometry, data, itemSize, dtype) {
   var attrib = isR69 ? geometry.getAttribute('index') : geometry.index
   var newAttrib = updateAttribute(attrib, data, itemSize, dtype)
   if (newAttrib) {
-    if (isR69) geometry.addAttribute('index', newAttrib)
+    if (isR69) geometry.setAttribute('index', newAttrib)
     else geometry.index = newAttrib
   }
 }
@@ -870,7 +870,7 @@ function setAttribute (geometry, key, data, itemSize, dtype) {
   var attrib = geometry.getAttribute(key)
   var newAttrib = updateAttribute(attrib, data, itemSize, dtype)
   if (newAttrib) {
-    geometry.addAttribute(key, newAttrib)
+    geometry.setAttribute(key, newAttrib)
   }
 }
 
@@ -880,12 +880,12 @@ function updateAttribute (attrib, data, itemSize, dtype) {
     // create a new array with desired type
     data = flatten(data, dtype)
 
-    var needsNewBuffer = attrib && typeof attrib.setArray !== 'function'
-    if (!attrib || needsNewBuffer) {
+    // var needsNewBuffer = attrib && typeof attrib.setArray !== 'function'
+    if (!attrib) {
       // We are on an old version of ThreeJS which can't
       // support growing / shrinking buffers, so we need
       // to build a new buffer
-      if (needsNewBuffer && !warned) {
+      /* if (needsNewBuffer && !warned) {
         warned = true
         console.warn([
           'A WebGL buffer is being updated with a new size or itemSize, ',
@@ -896,21 +896,23 @@ function updateAttribute (attrib, data, itemSize, dtype) {
           'See here for discussion:\n',
           'https://github.com/mrdoob/three.js/pull/9631'
         ].join(''))
-      }
+      } */
 
       // Build a new attribute
       attrib = new THREE.BufferAttribute(data, itemSize);
     }
 
-    attrib.itemSize = itemSize
-    attrib.needsUpdate = true
+    attrib.array = data;
+    attrib.count = data.length/itemSize;
+    attrib.itemSize = itemSize;
+    attrib.needsUpdate = true;
 
     // New versions of ThreeJS suggest using setArray
     // to change the data. It will use bufferData internally,
     // so you can change the array size without any issues
-    if (typeof attrib.setArray === 'function') {
+    /* if (typeof attrib.setArray === 'function') {
       attrib.setArray(data)
-    }
+    } */
 
     return attrib
   } else {
