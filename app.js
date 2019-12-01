@@ -2868,18 +2868,6 @@ loginForm.onsubmit = async e => {
     await storage.remove('loginToken');
 
     window.location.reload();
-
-    /* loginToken = null;
-    xrEngine.postMessage({
-      method: 'login',
-      loginToken,
-    });
-
-    loginNotice.innerHTML = '';
-    loginError.innerHTML = '';
-    topDocument.body.classList.remove('logged-in');
-    loginForm.classList.remove('phase-3');
-    loginForm.classList.add('phase-1'); */
   }
 };
 
