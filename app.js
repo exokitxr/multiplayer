@@ -2339,7 +2339,7 @@ connectButton.addEventListener('click', () => {
     channelConnection.addEventListener('peerconnection', e => {
       const peerConnection = e.detail;
 
-      peerConnection.model = null;
+      peerConnection.username = 'Anonymous';
       peerConnection.rig = null;
       peerConnection.mediaStream = null;
       let updateInterval = 0;
@@ -2348,6 +2348,12 @@ connectButton.addEventListener('click', () => {
 
         peerConnections.push(peerConnection);
 
+        if (loginToken) {
+          _sendAllPeerConnections(JSON.stringify({
+            method: 'username',
+            name: loginToken.name,
+          }));
+        }
         peerConnection.send(JSON.stringify({
           method: 'model',
           url: modelUrl,
@@ -2440,7 +2446,14 @@ connectButton.addEventListener('click', () => {
         console.log('got message', e);
         const data = JSON.parse(e.data);
         const {method} = data;
-        if (method === 'model') {
+        if (method === 'username') {
+          const {name} = data;
+          peerConnection.username = name;
+
+          if (peerConnection.rig && peerConnection.rig.nametagMesh) {
+            peerConnection.rig.nametagMesh.setName(name);
+          }
+        } else if (method === 'model') {
           const {url} = data;
           console.log('got peer model', {url});
 
@@ -2460,7 +2473,7 @@ connectButton.addEventListener('click', () => {
           });
           peerConnection.rig.nametagMesh = null;
           fontPromise.then(() => {
-            peerConnection.rig.nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
+            peerConnection.rig.nametagMesh = _makeNametagMesh(_makeTextMesh(peerConnection.username, 0xFFFFFF, 2));
             peerConnection.rig.nametagMesh.visible = nameTagsSwitchWrap.classList.contains('on');
             container.add(peerConnection.rig.nametagMesh);
           });
@@ -2786,6 +2799,10 @@ const _setLoginToken = newLoginToken => {
   if (rig && rig.nametagMesh) {
     rig.nametagMesh.setName(name);
   }
+  _sendAllPeerConnections(JSON.stringify({
+    method: 'username',
+    name: loginToken.name,
+  }));
 };
 async function doLogin(email, code) {
   const res = await fetch(`${loginUrl}?email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`, {
