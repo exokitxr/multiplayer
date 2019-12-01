@@ -1810,7 +1810,7 @@ thirdpersonButton.addEventListener('click', async () => {
   }
 });
 
-gridMeshSwitchWrap.addEventListener('click', async () => {
+gridMeshSwitchWrap.addEventListener('click', () => {
   gridMeshSwitchWrap.classList.toggle('on');
 
   const enabled = gridMeshSwitchWrap.classList.contains('on');
@@ -1822,7 +1822,7 @@ gridMeshSwitchWrap.addEventListener('click', async () => {
   }
 });
 
-mirrorMeshSwitchWrap.addEventListener('click', async () => {
+mirrorMeshSwitchWrap.addEventListener('click', () => {
   mirrorMeshSwitchWrap.classList.toggle('on');
 
   const enabled = mirrorMeshSwitchWrap.classList.contains('on');
