@@ -924,7 +924,7 @@ const _setLocalModel = newModel => {
   });
   rig.nametagMesh = null;
   fontPromise.then(() => {
-    rig.nametagMesh = _makeNametagMesh(_makeTextMesh('avaer', 0xFFFFFF, 2));
+    rig.nametagMesh = _makeNametagMesh(_makeTextMesh(loginToken ? loginToken.name : 'Anonymous', 0xFFFFFF, 2));
     rig.nametagMesh.visible = nameTagsSwitchWrap.classList.contains('on');
     container.add(rig.nametagMesh);
   });
