@@ -83,7 +83,7 @@ scene.add(directionalLight);
 directionalLight2.position.set(-0.5, 1, -0.5);
 scene.add(directionalLight2); */
 
-/* const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
+const _makeTextMesh = (s = '', color = 0x000000, size = 1) => {
   // create a geometry of packed bitmap glyphs,
   // word wrapped to 300px and right-aligned
   var geometry = createTextGeometry({
@@ -122,7 +122,7 @@ scene.add(directionalLight2); */
     }
   };
   return mesh;
-}; */
+};
 
 const gridHelper = new THREE.GridHelper(10, 10);
 container.add(gridHelper);
@@ -1156,6 +1156,11 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
+  if (nametagMesh && rig) {
+    nametagMesh.position.copy(rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
+    nametagMesh.quaternion.copy(camera.quaternion);
+  }
+
   renderer.render(scene, camera);
 
   for (let i = 0; i < peerConnections.length; i++) {
@@ -1249,6 +1254,7 @@ function animate(timestamp, frame, referenceSpace) {
 renderer.setAnimationLoop(animate);
 
 let fontJson, fontTexture;
+let nametagMesh = null;
 const fontPromise = Promise.all([
   fetch('DejaVu-sdf.json').then(res => res.json()),
   new Promise((accept, reject) => {
@@ -1257,6 +1263,9 @@ const fontPromise = Promise.all([
 ]).then(results => {
   fontJson = results[0];
   fontTexture = results[1];
+
+  nametagMesh = _makeTextMesh('avaer', 0xFFFFFF, 2);
+  container.add(nametagMesh);
 });
 
 const mouse = {
