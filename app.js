@@ -1282,9 +1282,33 @@ document.addEventListener('pointerlockchange', () => {
   }
 });
 
+const chat = topDocument.getElementById('chat');
 const chatMessages = topDocument.getElementById('chat-messages');
 const chatInput = topDocument.getElementById('chat-input');
 let transformMode = 'translate';
+chat.addEventListener('submit', e => {
+  e.preventDefault();
+
+  if (chatInput.value) {
+    const messageEl = topDocument.createElement('message');
+    messageEl.classList.add('message');
+    messageEl.innerHTML = `<div class=message><b>you</b>: <span class=text></span></div>`;
+    const textEl = messageEl.querySelector('.text');
+    textEl.innerText = chatInput.value;
+    chatMessages.appendChild(messageEl);
+
+    chatInput.value = '';
+    chatInput.dispatchEvent(new CustomEvent('change'));
+
+    setTimeout(() => {
+      chatMessages.removeChild(messageEl);
+    }, 10000);
+  }
+});
+const _inputFocused = () => {
+  const {activeElement} = topDocument;
+  return activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+};
 const _keydown = e => {
   if (!controlsBound) {
     const _setMode = mode => {
@@ -1346,26 +1370,15 @@ const _keydown = e => {
         break;
       }
       case 13: { // enter
-        if (!saveDialog.classList.contains('open')) {
+        const {activeElement} = topDocument;
+        if (activeElement === saveNameInput) {
+          saveDialog.dispatchEvent(new CustomEvent('submit'));
+        } else {
           chatInput.classList.toggle('open');
           if (chatInput.classList.contains('open')) {
             chatInput.focus();
           } else {
-            if (chatInput.value) {
-              const messageEl = topDocument.createElement('message');
-              messageEl.classList.add('message');
-              messageEl.innerHTML = `<div class=message><b>you</b>: <span class=text></span></div>`;
-              const textEl = messageEl.querySelector('.text');
-              textEl.innerText = chatInput.value;
-              chatMessages.appendChild(messageEl);
-
-              chatInput.value = '';
-              chatInput.dispatchEvent(new CustomEvent('change'));
-
-              setTimeout(() => {
-                chatMessages.removeChild(messageEl);
-              }, 10000);
-            }
+            chat.dispatchEvent(new CustomEvent('submit'));
           }
         }
         break;
@@ -1374,7 +1387,7 @@ const _keydown = e => {
   }
   switch (e.which) {
     case 71: { // G
-      if (!e.ctrlKey && !e.metaKey) {
+      if (!_inputFocused() && !e.ctrlKey && !e.metaKey) {
         topBody.classList.toggle('fullscreen');
       }
       break;
