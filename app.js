@@ -172,13 +172,12 @@ const backgroundColorInput = topDocument.getElementById('background-color-input'
 backgroundColorInput.addEventListener('change', () => {
   const c = backgroundColorInput.value;
 
-  const xrEngine = topDocument.querySelector('xr-engine');
-  scene.background = new THREE.Color().setStyle(c);
-  console.log('scene background', scene.background);
-  if (xrEngine) {
-    xrEngine.setClearColor(scene.background.r, scene.background.g, scene.background.b, 1);
+  const xrSite = document.querySelector('xr-site');
+  if (xrSite) {
+    xrSite.setAttribute('bg', c);
+  } else {
+    console.warn('no xr-site to set background on');
   }
-  mirrorMesh.setBackgroundColor(c);
 });
 const greenScreenButton = topDocument.getElementById('green-screen-button');
 greenScreenButton.addEventListener('click', e => {
@@ -448,42 +447,67 @@ const _unbindXrIframe = xrIframe => {
   xrIframe.bindState = null;
 };
 const _bindXrSite = xrSite => {
-  const _update = () => {
-    if (xrSite.guardianMesh) {
-      container.remove(xrSite.guardianMesh);
-      xrSite.guardianMesh = null;
-    }
-    if (xrSite.baseMesh) {
-      container.remove(xrSite.baseMesh);
-      xrSite.baseMesh = null;
-    }
+  const _update = mutationRecords => {
+    for (let i = 0; i < mutationRecords.length; i++) {
+      const mutationRecord = mutationRecords[i];
+      const {target, attributeName} = mutationRecord;
+      if (attributeName === 'bg') {
+        const c = target.getAttribute(attributeName) || '#000000';
 
-    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
-    if (extents.length > 0) {
-      let color;
-      if (toolManager.getDirtyElement() === xrSite) {
-        color = colors.select4;
-      } else if (toolManager.getSelectedElement() === xrSite) {
-        color = colors.select3;
+        const xrEngine = topDocument.querySelector('xr-engine');
+        scene.background = new THREE.Color().setStyle(c);
+        if (xrEngine) {
+          xrEngine.setClearColor(scene.background.r, scene.background.g, scene.background.b, 1);
+        }
+        mirrorMesh.setBackgroundColor(c);
+
+        if (backgroundColorInput.value !== c) {
+          backgroundColorInput.value = c;
+        }
+      } else if (attributeName === 'extents') {
+        if (xrSite.guardianMesh) {
+          container.remove(xrSite.guardianMesh);
+          xrSite.guardianMesh = null;
+        }
+        if (xrSite.baseMesh) {
+          container.remove(xrSite.baseMesh);
+          xrSite.baseMesh = null;
+        }
+
+        const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+        if (extents.length > 0) {
+          let color;
+          if (toolManager.getDirtyElement() === xrSite) {
+            color = colors.select4;
+          } else if (toolManager.getSelectedElement() === xrSite) {
+            color = colors.select3;
+          } else {
+            color = colors.select;
+          }
+
+          // const toolName = toolManager.getSelectedToolName();
+          xrSite.baseMesh = new THREE.Land(extents, color);
+          // xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
+          container.add(xrSite.baseMesh);
+          xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
+          // xrSite.guardianMesh.visible = toolName === 'select';
+          container.add(xrSite.guardianMesh);
+        }
       } else {
-        color = colors.select;
+        console.warn('unknown attribute name', attributeName);
       }
-
-      // const toolName = toolManager.getSelectedToolName();
-      xrSite.baseMesh = new THREE.Land(extents, color);
-      // xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
-      container.add(xrSite.baseMesh);
-      xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
-      // xrSite.guardianMesh.visible = toolName === 'select';
-      container.add(xrSite.guardianMesh);
     }
   };
-  _update();
+  _update([{
+    target: xrSite,
+    attributeName: 'extents',
+  }]);
   const observer = new MutationObserver(_update);
   observer.observe(xrSite, {
     attributes: true,
     attributeFilter: [
       'extents',
+      'bg',
     ],
   });
   xrSite.bindState = {
