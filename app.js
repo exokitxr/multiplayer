@@ -1881,8 +1881,8 @@ const _connectLand = () => {
           const dom = parseHtml(codeInput.value);
           const requiredParcelCoords = _getRequiredParcelCoords(x, z);
           const outrangedParcels = _getAllParcelXrSites(dom)
-            .filter(xrSite => // parcels where every coord is not required
-              _getParcelCoords(xrSite).every(coord => !requiredParcelCoords.some(coord2 => coord2[0] === coord[0] && coord2[1] === coord[1]))
+            .filter(xrSite => // real parcels where every coord is not required
+              !xrSite.attrs.pending && _getParcelCoords(xrSite).every(coord => !requiredParcelCoords.some(coord2 => coord2[0] === coord[0] && coord2[1] === coord[1]))
             );
           if (outrangedParcels.length > 0) {
             for (let i = 0; i < outrangedParcels.length; i++) {
