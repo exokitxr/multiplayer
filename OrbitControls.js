@@ -24,6 +24,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	// Set to false to disable this control
 	this.enabled = true;
+	this.clickEnabled = true;
 
 	// "target" sets the location of focus, where the object orbits around
 	this.target = new THREE.Vector3();
@@ -750,7 +751,7 @@ THREE.OrbitControls = function ( object, domElement ) {
 
 	function onMouseDown( event ) {
 
-		if ( scope.enabled === false ) return;
+		if ( scope.enabled === false || scope.clickEnabled === false ) return;
 
 		// Prevent the browser from scrolling.
 
