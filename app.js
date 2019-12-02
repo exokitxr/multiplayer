@@ -523,6 +523,7 @@ const toolManager = new ToolManager({
     control.enabled = moveSelected;
   });
 }); */
+const _incr = (a, b) => a - b;
 const parcelCreateContent = topDocument.getElementById('parcel-create');
 const createParcelButton = topDocument.getElementById('create-parcel-button');
 createParcelButton.addEventListener('click', () => {
@@ -572,25 +573,6 @@ toolManager.addEventListener('hoverchange', e => {
 });
 toolManager.addEventListener('editchange', e => {
   lastParcelKey = '';
-});
-const _incr = (a, b) => a - b;
-toolManager.addEventListener('dragchange', e => {
-  const drag = e.data;
-  if (drag) {
-    const xs = [
-      Math.floor((drag.start.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-      Math.floor((drag.end.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-    ].sort(_incr);
-    const ys = [
-      Math.floor((drag.start.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-      Math.floor((drag.end.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-    ].sort(_incr);
-    xs[1] += parcelSize;
-    ys[1] += parcelSize;
-    floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
-  } /* else {
-    floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
-  } */
 });
 
 const _bindXrIframe = xrIframe => {

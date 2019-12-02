@@ -605,8 +605,8 @@ const _mousemove = e => {
       drag.end.copy(intersection.start);
       _updateExtentXrSite(drag);
 
-      this.dispatchEvent(new MessageEvent('dragchange', {
-        data: drag,
+      this.dispatchEvent(new MessageEvent('selectchange', {
+        data: selection,
       }));
     }
 
