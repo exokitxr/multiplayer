@@ -431,9 +431,9 @@ scene.onAfterRender = () => {
   const selectedEl = toolManager.getSelectedElement();
   const hoveredEl = toolManager.getHoveredElement();
   const outlineEl = selectedEl || hoveredEl;
-  const outlineModel = outlineEl && outlineEl.bindState.model;
+  const outlineModel = (outlineEl && (outlineEl.tagName === 'XR-IFRAME' || outlineEl.tagName === 'XR-MODEL')) ? outlineEl.bindState.model : null;
   let oldParent = null;
-  if (outlineEl) {
+  if (outlineModel) {
     oldParent = outlineModel.parent;
     outlineScene.add(outlineModel);
 
@@ -523,6 +523,12 @@ const toolManager = new ToolManager({
     control.enabled = moveSelected;
   });
 }); */
+const parcelCreateContent = topDocument.getElementById('parcel-create');
+const createParcelButton = topDocument.getElementById('create-parcel-button');
+createParcelButton.addEventListener('click', () => {
+  const {element} = selection;
+  element.removeAttribute('pending');
+});
 toolManager.addEventListener('selectchange', e => {
   const selection = e.data;
 
@@ -530,9 +536,34 @@ toolManager.addEventListener('selectchange', e => {
     xrNode.bindState.control.visible = false;
     xrNode.bindState.control.enabled = false;
   });
-  if (selection && selection.type === 'element') {
-    selection.element.bindState.control.visible = true;
-    selection.element.bindState.control.enabled = true;
+  Array.from(document.querySelectorAll('xr-site')).forEach(xrSite => {
+    if (xrSite !== selection.element && xrSite.getAttribute('pending')) {
+      xrSite.parentNode.removeChild(xrSite);
+    }
+  });
+  if (selection) {
+    if (selection.type === 'element') {
+      selection.element.bindState.control.visible = true;
+      selection.element.bindState.control.enabled = true;
+    } else if (selection.type === 'parcel') {
+      const xs = [
+        Math.floor((selection.start.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+        Math.floor((selection.end.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+      ].sort(_incr);
+      const ys = [
+        Math.floor((selection.start.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+        Math.floor((selection.end.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+      ].sort(_incr);
+      xs[1] += parcelSize;
+      ys[1] += parcelSize;
+      floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
+
+      parcelCreateContent.classList.add('open');
+    } else {
+      parcelCreateContent.classList.remove('open');
+    }
+  } else {
+    parcelCreateContent.classList.remove('open');
   }
 });
 toolManager.addEventListener('hoverchange', e => {
@@ -557,9 +588,9 @@ toolManager.addEventListener('dragchange', e => {
     xs[1] += parcelSize;
     ys[1] += parcelSize;
     floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
-  } else {
+  } /* else {
     floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
-  }
+  } */
 });
 
 const _bindXrIframe = xrIframe => {
@@ -707,10 +738,12 @@ const _bindXrSite = xrSite => {
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
         if (extents.length > 0) {
           let color;
-          if (toolManager.getDirtyElement() === xrSite) {
-            color = colors.select4;
-          } else if (toolManager.getSelectedElement() === xrSite) {
-            color = colors.select3;
+          if (toolManager.getSelectedElement() === xrSite) {
+            if (xrSite.getAttribute('pending')) {
+              color = colors.select4;
+            } else {
+              color = colors.select3;
+            }
           } else {
             color = colors.select;
           }
@@ -1406,9 +1439,8 @@ function animate(timestamp, frame, referenceSpace) {
     }
     const intersection = toolManager.getHover();
     if (intersection && intersection.type === 'floor') {
-      const {point} = intersection;
-      const minX = Math.floor((point.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-      const minZ = Math.floor((point.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      const minX = Math.floor((intersection.start.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      const minZ = Math.floor((intersection.start.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
       const maxX = minX + parcelSize;
       const maxZ = minZ + parcelSize;
       floorMesh.material.uniforms.uHoverParcel.value.set(minX, minZ, maxX, maxZ);

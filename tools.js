@@ -256,10 +256,10 @@ const _updateExtentXrSite = drag => {
 };
 const _mousedown = e => {
   if (orbitControls.draggable) {
-    if (intersection && intersection.type === 'floor' && canDrag(drag && drag.start, intersection.point)) {
+    if (intersection && (intersection.type === 'floor' || intersection.type === 'parcel') && canDrag(drag && drag.start, intersection.start)) {
       if (!drag) {
         const dom = parseHtml(codeInput.value);
-        dom.childNodes.push(parseHtml(`<xr-site></xr-site>`).childNodes[0]);
+        dom.childNodes.push(parseHtml(`<xr-site pending=true></xr-site>`).childNodes[0]);
         codeInput.value = serializeHtml(dom);
         codeInput.dispatchEvent(new CustomEvent('change'));
 
@@ -268,15 +268,24 @@ const _mousedown = e => {
 
         drag = {
           type: 'parcel',
-          start: intersection.point.clone(),
-          end: intersection.point.clone(),
+          start: intersection.start.clone(),
+          end: intersection.start.clone(),
           element: xrSite,
         };
+        intersection = drag;
+        selection = drag;
         _updateExtentXrSite(drag);
 
         orbitControls.enabled = false;
+
+        this.dispatchEvent(new MessageEvent('hoverchange', {
+          data: intersection,
+        }));
+        this.dispatchEvent(new MessageEvent('selectchange', {
+          data: selection,
+        }));
       } else {
-        drag.end.copy(intersection.point);
+        drag.end.copy(intersection.start);
         _updateExtentXrSite(drag);
       }
       this.dispatchEvent(new MessageEvent('dragchange', {
@@ -385,9 +394,18 @@ domElement.addEventListener('mousedown', _mousedown);
 const _mouseup = e => {
   if (drag && drag.type === 'parcel') {
     const {element: xrSite} = drag;
-    xrSite.parentNode.removeChild(xrSite);
+    // xrSite.parentNode.removeChild(xrSite);
 
+    intersection = drag;
+    selection = drag;
     drag = null;
+
+    this.dispatchEvent(new MessageEvent('hoverchange', {
+      data: intersection,
+    }));
+    this.dispatchEvent(new MessageEvent('selectchange', {
+      data: selection,
+    }));
     this.dispatchEvent(new MessageEvent('dragchange', {
       data: drag,
     }));
@@ -493,9 +511,26 @@ const _mousemove = e => {
     const _checkFloorIntersections = () => {
       const floorIntersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
       if (floorIntersection) {
+        const x = localVector.x/container.scale.x;
+        const y = localVector.z/container.scale.z;
+        const xrSites = Array.from(document.querySelectorAll('xr-site'));
+        for (let i = 0; i < xrSites.length; i++) {
+          const xrSite = xrSites[i];
+          const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+          if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < x2 && y >= y1 && y < y2)) {
+            intersection = {
+              type: 'parcel',
+              element: xrSite,
+              start: localVector.clone(),
+              end: localVector.clone(),
+            };
+            return true;
+          }
+        }
         intersection = {
           type: 'floor',
-          point: localVector.clone(),
+          start: localVector.clone(),
+          start: localVector.clone(),
         };
         return true;
       } else {
@@ -566,8 +601,8 @@ const _mousemove = e => {
       _updateExtentXrSite();
     } */
 
-    if (drag && drag.type === 'parcel' && intersection && intersection.type === 'floor') {
-      drag.end.copy(intersection.point);
+    if (drag && drag.type === 'parcel' && intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
+      drag.end.copy(intersection.start);
       _updateExtentXrSite(drag);
 
       this.dispatchEvent(new MessageEvent('dragchange', {
@@ -623,10 +658,10 @@ document.addEventListener('pointerlockchange', () => {
     return null;
     // return editedXrSite;
   }
-  getDirtyElement() {
+  /* getDirtyElement() {
     return null;
     // return dirtyXrSite;
-  }
+  } */
   clampPositionToElementExtent(position, xrSite) {
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     for (let i = 0; i < extents.length; i++) {
