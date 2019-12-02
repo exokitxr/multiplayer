@@ -448,7 +448,7 @@ const _mousemove = e => {
       if (floorIntersection) {
         intersection = {
           type: 'floor',
-          intersectionPoint: localVector.clone(),
+          point: localVector.clone(),
         };
         return true;
       } else {
