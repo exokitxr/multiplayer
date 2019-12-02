@@ -208,6 +208,7 @@ const floorMesh = (() => {
     uniform vec4 uCurrentParcel;
     uniform vec4 uHoverParcel;
     uniform vec4 uSelectedParcel;
+    uniform vec3 uSelectedColor;
     // uniform float uAnimation;
     varying vec3 vPosition;
     varying float vTypex;
@@ -222,17 +223,19 @@ const floorMesh = (() => {
         vPosition.x <= uSelectedParcel.z &&
         vPosition.z <= uSelectedParcel.w
       ) {
-        c = vec3(${new THREE.Color().setHex(0x29b6f6).toArray().map(n => n.toFixed(8)).join(',')});
-      } else if (
+        c = uSelectedColor;
+      } else {
+        c = vec3(0.5);
+      }
+      float add = 0.0;
+      if (
         vPosition.x >= uHoverParcel.x &&
         vPosition.z >= uHoverParcel.y &&
         vPosition.x <= uHoverParcel.z &&
         vPosition.z <= uHoverParcel.w
       ) {
-        c = vec3(1.0);
+        add = 0.2;
       } else {
-        c = vec3(0.5);
-        float add = 0.0;
         vec3 f = fract(vPosition);
         if (vTypex >= 2.0/8.0) {
           if (f.x >= 0.8) {
@@ -252,16 +255,16 @@ const floorMesh = (() => {
             add = 0.2;
           }
         }
-        if (
+        /* if (
           vPosition.x >= uCurrentParcel.x &&
           vPosition.z >= uCurrentParcel.y &&
           vPosition.x <= uCurrentParcel.z &&
           vPosition.z <= uCurrentParcel.w
         ) {
           add = 0.2;
-        }
-        c += add;
+        } */
       }
+      c += add;
       a = (1.0-vDepth)*0.5;
       gl_FragColor = vec4(c, a);
     }
@@ -283,6 +286,10 @@ const floorMesh = (() => {
       uSelectedParcel: {
         type: 'v4',
         value: new THREE.Vector4(),
+      },
+      uSelectedColor: {
+        type: 'c',
+        value: new THREE.Color().setHex(0x29b6f6),
       },
       uAnimation: {
         type: 'f',
@@ -557,6 +564,8 @@ toolManager.addEventListener('selectchange', e => {
       xs[1] += parcelSize;
       ys[1] += parcelSize;
       floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
+      const color = _getSelectedColor(selection.element);
+      floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
 
       parcelCreateContent.classList.add('open');
     } else {
@@ -690,6 +699,19 @@ const _unbindXrIframe = xrIframe => {
 
   xrIframe.bindState = null;
 };
+const _getSelectedColor = xrSite => {
+  let color;
+  if (toolManager.getSelectedElement() === xrSite) {
+    if (xrSite.getAttribute('pending')) {
+      color = colors.select4;
+    } else {
+      color = colors.select3;
+    }
+  } else {
+    color = colors.select;
+  }
+  return color;
+}
 const _bindXrSite = xrSite => {
   const _update = mutationRecords => {
     for (let i = 0; i < mutationRecords.length; i++) {
@@ -716,17 +738,7 @@ const _bindXrSite = xrSite => {
 
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
         if (extents.length > 0) {
-          let color;
-          if (toolManager.getSelectedElement() === xrSite) {
-            if (xrSite.getAttribute('pending')) {
-              color = colors.select4;
-            } else {
-              color = colors.select3;
-            }
-          } else {
-            color = colors.select;
-          }
-
+          const color = _getSelectedColor(xrSite);
           xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
           container.add(xrSite.guardianMesh);
         }
@@ -1403,7 +1415,7 @@ function animate(timestamp, frame, referenceSpace) {
   }
 
   if (landConnection) {
-    if (rig) {
+    /* if (rig) {
       const minX = Math.floor((rig.inputs.hmd.position.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
       const minZ = Math.floor((rig.inputs.hmd.position.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
       const maxX = minX + parcelSize;
@@ -1411,7 +1423,7 @@ function animate(timestamp, frame, referenceSpace) {
       floorMesh.material.uniforms.uCurrentParcel.value.set(minX, minZ, maxX, maxZ);
     } else {
       floorMesh.material.uniforms.uCurrentParcel.value.set(0, 0, 0, 0);
-    }
+    } */
     const intersection = toolManager.getHover();
     if (intersection && intersection.type === 'floor') {
       const minX = Math.floor((intersection.start.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
