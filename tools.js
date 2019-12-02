@@ -160,7 +160,7 @@ unsetAvatarButton.addEventListener('click', () => {
 });
 
 screenshotButton.addEventListener('click', async () => {
-  const {element: {bindState: {model}}} = intersection;
+  const {element: {bindState: {model}}} = selection;
   console.log('screenshot', model);
   if (model) {
     const blob = await screenshot(model, {
