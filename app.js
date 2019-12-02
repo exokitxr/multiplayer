@@ -344,7 +344,7 @@ const toolManager = new ToolManager({
   camera,
   container,
 });
-toolManager.addEventListener('toolchange', e => {
+/* toolManager.addEventListener('toolchange', e => {
   const toolName = e.data;
   const cameraSelected = toolName === 'camera';
   const selectSelected = toolName === 'select';
@@ -357,6 +357,18 @@ toolManager.addEventListener('toolchange', e => {
     control.visible = moveSelected;
     control.enabled = moveSelected;
   });
+}); */
+toolManager.addEventListener('selectchange', e => {
+  const selection = e.data;
+
+  Array.from(document.querySelectorAll('xr-iframe')).concat(Array.from(document.querySelectorAll('xr-model'))).forEach(xrNode => {
+    xrNode.bindState.control.visible = false;
+    xrNode.bindState.control.enabled = false;
+  });
+  if (selection && selection.type === 'element') {
+    selection.element.bindState.control.visible = true;
+    selection.element.bindState.control.enabled = true;
+  }
 });
 toolManager.addEventListener('hoverchange', e => {
   const hoveredEl = e.data;
@@ -378,10 +390,10 @@ const _bindXrIframe = xrIframe => {
   const control = new THREE.TransformControls(camera, renderer.domElement);
   control.setMode(transformMode);
   control.size = 3;
-  control.visible = toolManager.getSelectedToolName() === 'move';
+  control.visible = toolManager.getSelectedElement() === xrIframe;
   control.enabled = control.visible;
   control.addEventListener('dragging-changed', e => {
-    orbitControls.enabled = !e.value && toolManager.getSelectedToolName() === 'camera';
+    orbitControls.enabled = !e.value;
   });
   control.addEventListener('mouseEnter', () => {
     control.draggable = true;
@@ -780,10 +792,10 @@ class XRModel extends HTMLElement {
     const control = new THREE.TransformControls(camera, renderer.domElement);
     control.setMode(transformMode);
     control.size = 3;
-    control.visible = toolManager.getSelectedToolName() === 'move';
+    control.visible = toolManager.getSelectedElement() === this;
     control.enabled = control.visible;
     control.addEventListener('dragging-changed', e => {
-      orbitControls.enabled = !e.value && toolManager.getSelectedToolName() === 'camera';
+      orbitControls.enabled = !e.value;
     });
     control.addEventListener('mouseEnter', () => {
       control.draggable = true;
@@ -1382,14 +1394,14 @@ const _keydown = e => {
         }
         break;
       }
-      case 49: // 1
+      /* case 49: // 1
       case 50: // 2
       case 51: // 3
       case 52: // 4
       {
         toolManager.selectTool(e.which - 49);
         break;
-      }
+      } */
       case 27: { // esc
         if (saveDialog.classList.contains('open')) {
           saveDialog.classList.remove('open');
@@ -1797,7 +1809,6 @@ const _bindControls = type => {
     window.addEventListener('keyup', _keyup);
     window.removeEventListener('mousemove', _mousemove);
     orbitControls.target.copy(camera.position).add(new THREE.Vector3(0, 0, -3).applyQuaternion(camera.quaternion));
-    orbitControls.enabled = toolManager.getSelectedToolName() === 'camera';
     controlsBound = null;
   };
 };

@@ -20,12 +20,12 @@ const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const editParcelButton = topDocument.getElementById('edit-parcel-button');
 const stopEditingButton = topDocument.getElementById('stop-editing-button');
 
-const toolNames = [
+/* const toolNames = [
   'camera',
   'select',
   'move',
   'trace',
-];
+]; */
 const floorPlane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0));
 
 const localVector = new THREE.Vector3();
@@ -33,7 +33,7 @@ const localVector2 = new THREE.Vector3();
 const localVector2D = new THREE.Vector2();
 const localRaycaster = new THREE.Raycaster();
 
-let toolIndex = 0;
+// let toolIndex = 0;
 const pixels = {};
 let intersection = null;
 let selection = null;
@@ -84,7 +84,7 @@ class ToolManager extends EventTarget {
   constructor({domElement, camera, container}) {
     super();
 
-for (let i = 0; i < tools.length; i++) {
+/* for (let i = 0; i < tools.length; i++) {
   const tool = tools[i];
   tool.addEventListener('click', () => {
     for (let i = 0; i < tools.length; i++) {
@@ -97,7 +97,7 @@ for (let i = 0; i < tools.length; i++) {
       data: toolName,
     }));
   });
-}
+} */
 
 const _updateExtentXrSite = () => {
   const _incr = (a, b) => a - b;
@@ -369,8 +369,9 @@ const _mouseup = e => {
 };
 domElement.addEventListener('mouseup', _mouseup);
 const _click = () => {
-  if (selection && selection.type === 'element') {
-    selection.element.bindState.model.boundingBoxMesh.setSelect(false);
+  const oldSelection = selection;
+  if (oldSelection && oldSelection.type === 'element') {
+    oldSelection.element.bindState.model.boundingBoxMesh.setSelect(false);
   }
   selection = intersection;
   if (selection && selection.type === 'element') {
@@ -380,6 +381,15 @@ const _click = () => {
     detailsContentTab.click();
   } else {
     selectedObjectDetails.classList.remove('open');
+  }
+
+  if (
+    (!!oldSelection !== !!selection) ||
+    (selection && oldSelection && (selection.type !== oldSelection.type || selection.element !== oldSelection.element))
+  ) {
+    this.dispatchEvent(new MessageEvent('selectchange', {
+      data: selection,
+    }));
   }
 };
 domElement.addEventListener('click', _click);
@@ -518,12 +528,12 @@ const _mousemove = e => {
 domElement.addEventListener('mousemove', _mousemove);
 
   }
-  selectTool(i) {
+  /* selectTool(i) {
     tools[i].click();
   }
   getSelectedToolName() {
     return toolNames[toolIndex];
-  }
+  } */
   getHoveredElement() {
     return intersection && intersection.element;
   }
@@ -555,11 +565,17 @@ domElement.addEventListener('mousemove', _mousemove);
         if (intersection && intersection.element === element) {
           intersection.element.bindState.model.boundingBoxMesh.setHover(false);
           intersection = null;
+          this.dispatchEvent(new MessageEvent('hoverchange', {
+            data: intersection,
+          }));
         }
         element.bindState.model.boundingBoxMesh.setSelect(false);
 
         element.parentNode.removeChild(element);
         selection = null;
+        this.dispatchEvent(new MessageEvent('selectchange', {
+          data: selection,
+        }));
 
         selectedObjectDetails.classList.remove('open');
       } else if (element.tagName === 'XR-SITE') {
@@ -576,6 +592,9 @@ domElement.addEventListener('mousemove', _mousemove);
         if (intersection && intersection.element === element) {
           intersection.element.bindState.model.boundingBoxMesh.setHover(false);
           intersection = null;
+          this.dispatchEvent(new MessageEvent('hoverchange', {
+            data: intersection,
+          }));
         }
 
         element.parentNode.removeChild(element);
@@ -589,6 +608,9 @@ domElement.addEventListener('mousemove', _mousemove);
         }
 
         selection = null;
+        this.dispatchEvent(new MessageEvent('selectchange', {
+          data: selection,
+        }));
 
         parcelNameInput.value = '';
         _updateParcelButtons();
