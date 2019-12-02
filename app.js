@@ -1425,9 +1425,9 @@ function animate(timestamp, frame, referenceSpace) {
       floorMesh.material.uniforms.uCurrentParcel.value.set(0, 0, 0, 0);
     } */
     const intersection = toolManager.getHover();
-    if (intersection && intersection.type === 'floor') {
-      const minX = Math.floor((intersection.start.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-      const minZ = Math.floor((intersection.start.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+    if (intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
+      const minX = Math.floor((intersection.end.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      const minZ = Math.floor((intersection.end.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
       const maxX = minX + parcelSize;
       const maxZ = minZ + parcelSize;
       floorMesh.material.uniforms.uHoverParcel.value.set(minX, minZ, maxX, maxZ);
