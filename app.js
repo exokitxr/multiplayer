@@ -1369,19 +1369,19 @@ const _keydown = e => {
     };
     switch (e.which) {
       case 87: { // W
-        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
+        if (!_inputFocused()) {
           _setMode('translate');
         }
         break;
       }
       case 69: { // E
-        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
+        if (!_inputFocused()) {
           _setMode('rotate');
         }
         break;
       }
       case 82: { // R
-        if (toolManager.getSelectedToolName() === 'move' && !chatInput.classList.contains('open')) {
+        if (!_inputFocused()) {
           _setMode('scale');
         }
         break;
