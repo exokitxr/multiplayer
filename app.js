@@ -1630,7 +1630,7 @@ const _keydown = e => {
           chatInput.classList.remove('open');
           chatInput.value = '';
         } else {
-          toolManager.escape();
+          toolManager.reset();
         }
         break;
       }

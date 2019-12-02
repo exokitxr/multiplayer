@@ -729,12 +729,12 @@ document.addEventListener('pointerlockchange', () => {
       }
     }
   }
-  escape() {
-    /* if (editedXrSite) {
+  /* escape() {
+    if (editedXrSite) {
       _uneditXrSite();
       this.dispatchEvent(new MessageEvent('editchange'));
-    } */
-  }
+    }
+  } */
   reset() {
     intersection = null;
     selection = null;
