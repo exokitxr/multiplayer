@@ -208,6 +208,7 @@ const floorMesh = (() => {
   const floorFsh = `
     uniform vec4 uCurrentParcel;
     uniform vec4 uHoverParcel;
+    uniform vec4 uSelectedParcel;
     // uniform float uAnimation;
     varying vec3 vPosition;
     varying float vTypex;
@@ -217,12 +218,19 @@ const floorMesh = (() => {
       vec3 c;
       float a;
       if (
+        vPosition.x >= uSelectedParcel.x &&
+        vPosition.z >= uSelectedParcel.y &&
+        vPosition.x <= uSelectedParcel.z &&
+        vPosition.z <= uSelectedParcel.w
+      ) {
+        c = vec3(${new THREE.Color().setHex(0x29b6f6).toArray().map(n => n.toFixed(8)).join(',')});
+      } else if (
         vPosition.x >= uHoverParcel.x &&
         vPosition.z >= uHoverParcel.y &&
         vPosition.x <= uHoverParcel.z &&
         vPosition.z <= uHoverParcel.w
       ) {
-        c = vec3(${new THREE.Color().setHex(0x5c6bc0).toArray().map(n => n.toFixed(8)).join(',')});
+        c = vec3(1.0);
       } else {
         c = vec3(0.5);
         float add = 0.0;
@@ -270,6 +278,10 @@ const floorMesh = (() => {
         value: new THREE.Vector4(),
       },
       uHoverParcel: {
+        type: 'v4',
+        value: new THREE.Vector4(),
+      },
+      uSelectedParcel: {
         type: 'v4',
         value: new THREE.Vector4(),
       },
@@ -525,6 +537,25 @@ toolManager.addEventListener('hoverchange', e => {
 });
 toolManager.addEventListener('editchange', e => {
   lastParcelKey = '';
+});
+const _incr = (a, b) => a - b;
+toolManager.addEventListener('dragchange', e => {
+  const drag = e.data;
+  if (drag) {
+    const xs = [
+      Math.floor((drag.start.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+      Math.floor((drag.end.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+    ].sort(_incr);
+    const ys = [
+      Math.floor((drag.start.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+      Math.floor((drag.end.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+    ].sort(_incr);
+    xs[1] += parcelSize;
+    ys[1] += parcelSize;
+    floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
+  } else {
+    floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
+  }
 });
 
 const _bindXrIframe = xrIframe => {
