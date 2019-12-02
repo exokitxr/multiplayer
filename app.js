@@ -499,11 +499,15 @@ const teleportMeshes = [
 container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
+const canDrag = (startPoint, endPoint) => {
+  return !!landConnection && (!startPoint || startPoint.distanceTo(endPoint) < 64);
+};
 const toolManager = new ToolManager({
   domElement: renderer.domElement,
   camera,
   container,
   orbitControls,
+  canDrag,
 });
 /* toolManager.addEventListener('toolchange', e => {
   const toolName = e.data;
@@ -1390,22 +1394,29 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
-  if (rig) {
-    const minX = Math.floor((rig.inputs.hmd.position.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-    const minZ = Math.floor((rig.inputs.hmd.position.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-    const maxX = minX + parcelSize;
-    const maxZ = minZ + parcelSize;
-    floorMesh.material.uniforms.uCurrentParcel.value.set(minX, minZ, maxX, maxZ);
-  }
-  const intersection = toolManager.getHover();
-  if (intersection && intersection.type === 'floor') {
-    const {point} = intersection;
-    const minX = Math.floor((point.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-    const minZ = Math.floor((point.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-    const maxX = minX + parcelSize;
-    const maxZ = minZ + parcelSize;
-    floorMesh.material.uniforms.uHoverParcel.value.set(minX, minZ, maxX, maxZ);
+  if (landConnection) {
+    if (rig) {
+      const minX = Math.floor((rig.inputs.hmd.position.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      const minZ = Math.floor((rig.inputs.hmd.position.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      const maxX = minX + parcelSize;
+      const maxZ = minZ + parcelSize;
+      floorMesh.material.uniforms.uCurrentParcel.value.set(minX, minZ, maxX, maxZ);
+    } else {
+      floorMesh.material.uniforms.uCurrentParcel.value.set(0, 0, 0, 0);
+    }
+    const intersection = toolManager.getHover();
+    if (intersection && intersection.type === 'floor') {
+      const {point} = intersection;
+      const minX = Math.floor((point.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      const minZ = Math.floor((point.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      const maxX = minX + parcelSize;
+      const maxZ = minZ + parcelSize;
+      floorMesh.material.uniforms.uHoverParcel.value.set(minX, minZ, maxX, maxZ);
+    } else {
+      floorMesh.material.uniforms.uHoverParcel.value.set(0, 0, 0, 0);
+    }
   } else {
+    floorMesh.material.uniforms.uCurrentParcel.value.set(0, 0, 0, 0);
     floorMesh.material.uniforms.uHoverParcel.value.set(0, 0, 0, 0);
   }
 

@@ -82,7 +82,7 @@ const _updateParcelButtons = () => {
 }
 
 class ToolManager extends EventTarget {
-  constructor({domElement, camera, container, orbitControls}) {
+  constructor({domElement, camera, container, orbitControls, canDrag}) {
     super();
 
 /* for (let i = 0; i < tools.length; i++) {
@@ -227,9 +227,6 @@ stopEditingButton.addEventListener('click', () => {
   this.dispatchEvent(new MessageEvent('editchange'));
 });
 
-const _canDrag = (startPoint, endPoint) => {
-  return !startPoint || startPoint.distanceTo(endPoint) < 64;
-};
 const _incr = (a, b) => a - b;
 const _updateExtentXrSite = drag => {
   const {element: xrSite} = drag;
@@ -259,7 +256,7 @@ const _updateExtentXrSite = drag => {
 };
 const _mousedown = e => {
   if (orbitControls.draggable) {
-    if (intersection && intersection.type === 'floor' && _canDrag(drag && drag.start, intersection.point)) {
+    if (intersection && intersection.type === 'floor' && canDrag(drag && drag.start, intersection.point)) {
       if (!drag) {
         const dom = parseHtml(codeInput.value);
         dom.childNodes.push(parseHtml(`<xr-site></xr-site>`).childNodes[0]);
