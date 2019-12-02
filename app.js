@@ -659,10 +659,10 @@ const _bindXrSite = xrSite => {
           container.remove(xrSite.guardianMesh);
           xrSite.guardianMesh = null;
         }
-        if (xrSite.baseMesh) {
+        /* if (xrSite.baseMesh) {
           container.remove(xrSite.baseMesh);
           xrSite.baseMesh = null;
-        }
+        } */
 
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
         if (extents.length > 0) {
@@ -675,8 +675,8 @@ const _bindXrSite = xrSite => {
             color = colors.select;
           }
 
-          xrSite.baseMesh = new THREE.Land(extents, color);
-          container.add(xrSite.baseMesh);
+          /* xrSite.baseMesh = new THREE.Land(extents, color);
+          container.add(xrSite.baseMesh); */
           xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
           container.add(xrSite.guardianMesh);
         }
@@ -704,8 +704,8 @@ const _bindXrSite = xrSite => {
 const _unbindXrSite = xrSite => {
   container.remove(xrSite.guardianMesh);
   xrSite.guardianMesh = null;
-  container.remove(xrSite.baseMesh);
-  xrSite.baseMesh = null;
+  /* container.remove(xrSite.baseMesh);
+  xrSite.baseMesh = null; */
 
   const {observer} = xrSite.bindState;
   observer.disconnect();
@@ -1117,10 +1117,10 @@ function animate(timestamp, frame, referenceSpace) {
 
   const editedEl = toolManager.getEditedElement();
   if (editedEl && editedEl.tagName === 'XR-SITE') {
-    const {baseMesh, guardianMesh} = editedEl;
+    const {/*baseMesh, */guardianMesh} = editedEl;
     const f = 1 + Math.pow(1 - (now % 1000) / 1000, 2);
     const c = localColor.setHex(colors.select3).multiplyScalar(f);
-    baseMesh.material.uniforms.uColor.value.copy(c);
+    // baseMesh.material.uniforms.uColor.value.copy(c);
     guardianMesh.material.uniforms.uColor.value.copy(c);
   }
 

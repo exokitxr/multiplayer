@@ -221,7 +221,7 @@ saveParcelButton.addEventListener('click', async () => {
 
       xrSite.setAttribute('name', name);
       const color = xrSite === selectedXrSite ? colors.select3 : colors.select;
-      xrSite.baseMesh && xrSite.baseMesh.material.uniforms.uColor.value.setHex(color);
+      // xrSite.baseMesh && xrSite.baseMesh.material.uniforms.uColor.value.setHex(color);
       xrSite.guardianMesh && xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
 
       if (selectedXrSite === xrSite) {
