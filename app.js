@@ -907,6 +907,21 @@ const _updateXrIframeMatrices = () => {
     xrIframe.parentXrOffset.flagUpdate();
   }
 };
+const _makeAvatar = (model, options, name) => {
+  const rig = new Avatar(model, options);
+  rig.nametagMesh = null;
+  fontPromise.then(() => {
+    rig.nametagMesh = _makeNametagMesh(_makeTextMesh(name, 0xFFFFFF, 2));
+    rig.nametagMesh.visible = nameTagsSwitchWrap.classList.contains('on');
+    container.add(rig.nametagMesh);
+  });
+  rig.destroy = (destroy => function() {
+    container.remove(rig.model);
+    container.remove(rig.nametagMesh);
+  })(rig.destroy);
+  container.add(rig.model);
+  return rig;
+};
 const _setLocalModel = newModel => {
   if (rig) {
     container.remove(rig.model);
@@ -914,22 +929,15 @@ const _setLocalModel = newModel => {
     rig = null;
   }
 
-  rig = new Avatar(newModel, {
+  rig = _makeAvatar(newModel, {
     fingers: true,
     hair: true,
     visemes: true,
     decapitate: possessRig,
     microphoneMediaStream,
     // debug: !newModel,
-  });
-  rig.nametagMesh = null;
-  fontPromise.then(() => {
-    rig.nametagMesh = _makeNametagMesh(_makeTextMesh(loginToken ? loginToken.name : 'Anonymous', 0xFFFFFF, 2));
-    rig.nametagMesh.visible = nameTagsSwitchWrap.classList.contains('on');
-    container.add(rig.nametagMesh);
-  });
-  container.add(rig.model);
-  window.model = newModel;
+  }, loginToken ? loginToken.name : 'Anonymous');
+  // window.model = newModel;
 
   heightFactor = _getHeightFactor(rig.height);
 
@@ -2397,7 +2405,6 @@ connectButton.addEventListener('click', () => {
         clearInterval(updateInterval);
 
         if (peerConnection.rig) {
-          container.remove(peerConnection.rig.model);
           peerConnection.rig.destroy();
         }
       });
@@ -2470,14 +2477,7 @@ connectButton.addEventListener('click', () => {
             microphoneMediaStream: peerConnection.mediaStream,
             muted: false,
             // debug: !model,
-          });
-          peerConnection.rig.nametagMesh = null;
-          fontPromise.then(() => {
-            peerConnection.rig.nametagMesh = _makeNametagMesh(_makeTextMesh(peerConnection.username, 0xFFFFFF, 2));
-            peerConnection.rig.nametagMesh.visible = nameTagsSwitchWrap.classList.contains('on');
-            container.add(peerConnection.rig.nametagMesh);
-          });
-          container.add(peerConnection.rig.model);
+          }, peerConnection.username);
 
           peerConnection.rig.starts = {
             hmd: {
