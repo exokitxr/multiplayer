@@ -517,12 +517,9 @@ const _bindXrSite = xrSite => {
             color = colors.select;
           }
 
-          // const toolName = toolManager.getSelectedToolName();
           xrSite.baseMesh = new THREE.Land(extents, color);
-          // xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
           container.add(xrSite.baseMesh);
           xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
-          // xrSite.guardianMesh.visible = toolName === 'select';
           container.add(xrSite.guardianMesh);
         }
       } else {
