@@ -288,9 +288,6 @@ const _mousedown = e => {
         drag.end.copy(intersection.start);
         _updateExtentXrSite(drag);
       }
-      this.dispatchEvent(new MessageEvent('dragchange', {
-        data: drag,
-      }));
     }
   }
   /* if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
@@ -405,9 +402,6 @@ const _mouseup = e => {
     }));
     this.dispatchEvent(new MessageEvent('selectchange', {
       data: selection,
-    }));
-    this.dispatchEvent(new MessageEvent('dragchange', {
-      data: drag,
     }));
 
     orbitControls.enabled = true;
@@ -740,6 +734,18 @@ document.addEventListener('pointerlockchange', () => {
       _uneditXrSite();
       this.dispatchEvent(new MessageEvent('editchange'));
     } */
+  }
+  reset() {
+    intersection = null;
+    selection = null;
+    drag = null;
+
+    this.dispatchEvent(new MessageEvent('hoverchange', {
+      data: intersection,
+    }));
+    this.dispatchEvent(new MessageEvent('selectchange', {
+      data: selection,
+    }));
   }
 }
 

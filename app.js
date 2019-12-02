@@ -560,9 +560,11 @@ toolManager.addEventListener('selectchange', e => {
 
       parcelCreateContent.classList.add('open');
     } else {
+      floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
       parcelCreateContent.classList.remove('open');
     }
   } else {
+    floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
     parcelCreateContent.classList.remove('open');
   }
 });
@@ -711,10 +713,6 @@ const _bindXrSite = xrSite => {
           container.remove(xrSite.guardianMesh);
           xrSite.guardianMesh = null;
         }
-        /* if (xrSite.baseMesh) {
-          container.remove(xrSite.baseMesh);
-          xrSite.baseMesh = null;
-        } */
 
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
         if (extents.length > 0) {
@@ -729,8 +727,6 @@ const _bindXrSite = xrSite => {
             color = colors.select;
           }
 
-          /* xrSite.baseMesh = new THREE.Land(extents, color);
-          container.add(xrSite.baseMesh); */
           xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
           container.add(xrSite.guardianMesh);
         }
@@ -758,8 +754,6 @@ const _bindXrSite = xrSite => {
 const _unbindXrSite = xrSite => {
   container.remove(xrSite.guardianMesh);
   xrSite.guardianMesh = null;
-  /* container.remove(xrSite.baseMesh);
-  xrSite.baseMesh = null; */
 
   const {observer} = xrSite.bindState;
   observer.disconnect();
@@ -1706,8 +1700,6 @@ for (let i = 0; i < mainOptions.length; i++) {
 
       switch (i) {
         case 0: {
-          codeInput.value = `<xr-site></xr-site>`;
-          codeInput.dispatchEvent(new CustomEvent('change'));
           break;
         }
         case 1: {
@@ -1940,10 +1932,14 @@ const _connectLand = () => {
 
   return {
     disconnect() {
-      const selectedElement = toolManager.getSelectedElement();
+      /* const selectedElement = toolManager.getSelectedElement();
       if (selectedElement && selectedElement.tagName === 'XR-SITE') {
         toolManager.deselect();
-      }
+      } */
+      _resetCodeInput();
+      setTimeout(() => {
+        toolManager.reset();
+      });
 
       clearInterval(updateInterval);
     },
