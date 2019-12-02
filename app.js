@@ -538,7 +538,7 @@ toolManager.addEventListener('selectchange', e => {
     xrNode.bindState.control.enabled = false;
   });
   Array.from(document.querySelectorAll('xr-site')).forEach(xrSite => {
-    if (xrSite !== selection.element && xrSite.getAttribute('pending')) {
+    if (xrSite !== (selection && selection.element) && xrSite.getAttribute('pending')) {
       xrSite.parentNode.removeChild(xrSite);
     }
   });
