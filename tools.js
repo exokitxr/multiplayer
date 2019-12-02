@@ -554,6 +554,9 @@ document.addEventListener('pointerlockchange', () => {
   getSelectedToolName() {
     return toolNames[toolIndex];
   } */
+  getHover() {
+    return intersection;
+  }
   getHoveredElement() {
     return intersection && intersection.element;
   }
