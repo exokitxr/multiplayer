@@ -1708,6 +1708,12 @@ for (let i = 0; i < mainOptions.length; i++) {
       if (landConnection) {
         landConnection.disconnect();
         landConnection = null;
+
+        setTimeout(() => {
+          toolManager.reset();
+        });
+      } else {
+        toolManager.reset();
       }
 
       switch (i) {
@@ -1949,9 +1955,6 @@ const _connectLand = () => {
         toolManager.deselect();
       } */
       _resetCodeInput();
-      setTimeout(() => {
-        toolManager.reset();
-      });
 
       clearInterval(updateInterval);
     },
