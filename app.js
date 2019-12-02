@@ -142,14 +142,84 @@ const _makeNametagMesh = textMesh => {
   return o;
 };
 
-const gridHelper = new THREE.GridHelper(10, 10);
-container.add(gridHelper);
+const floorMesh = (() => {
+  const planeBufferGeometry = new THREE.PlaneBufferGeometry(1, 1)
+    .applyMatrix(localMatrix.makeScale(0.95, 0.95, 1))
+    .applyMatrix(localMatrix.makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2)))
+    .toNonIndexed();
+  const positions = new Float32Array(planeBufferGeometry.attributes.position.array.length*201*201);
+  let i = 0;
+  for (let x = -100; x <= 100; x++) {
+    for (let z = -100; z <= 100; z++) {
+      const newPlaneBufferGeometry = planeBufferGeometry.clone()
+        .applyMatrix(localMatrix.makeTranslation(x, 0, z));
+      positions.set(newPlaneBufferGeometry.attributes.position.array, i * newPlaneBufferGeometry.attributes.position.array.length);
+      i++;
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  /* const geometry = new THREE.PlaneBufferGeometry(300, 300, 300, 300)
+    .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)))); */
+  const floorVsh = `
+    uniform float uAnimation;
+    // attribute float scene;
+    varying vec3 vPosition;
+    // varying float vScene;
+    varying float vDepth;
+    void main() {
+      float radius = sqrt(position.x*position.x + position.z*position.z);
+      // vec3 p = vec3(position.x, position.y - (1.0 - uAnimation * radius), position.z);
+      vec3 p = vec3(position.x, position.y - (1.0 - uAnimation) * radius, position.z);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
+      vPosition = position;
+      // vScene = scene;
+      vDepth = gl_Position.z / 100.0;
+    }
+  `;
+  const floorFsh = `
+    uniform float uAnimation;
+    varying vec3 vPosition;
+    varying float vDepth;
+    void main() {
+      vec3 c;
+      float a;
+      c = vec3(0.75);
+      /* vec3 f = fract(vPosition);
+      if (f.x <= 0.01 || f.x >= 0.99 || f.z <= 0.01 || f.z >= 0.99) {
+        discard;
+      } else { */
+        a = (1.0-vDepth)*0.5;
+      // }
+      gl_FragColor = vec4(c, a);
+    }
+  `;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      /* uTex: {
+        type: 't',
+        value: new THREE.Texture(),
+      }, */
+      uAnimation: {
+        type: 'f',
+        value: 1,
+      },
+    },
+    vertexShader: floorVsh,
+    fragmentShader: floorFsh,
+    transparent: true,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  return mesh;
+})();
+container.add(floorMesh);
 const gridMeshSwitchWrap = topDocument.getElementById('grid-mesh-switch-wrap');
 if (localStorage.getItem('gridHelper') !== 'false') {
-  gridHelper.visible = true;
+  floorMesh.visible = true;
   gridMeshSwitchWrap.classList.add('on');
 } else {
-  gridHelper.visible = false;
+  floorMesh.visible = false;
 }
 
 let renderingMirror = false;
@@ -1839,7 +1909,7 @@ gridMeshSwitchWrap.addEventListener('click', () => {
   gridMeshSwitchWrap.classList.toggle('on');
 
   const enabled = gridMeshSwitchWrap.classList.contains('on');
-  gridHelper.visible = enabled;
+  floorMesh.visible = enabled;
   if (enabled) {
     localStorage.removeItem('gridHelper');
   } else {
