@@ -8,7 +8,6 @@ import './land.js';
 import './bmfont.js';
 
 import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
-import {HTMLServer} from 'https://sync.exokit.org/sync-server.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
 import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import Avatar from 'https://avatars.exokit.org/avatars.js';
