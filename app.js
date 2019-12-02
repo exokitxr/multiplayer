@@ -188,7 +188,7 @@ const floorMesh = (() => {
   /* const geometry = new THREE.PlaneBufferGeometry(300, 300, 300, 300)
     .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)))); */
   const floorVsh = `
-    uniform float uAnimation;
+    // uniform float uAnimation;
     attribute float typex;
     attribute float typez;
     varying vec3 vPosition;
@@ -196,8 +196,8 @@ const floorMesh = (() => {
     varying float vTypez;
     varying float vDepth;
     void main() {
-      float radius = sqrt(position.x*position.x + position.z*position.z);
-      vec3 p = vec3(position.x, position.y - (1.0 - uAnimation) * radius, position.z);
+      // float radius = sqrt(position.x*position.x + position.z*position.z);
+      vec3 p = vec3(position.x, position.y /*- (1.0 - uAnimation) * radius*/, position.z);
       gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
       vPosition = position + vec3(0.5, 0.0, 0.5);
       vTypex = typex;
@@ -206,7 +206,8 @@ const floorMesh = (() => {
     }
   `;
   const floorFsh = `
-    uniform float uAnimation;
+    uniform vec4 uHoverParcel;
+    // uniform float uAnimation;
     varying vec3 vPosition;
     varying float vTypex;
     varying float vTypez;
@@ -214,26 +215,36 @@ const floorMesh = (() => {
     void main() {
       vec3 c;
       float a;
-      c = vec3(0.75);
+      c = vec3(0.5);
       vec3 f = fract(vPosition);
+      float add = 0.0;
       if (vTypex >= 2.0/8.0) {
         if (f.x >= 0.8) {
-          c += 1.0;
+          add = 0.2;
         }
       } else if (vTypex >= 1.0/8.0) {
         if (f.x <= 0.2) {
-          c += 1.0;
+          add = 0.2;
         }
       }
       if (vTypez >= 2.0/8.0) {
         if (f.z >= 0.8) {
-          c += 1.0;
+          add = 0.2;
         }
       } else if (vTypez >= 1.0/8.0) {
         if (f.z <= 0.2) {
-          c += 1.0;
+          add = 0.2;
         }
       }
+      if (
+        vPosition.x >= uHoverParcel.x &&
+        vPosition.z >= uHoverParcel.y &&
+        vPosition.x <= uHoverParcel.z &&
+        vPosition.z <= uHoverParcel.w
+      ) {
+        add = 0.2;
+      }
+      c += add;
       a = (1.0-vDepth)*0.5;
       gl_FragColor = vec4(c, a);
     }
@@ -244,6 +255,10 @@ const floorMesh = (() => {
         type: 't',
         value: new THREE.Texture(),
       }, */
+      uHoverParcel: {
+        type: 'v4',
+        value: new THREE.Vector4(),
+      },
       uAnimation: {
         type: 'f',
         value: 1,
@@ -1323,6 +1338,14 @@ function animate(timestamp, frame, referenceSpace) {
       peerConnection.rig.nametagMesh.position.copy(peerConnection.rig.inputs.hmd.position).add(localVector.set(0, 0.2, 0));
       peerConnection.rig.nametagMesh.quaternion.copy(camera.quaternion);
     }
+  }
+
+  if (rig) {
+    const minX = Math.floor((rig.inputs.hmd.position.x + parcelSize/2) / parcelSize) * parcelSize - parcelSize/2;
+    const minZ = Math.floor((rig.inputs.hmd.position.z + parcelSize/2) / parcelSize) * parcelSize - parcelSize/2;
+    const maxX = minX + parcelSize;
+    const maxZ = minZ + parcelSize;
+    floorMesh.material.uniforms.uHoverParcel.value.set(minX, minZ, maxX, maxZ);
   }
 
   renderer.render(scene, camera);
