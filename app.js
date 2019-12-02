@@ -141,56 +141,100 @@ const _makeNametagMesh = textMesh => {
   };
   return o;
 };
-
+function mod(a, n) {
+  return ((a%n)+n)%n;
+}
 const floorMesh = (() => {
+  const numTiles = 64;
+  const numTiles2P1 = 2*numTiles+1;
   const planeBufferGeometry = new THREE.PlaneBufferGeometry(1, 1)
     .applyMatrix(localMatrix.makeScale(0.95, 0.95, 1))
     .applyMatrix(localMatrix.makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2)))
     .toNonIndexed();
-  const positions = new Float32Array(planeBufferGeometry.attributes.position.array.length*201*201);
+  const numCoords = planeBufferGeometry.attributes.position.array.length;
+  const numVerts = numCoords/3;
+  const positions = new Float32Array(numCoords*numTiles2P1*numTiles2P1);
+  const typesx = new Float32Array(numVerts*numTiles2P1*numTiles2P1);
+  const typesz = new Float32Array(numVerts*numTiles2P1*numTiles2P1);
   let i = 0;
-  for (let x = -100; x <= 100; x++) {
-    for (let z = -100; z <= 100; z++) {
+  for (let x = -numTiles; x <= numTiles; x++) {
+    for (let z = -numTiles; z <= numTiles; z++) {
       const newPlaneBufferGeometry = planeBufferGeometry.clone()
         .applyMatrix(localMatrix.makeTranslation(x, 0, z));
       positions.set(newPlaneBufferGeometry.attributes.position.array, i * newPlaneBufferGeometry.attributes.position.array.length);
+      let typex = 0;
+      if (mod((x + parcelSize/2), parcelSize) === 0) {
+        typex = 1/8;
+      } else if (mod((x + parcelSize/2), parcelSize) === parcelSize-1) {
+        typex = 2/8;
+      }
+      let typez = 0;
+      if (mod((z + parcelSize/2), parcelSize) === 0) {
+        typez = 1/8;
+      } else if (mod((z + parcelSize/2), parcelSize) === parcelSize-1) {
+        typez = 2/8;
+      }
+      for (let j = 0; j < numVerts; j++) {
+        typesx[i*numVerts + j] = typex;
+        typesz[i*numVerts + j] = typez;
+      }
       i++;
     }
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('typex', new THREE.BufferAttribute(typesx, 1));
+  geometry.setAttribute('typez', new THREE.BufferAttribute(typesz, 1));
   /* const geometry = new THREE.PlaneBufferGeometry(300, 300, 300, 300)
     .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)))); */
   const floorVsh = `
     uniform float uAnimation;
-    // attribute float scene;
+    attribute float typex;
+    attribute float typez;
     varying vec3 vPosition;
-    // varying float vScene;
+    varying float vTypex;
+    varying float vTypez;
     varying float vDepth;
     void main() {
       float radius = sqrt(position.x*position.x + position.z*position.z);
-      // vec3 p = vec3(position.x, position.y - (1.0 - uAnimation * radius), position.z);
       vec3 p = vec3(position.x, position.y - (1.0 - uAnimation) * radius, position.z);
       gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
-      vPosition = position;
-      // vScene = scene;
-      vDepth = gl_Position.z / 100.0;
+      vPosition = position + vec3(0.5, 0.0, 0.5);
+      vTypex = typex;
+      vTypez = typez;
+      vDepth = gl_Position.z / ${numTiles.toFixed(8)};
     }
   `;
   const floorFsh = `
     uniform float uAnimation;
     varying vec3 vPosition;
+    varying float vTypex;
+    varying float vTypez;
     varying float vDepth;
     void main() {
       vec3 c;
       float a;
       c = vec3(0.75);
-      /* vec3 f = fract(vPosition);
-      if (f.x <= 0.01 || f.x >= 0.99 || f.z <= 0.01 || f.z >= 0.99) {
-        discard;
-      } else { */
-        a = (1.0-vDepth)*0.5;
-      // }
+      vec3 f = fract(vPosition);
+      if (vTypex >= 2.0/8.0) {
+        if (f.x >= 0.8) {
+          c += 1.0;
+        }
+      } else if (vTypex >= 1.0/8.0) {
+        if (f.x <= 0.2) {
+          c += 1.0;
+        }
+      }
+      if (vTypez >= 2.0/8.0) {
+        if (f.z >= 0.8) {
+          c += 1.0;
+        }
+      } else if (vTypez >= 1.0/8.0) {
+        if (f.z <= 0.2) {
+          c += 1.0;
+        }
+      }
+      a = (1.0-vDepth)*0.5;
       gl_FragColor = vec4(c, a);
     }
   `;
