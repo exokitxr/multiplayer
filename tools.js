@@ -81,7 +81,7 @@ const _updateParcelButtons = () => {
 }
 
 class ToolManager extends EventTarget {
-  constructor({domElement, camera, container}) {
+  constructor({domElement, camera, container, orbitControls}) {
     super();
 
 /* for (let i = 0; i < tools.length; i++) {
@@ -369,27 +369,29 @@ const _mouseup = e => {
 };
 domElement.addEventListener('mouseup', _mouseup);
 const _click = () => {
-  const oldSelection = selection;
-  if (oldSelection && oldSelection.type === 'element') {
-    oldSelection.element.bindState.model.boundingBoxMesh.setSelect(false);
-  }
-  selection = intersection;
-  if (selection && selection.type === 'element') {
-    selection.element.bindState.model.boundingBoxMesh.setSelect(true);
-    selectedObjectDetails.classList.add('open');
+  if (orbitControls.draggable) {
+    const oldSelection = selection;
+    if (oldSelection && oldSelection.type === 'element') {
+      oldSelection.element.bindState.model.boundingBoxMesh.setSelect(false);
+    }
+    selection = intersection;
+    if (selection && selection.type === 'element') {
+      selection.element.bindState.model.boundingBoxMesh.setSelect(true);
+      selectedObjectDetails.classList.add('open');
 
-    detailsContentTab.click();
-  } else {
-    selectedObjectDetails.classList.remove('open');
-  }
+      detailsContentTab.click();
+    } else {
+      selectedObjectDetails.classList.remove('open');
+    }
 
-  if (
-    (!!oldSelection !== !!selection) ||
-    (selection && oldSelection && (selection.type !== oldSelection.type || selection.element !== oldSelection.element))
-  ) {
-    this.dispatchEvent(new MessageEvent('selectchange', {
-      data: selection,
-    }));
+    if (
+      (!!oldSelection !== !!selection) ||
+      (selection && oldSelection && (selection.type !== oldSelection.type || selection.element !== oldSelection.element))
+    ) {
+      this.dispatchEvent(new MessageEvent('selectchange', {
+        data: selection,
+      }));
+    }
   }
 };
 domElement.addEventListener('click', _click);
@@ -402,130 +404,148 @@ const _dblclick = e => {
 domElement.addEventListener('dblclick', _dblclick);
 
 const _mousemove = e => {
-  const oldIntersection = intersection;
-  intersection = null;
-  // floorIntersectionPoint.set(NaN, NaN, NaN);
-  // hoveredXrSite = null;
+  if (orbitControls.draggable && !document.pointerLockElement) {
+    const oldIntersection = intersection;
+    intersection = null;
+    // floorIntersectionPoint.set(NaN, NaN, NaN);
+    // hoveredXrSite = null;
 
-  const rect = domElement.getBoundingClientRect();
-  const xFactor = (e.clientX - rect.left) / rect.width;
-  const yFactor = -(e.clientY - rect.top) / rect.height;
-  localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
+    const rect = domElement.getBoundingClientRect();
+    const xFactor = (e.clientX - rect.left) / rect.width;
+    const yFactor = -(e.clientY - rect.top) / rect.height;
+    localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
 
-  const _checkElementIntersections = () => {
-    const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
-      .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
-      .filter(boundingBoxMesh => boundingBoxMesh);
-    if (intersectionCandidates.length > 0) {
-      for (let i = 0; i < intersectionCandidates.length; i++) {
-        const boundingBoxMesh = intersectionCandidates[i];
-        boundingBoxMesh.setHover(false);
-      }
-      for (let i = 0; i < intersectionCandidates.length; i++) {
-        const boundingBoxMesh = intersectionCandidates[i];
-        const intersections = boundingBoxMesh.intersect(localRaycaster);
-        if (intersections.length > 0) {
-          boundingBoxMesh.setHover(true);
-          const model = boundingBoxMesh.target;
-          const {element} = model;
-          intersection = {
-            type: 'element',
-            /* boundingBoxMesh,
-            model, */
-            element,
-          };
-          return true;
+    const _checkElementIntersections = () => {
+      const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
+        .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
+        .filter(boundingBoxMesh => boundingBoxMesh);
+      if (intersectionCandidates.length > 0) {
+        for (let i = 0; i < intersectionCandidates.length; i++) {
+          const boundingBoxMesh = intersectionCandidates[i];
+          boundingBoxMesh.setHover(false);
+        }
+        for (let i = 0; i < intersectionCandidates.length; i++) {
+          const boundingBoxMesh = intersectionCandidates[i];
+          const intersections = boundingBoxMesh.intersect(localRaycaster);
+          if (intersections.length > 0) {
+            boundingBoxMesh.setHover(true);
+            const model = boundingBoxMesh.target;
+            const {element} = model;
+            intersection = {
+              type: 'element',
+              /* boundingBoxMesh,
+              model, */
+              element,
+            };
+            return true;
+          }
         }
       }
-    }
-    return false;
-  };
-  const _checkFloorIntersections = () => {
-    const floorIntersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
-    if (floorIntersection) {
-      intersection = {
-        type: 'floor',
-        intersectionPoint: localVector.clone(),
-      };
-      return true;
-    } else {
       return false;
-    }
-  };
-  _checkElementIntersections() || _checkFloorIntersections();
+    };
+    const _checkFloorIntersections = () => {
+      const floorIntersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
+      if (floorIntersection) {
+        intersection = {
+          type: 'floor',
+          intersectionPoint: localVector.clone(),
+        };
+        return true;
+      } else {
+        return false;
+      }
+    };
+    _checkElementIntersections() || _checkFloorIntersections();
 
-  /* if (intersectionType === 'floor') {
-    if (draggedXrSite) {
-      const oldPixelKeys = [];
-      const oldPixelKeysIndex = {};
-      const oldExtents = THREE.Land.parseExtents(draggedXrSite.getAttribute('extents'));
-      for (let i = 0; i < oldExtents.length; i++) {
-        const extent = oldExtents[i];
-        const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x < x2; x++) {
-          for (let y = y1; y < y2; y++) {
-            const k = _getPixelKey(x, y);
-            oldPixelKeys.push(k);
-            oldPixelKeysIndex[k] = true;
+    /* if (intersectionType === 'floor') {
+      if (draggedXrSite) {
+        const oldPixelKeys = [];
+        const oldPixelKeysIndex = {};
+        const oldExtents = THREE.Land.parseExtents(draggedXrSite.getAttribute('extents'));
+        for (let i = 0; i < oldExtents.length; i++) {
+          const extent = oldExtents[i];
+          const [x1, y1, x2, y2] = extent;
+          for (let x = x1; x < x2; x++) {
+            for (let y = y1; y < y2; y++) {
+              const k = _getPixelKey(x, y);
+              oldPixelKeys.push(k);
+              oldPixelKeysIndex[k] = true;
+            }
+          }
+        }
+
+        localVector
+          .set(Math.floor(floorIntersectionPoint.x/container.scale.x/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.y/container.scale.y/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.z/container.scale.z/parcelSize)*parcelSize)
+          .sub(localVector2.set(Math.floor(dragStartPoint.x/container.scale.x/parcelSize)*parcelSize, Math.floor(dragStartPoint.y/container.scale.y/parcelSize)*parcelSize, Math.floor(dragStartPoint.z/container.scale.z/parcelSize)*parcelSize));
+        const dx = localVector.x;
+        const dy = localVector.z;
+        const newExtents = dragStartExtents.map(([x1, y1, x2, y2]) => [x1 + dx, y1 + dy, x2 + dx, y2 + dy]);
+
+        const newPixelKeys = [];
+        for (let i = 0; i < newExtents.length; i++) {
+          const extent = newExtents[i];
+          const [x1, y1, x2, y2] = extent;
+          for (let x = x1; x < x2; x++) {
+            for (let y = y1; y < y2; y++) {
+              newPixelKeys.push(_getPixelKey(x, y));
+            }
+          }
+        }
+        if (newPixelKeys.every(k => !pixels[k] || oldPixelKeysIndex[k])) {
+          draggedXrSite.setAttribute('extents', THREE.Land.serializeExtents(newExtents));
+
+          for (let i = 0; i < oldPixelKeys.length; i++) {
+            pixels[oldPixelKeys[i]] = false;
+          }
+          for (let i = 0; i < newPixelKeys.length; i++) {
+            pixels[newPixelKeys[i]] = true;
+          }
+        }
+
+        // XXX add parcel remove support
+      } else {
+        const x = floorIntersectionPoint.x/container.scale.x;
+        const y = floorIntersectionPoint.z/container.scale.z;
+        const xrSites = Array.from(document.querySelectorAll('xr-site'));
+        for (let i = 0; i < xrSites.length; i++) {
+          const xrSite = xrSites[i];
+          const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+          if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < x2 && y >= y1 && y < y2)) {
+            hoveredXrSite = xrSite;
           }
         }
       }
+    } else if (toolIndex === 3 && extentXrSite && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
+      _updateExtentXrSite();
+    } */
 
-      localVector
-        .set(Math.floor(floorIntersectionPoint.x/container.scale.x/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.y/container.scale.y/parcelSize)*parcelSize, Math.floor(floorIntersectionPoint.z/container.scale.z/parcelSize)*parcelSize)
-        .sub(localVector2.set(Math.floor(dragStartPoint.x/container.scale.x/parcelSize)*parcelSize, Math.floor(dragStartPoint.y/container.scale.y/parcelSize)*parcelSize, Math.floor(dragStartPoint.z/container.scale.z/parcelSize)*parcelSize));
-      const dx = localVector.x;
-      const dy = localVector.z;
-      const newExtents = dragStartExtents.map(([x1, y1, x2, y2]) => [x1 + dx, y1 + dy, x2 + dx, y2 + dy]);
-
-      const newPixelKeys = [];
-      for (let i = 0; i < newExtents.length; i++) {
-        const extent = newExtents[i];
-        const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x < x2; x++) {
-          for (let y = y1; y < y2; y++) {
-            newPixelKeys.push(_getPixelKey(x, y));
-          }
-        }
-      }
-      if (newPixelKeys.every(k => !pixels[k] || oldPixelKeysIndex[k])) {
-        draggedXrSite.setAttribute('extents', THREE.Land.serializeExtents(newExtents));
-
-        for (let i = 0; i < oldPixelKeys.length; i++) {
-          pixels[oldPixelKeys[i]] = false;
-        }
-        for (let i = 0; i < newPixelKeys.length; i++) {
-          pixels[newPixelKeys[i]] = true;
-        }
-      }
-
-      // XXX add parcel remove support
-    } else {
-      const x = floorIntersectionPoint.x/container.scale.x;
-      const y = floorIntersectionPoint.z/container.scale.z;
-      const xrSites = Array.from(document.querySelectorAll('xr-site'));
-      for (let i = 0; i < xrSites.length; i++) {
-        const xrSite = xrSites[i];
-        const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
-        if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < x2 && y >= y1 && y < y2)) {
-          hoveredXrSite = xrSite;
-        }
-      }
+    if (
+      (!!oldIntersection !== !!intersection) ||
+      (intersection && oldIntersection && (intersection.type !== oldIntersection.type || intersection.element !== oldIntersection.element))
+    ) {
+      this.dispatchEvent(new MessageEvent('hoverchange', {
+        data: intersection,
+      }));
     }
-  } else if (toolIndex === 3 && extentXrSite && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
-    _updateExtentXrSite();
-  } */
-
-  if (
-    (!!oldIntersection !== !!intersection) ||
-    (intersection && oldIntersection && (intersection.type !== oldIntersection.type || intersection.element !== oldIntersection.element))
-  ) {
-    this.dispatchEvent(new MessageEvent('hoverchange', {
-      data: intersection,
-    }));
   }
 };
 domElement.addEventListener('mousemove', _mousemove);
+document.addEventListener('pointerlockchange', () => {
+  if (document.pointerLockElement) {
+    if (intersection) {
+      intersection = null;
+      this.dispatchEvent(new MessageEvent('hoverchange', {
+        data: intersection,
+      }));
+    }
+    if (selection) {
+      selection = null;
+      this.dispatchEvent(new MessageEvent('selectchange', {
+        data: selection,
+      }));
+    }
+  }
+});
 
   }
   /* selectTool(i) {

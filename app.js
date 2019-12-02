@@ -343,6 +343,7 @@ const toolManager = new ToolManager({
   domElement: renderer.domElement,
   camera,
   container,
+  orbitControls,
 });
 /* toolManager.addEventListener('toolchange', e => {
   const toolName = e.data;
@@ -397,9 +398,11 @@ const _bindXrIframe = xrIframe => {
   });
   control.addEventListener('mouseEnter', () => {
     control.draggable = true;
+    orbitControls.draggable = false;
   });
   control.addEventListener('mouseLeave', () => {
     control.draggable = false;
+    orbitControls.draggable = true;
   });
   control.attach(model);
   scene.add(control);
@@ -799,9 +802,11 @@ class XRModel extends HTMLElement {
     });
     control.addEventListener('mouseEnter', () => {
       control.draggable = true;
+      orbitControls.draggable = false;
     });
     control.addEventListener('mouseLeave', () => {
       control.draggable = false;
+      orbitControls.draggable = true;
     });
     control.attach(model);
     scene.add(control);
@@ -1809,6 +1814,7 @@ const _bindControls = type => {
     window.addEventListener('keyup', _keyup);
     window.removeEventListener('mousemove', _mousemove);
     orbitControls.target.copy(camera.position).add(new THREE.Vector3(0, 0, -3).applyQuaternion(camera.quaternion));
+    orbitControls.enabled = true;
     controlsBound = null;
   };
 };
