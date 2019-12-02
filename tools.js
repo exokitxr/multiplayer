@@ -35,16 +35,15 @@ const localRaycaster = new THREE.Raycaster();
 
 let toolIndex = 0;
 const pixels = {};
-let hoveredBoundingBoxMesh = null;
-let selectedBoundingBoxMesh = null;
-let hoveredXrSite = null;
+let intersection = null;
+let selection = null;
 let selectedXrSite = null;
 let draggedXrSite = null;
 let dragStartExtents = [];
 let editedXrSite = null;
 let extentXrSite = null;
 let dirtyXrSite = null;
-let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
+// let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
 let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 
 const _getPixelKey = (x, z) => [x, z].join(':');
@@ -122,8 +121,7 @@ const _updateExtentXrSite = () => {
 };
 
 setAvatarButton.addEventListener('click', async () => {
-  const {target} = selectedBoundingBoxMesh;
-  const {element} = target;
+  const {element} = selection;
   const {src} = element;
 
   setAvatarButton.style.display = 'none';
@@ -162,7 +160,7 @@ unsetAvatarButton.addEventListener('click', () => {
 });
 
 screenshotButton.addEventListener('click', async () => {
-  const {target: {element: {bindState: {model}}}} = selectedBoundingBoxMesh;
+  const {element: {bindState: {model}}} = intersection;
   console.log('screenshot', model);
   if (model) {
     const blob = await screenshot(model, {
@@ -250,7 +248,7 @@ stopEditingButton.addEventListener('click', () => {
 });
 
 const _mousedown = e => {
-  if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
+  /* if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
     dragStartPoint.copy(floorIntersectionPoint);
 
     if (toolIndex === 3) {
@@ -284,8 +282,8 @@ const _mousedown = e => {
         selectedXrSite.baseMesh.material.uniforms.uColor.value.setHex(colors.select);
         selectedXrSite.guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
 
-        if (hoveredXrSite !== selectedXrSite) {
-          hoveredXrSite = null;
+        if (intersection && intersection.target !== selectedXrSite) {
+          intersection = null;
         }
         if (editedXrSite !== selectedXrSite) {
           _uneditXrSite();
@@ -345,7 +343,7 @@ const _mousedown = e => {
         _uneditXrSite();
       }
     }
-  }
+  } */
 };
 domElement.addEventListener('mousedown', _mousedown);
 const _mouseup = e => {
@@ -371,12 +369,12 @@ const _mouseup = e => {
 };
 domElement.addEventListener('mouseup', _mouseup);
 const _click = () => {
-  if (selectedBoundingBoxMesh) {
-    selectedBoundingBoxMesh.setSelect(false);
+  if (selection && selection.type === 'element') {
+    selection.element.bindState.model.boundingBoxMesh.setSelect(false);
   }
-  selectedBoundingBoxMesh = hoveredBoundingBoxMesh;
-  if (selectedBoundingBoxMesh) {
-    selectedBoundingBoxMesh.setSelect(true);
+  selection = intersection;
+  if (selection && selection.type === 'element') {
+    selection.element.bindState.model.boundingBoxMesh.setSelect(true);
     selectedObjectDetails.classList.add('open');
 
     detailsContentTab.click();
@@ -386,19 +384,18 @@ const _click = () => {
 };
 domElement.addEventListener('click', _click);
 const _dblclick = e => {
-  if (selectedXrSite) {
-    _editXrSite(selectedXrSite);
+  if (selection && selection.type === 'element' && selection.element.tagName === 'XR-SITE') {
+    _editXrSite(selection.element);
     this.dispatchEvent(new MessageEvent('editchange'));
   }
 };
 domElement.addEventListener('dblclick', _dblclick);
 
 const _mousemove = e => {
-  const oldHoveredXrSite = hoveredXrSite;
-
-  hoveredBoundingBoxMesh = null;
-  floorIntersectionPoint.set(NaN, NaN, NaN);
-  hoveredXrSite = null;
+  const oldIntersection = intersection;
+  intersection = null;
+  // floorIntersectionPoint.set(NaN, NaN, NaN);
+  // hoveredXrSite = null;
 
   const rect = domElement.getBoundingClientRect();
   const xFactor = (e.clientX - rect.left) / rect.width;
@@ -406,51 +403,48 @@ const _mousemove = e => {
   localRaycaster.setFromCamera(localVector2D.set(xFactor * 2 - 1, yFactor * 2 + 1), camera);
 
   const _checkElementIntersections = () => {
-    if (toolIndex === 1) {
-      const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
-        .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
-        .filter(boundingBoxMesh => boundingBoxMesh);
-      if (intersectionCandidates.length > 0) {
-        for (let i = 0; i < intersectionCandidates.length; i++) {
-          const boundingBoxMesh = intersectionCandidates[i];
-          boundingBoxMesh.setHover(false);
+    const intersectionCandidates = Array.from(document.querySelectorAll('xr-model')).concat(Array.from(document.querySelectorAll('xr-iframe')))
+      .map(xrModel => xrModel.bindState && xrModel.bindState.model && xrModel.bindState.model.boundingBoxMesh)
+      .filter(boundingBoxMesh => boundingBoxMesh);
+    if (intersectionCandidates.length > 0) {
+      for (let i = 0; i < intersectionCandidates.length; i++) {
+        const boundingBoxMesh = intersectionCandidates[i];
+        boundingBoxMesh.setHover(false);
+      }
+      for (let i = 0; i < intersectionCandidates.length; i++) {
+        const boundingBoxMesh = intersectionCandidates[i];
+        const intersections = boundingBoxMesh.intersect(localRaycaster);
+        if (intersections.length > 0) {
+          boundingBoxMesh.setHover(true);
+          const model = boundingBoxMesh.target;
+          const {element} = model;
+          intersection = {
+            type: 'element',
+            /* boundingBoxMesh,
+            model, */
+            element,
+          };
+          return true;
         }
-        for (let i = 0; i < intersectionCandidates.length; i++) {
-          const boundingBoxMesh = intersectionCandidates[i];
-          const intersections = boundingBoxMesh.intersect(localRaycaster);
-          if (intersections.length > 0) {
-            hoveredBoundingBoxMesh = boundingBoxMesh;
-            hoveredBoundingBoxMesh.setHover(true);
-            return true;
-          }
-        }
       }
     }
     return false;
   };
-  const _checkPointerIntersections = () => {
-    if (toolIndex === 1) {
-      const intersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
-      if (intersection) {
-        floorIntersectionPoint.copy(localVector);
-        return true;
-      }
+  const _checkFloorIntersections = () => {
+    const floorIntersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
+    if (floorIntersection) {
+      intersection = {
+        type: 'floor',
+        intersectionPoint: localVector.clone(),
+      };
+      return true;
+    } else {
+      return false;
     }
-    return false;
   };
-  const _checkToolIntersections = () => {
-    if (toolIndex === 3) {
-      const intersection = localRaycaster.ray.intersectPlane(floorPlane, localVector);
-      if (intersection) {
-        floorIntersectionPoint.copy(localVector);
-        return true;
-      }
-    }
-    return false;
-  };
-  _checkElementIntersections() || _checkPointerIntersections() || _checkToolIntersections();
+  _checkElementIntersections() || _checkFloorIntersections();
 
-  if (toolIndex === 1 && !isNaN(floorIntersectionPoint.x)) {
+  /* if (intersectionType === 'floor') {
     if (draggedXrSite) {
       const oldPixelKeys = [];
       const oldPixelKeysIndex = {};
@@ -510,6 +504,15 @@ const _mousemove = e => {
     }
   } else if (toolIndex === 3 && extentXrSite && !isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
     _updateExtentXrSite();
+  } */
+
+  if (
+    (!!oldIntersection !== !!intersection) ||
+    (intersection && oldIntersection && (intersection.type !== oldIntersection.type || intersection.element !== oldIntersection.element))
+  ) {
+    this.dispatchEvent(new MessageEvent('hoverchange', {
+      data: intersection,
+    }));
   }
 };
 domElement.addEventListener('mousemove', _mousemove);
@@ -522,10 +525,10 @@ domElement.addEventListener('mousemove', _mousemove);
     return toolNames[toolIndex];
   }
   getHoveredElement() {
-    return hoveredXrSite || hoveredBoundingBoxMesh;
+    return intersection && intersection.element;
   }
   getSelectedElement() {
-    return selectedXrSite || selectedBoundingBoxMesh;
+    return selection && selection.element;
   }
   getEditedElement() {
     return editedXrSite;
@@ -545,47 +548,53 @@ domElement.addEventListener('mousemove', _mousemove);
     // XXX finish this
   }
   delete() {
-    if (selectedBoundingBoxMesh) {
-      const {target} = selectedBoundingBoxMesh;
-      const {element} = target;
-      element.parentNode.removeChild(element);
+    if (selection && selection.type === 'element') {
+      const {element} = selection;
 
-      if (hoveredBoundingBoxMesh === selectedBoundingBoxMesh) {
-        hoveredBoundingBoxMesh.setHover(false);
-        hoveredBoundingBoxMesh = null;
-      }
-      selectedBoundingBoxMesh.setSelect(false);
-      selectedBoundingBoxMesh = null;
+      if (element.tagName === 'XR-IFRAME' || element.tagName === 'XR-MODEL') {
+        if (intersection && intersection.element === element) {
+          intersection.element.bindState.model.boundingBoxMesh.setHover(false);
+          intersection = null;
+        }
+        element.bindState.model.boundingBoxMesh.setSelect(false);
 
-      selectedObjectDetails.classList.remove('open');
-    } else if (selectedXrSite) {
-      const extents = THREE.Land.parseExtents(selectedXrSite.getAttribute('extents'));
-      for (let i = 0; i < extents.length; i++) {
-        const extent = extents[i];
-        const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x < x2; x++) {
-          for (let y = y1; y < y2; y++) {
-            pixels[_getPixelKey(x, y)] = false;
+        element.parentNode.removeChild(element);
+        selection = null;
+
+        selectedObjectDetails.classList.remove('open');
+      } else if (element.tagName === 'XR-SITE') {
+        const extents = THREE.Land.parseExtents(element.getAttribute('extents'));
+        for (let i = 0; i < extents.length; i++) {
+          const extent = extents[i];
+          const [x1, y1, x2, y2] = extent;
+          for (let x = x1; x < x2; x++) {
+            for (let y = y1; y < y2; y++) {
+              pixels[_getPixelKey(x, y)] = false;
+            }
           }
         }
-      }
+        if (intersection && intersection.element === element) {
+          intersection.element.bindState.model.boundingBoxMesh.setHover(false);
+          intersection = null;
+        }
 
-      selectedXrSite.parentNode.removeChild(selectedXrSite);
-      if (hoveredXrSite === selectedXrSite) {
-        hoveredXrSite = null;
-      }
-      if (dirtyXrSite === selectedXrSite) {
-        dirtyXrSite = null;
-      }
-      if (editedXrSite === selectedXrSite) {
-        _uneditXrSite();
-        this.dispatchEvent(new MessageEvent('editchange'));
-      }
-      selectedXrSite = null;
-      parcelNameInput.value = '';
-      _updateParcelButtons();
+        element.parentNode.removeChild(element);
 
-      // XXX add land parcel delete support
+        if (dirtyXrSite === element) {
+          dirtyXrSite = null;
+        }
+        if (editedXrSite === element) {
+          _uneditXrSite();
+          this.dispatchEvent(new MessageEvent('editchange'));
+        }
+
+        selection = null;
+
+        parcelNameInput.value = '';
+        _updateParcelButtons();
+
+        // XXX add land parcel delete support
+      }
     }
   }
   escape() {

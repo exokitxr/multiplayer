@@ -270,20 +270,20 @@ scene.onAfterRender = () => {
 
   const selectedEl = toolManager.getSelectedElement();
   const hoveredEl = toolManager.getHoveredElement();
-  const outlineBoundingBoxEl = selectedEl || hoveredEl;
-  const outlineEl = outlineBoundingBoxEl && outlineBoundingBoxEl.target;
+  const outlineEl = selectedEl || hoveredEl;
+  const outlineModel = outlineEl && outlineEl.bindState.model;
   let oldParent = null;
   if (outlineEl) {
-    oldParent = outlineEl.parent;
-    outlineScene.add(outlineEl);
+    oldParent = outlineModel.parent;
+    outlineScene.add(outlineModel);
 
     const color = localColor.setHex(colors.normal).toArray();
-    if (outlineBoundingBoxEl === selectedEl) {
+    if (outlineEl === selectedEl) {
       localColor.setHex(colors.select6).toArray(color);
-    } else if (outlineBoundingBoxEl === hoveredEl) {
+    } else if (outlineEl === hoveredEl) {
       localColor.setHex(colors.select5).toArray(color);
     }
-    outlineEl.traverse(o => {
+    outlineModel.traverse(o => {
       if (o.isMesh) {
         if (!o.material.userData) {
           o.material.userData = {};
@@ -306,7 +306,7 @@ scene.onAfterRender = () => {
   outlineEffect.renderOutline(outlineScene, camera);
 
   if (oldParent) {
-    oldParent.add(outlineEl);
+    oldParent.add(outlineModel);
   }
 
   renderingOutline = false;
@@ -353,16 +353,14 @@ toolManager.addEventListener('toolchange', e => {
   orbitControls.enabled = cameraSelected;
 
   Array.from(document.querySelectorAll('xr-iframe')).concat(Array.from(document.querySelectorAll('xr-model'))).forEach(xrNode => {
-    const {bindState: {model: {boundingBoxMesh}, control}} = xrNode;
-    boundingBoxMesh.visible = selectSelected;
+    const {bindState: {control}} = xrNode;
     control.visible = moveSelected;
     control.enabled = moveSelected;
   });
-  /* Array.from(document.querySelectorAll('xr-site')).forEach(xrSite => {
-    const toolName = toolManager.getSelectedToolName();
-    xrSite.baseMesh.visible = ['select', 'trace'].includes(toolName);
-    xrSite.guardianMesh.visible = toolName === 'select';
-  }); */
+});
+toolManager.addEventListener('hoverchange', e => {
+  const hoveredEl = e.data;
+  orbitControls.clickEnabled = !(hoveredEl && hoveredEl.type === 'element');
 });
 toolManager.addEventListener('editchange', e => {
   lastParcelKey = '';
@@ -373,7 +371,6 @@ const _bindXrIframe = xrIframe => {
   container.add(model);
 
   const boundingBoxMesh = _makeBoundingBoxMesh(model);
-  boundingBoxMesh.visible = toolManager.getSelectedToolName() === 'select';
   model.boundingBoxMesh = boundingBoxMesh;
   model.add(model.boundingBoxMesh);
   model.element = xrIframe;
