@@ -362,6 +362,11 @@ greenScreenButton.addEventListener('click', e => {
   backgroundColorInput.value = '#00FF00';
   backgroundColorInput.dispatchEvent(new CustomEvent('change'));
 });
+const whiteScreenButton = topDocument.getElementById('white-screen-button');
+whiteScreenButton.addEventListener('click', e => {
+  backgroundColorInput.value = '#FFFFFF';
+  backgroundColorInput.dispatchEvent(new CustomEvent('change'));
+});
 const blackScreenButton = topDocument.getElementById('black-screen-button');
 blackScreenButton.addEventListener('click', e => {
   backgroundColorInput.value = '#000000';
