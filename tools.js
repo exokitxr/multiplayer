@@ -736,10 +736,10 @@ document.addEventListener('pointerlockchange', () => {
     }
   }
   escape() {
-    if (editedXrSite) {
+    /* if (editedXrSite) {
       _uneditXrSite();
       this.dispatchEvent(new MessageEvent('editchange'));
-    }
+    } */
   }
 }
 
