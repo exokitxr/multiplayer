@@ -1484,6 +1484,8 @@ for (let i = 0; i < mainOptions.length; i++) {
 
       switch (i) {
         case 0: {
+          codeInput.value = `<xr-site></xr-site>`;
+          codeInput.dispatchEvent(new CustomEvent('change'));
           break;
         }
         case 1: {

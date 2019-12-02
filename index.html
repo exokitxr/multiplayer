@@ -161,6 +161,16 @@ header:not(.main-3) .parcel-display
   justify-content: center;
   align-items: center;
 }
+.parcel-create,
+.parcel-edit
+{
+  display: flex;
+}
+.parcel-create:not(.open),
+.parcel-edit:not(.open)
+{
+  display: none;
+}
 .details-content h1,
 .details-content h2,
 .details-content h3,
@@ -732,15 +742,22 @@ header > .login-form.phase-3 > .phaseless-content
         </div>
 
         <div class=parcel-display>
-          <input type=text placeholder="parcel name" id=parcel-name-input>
-          <div class=multibutton>
-            <nav class="button first last" id=save-parcel-button style="display: none">Save</nav>
+          <div class="parcel-create open" id=parcel-create>
+            <div class=multibutton>
+              <nav class="button first last" id=create-parcel-button style="display: none">Claim parcel</nav>
+            </div>
           </div>
-          <div class=multibutton>
-            <nav class="button first last" id=edit-parcel-button>Edit parcel</nav>
-          </div>
-          <div class=multibutton>
-            <nav class="button first last" id=stop-editing-button style="display: none">Stop editing</nav>
+          <div class=parcel-edit id=parcel-edit>
+            <input type=text placeholder="parcel name" id=parcel-name-input>
+            <div class=multibutton>
+              <nav class="button first last" id=save-parcel-button style="display: none">Save</nav>
+            </div>
+            <div class=multibutton>
+              <nav class="button first last" id=edit-parcel-button>Edit parcel</nav>
+            </div>
+            <div class=multibutton>
+              <nav class="button first last" id=stop-editing-button style="display: none">Stop editing</nav>
+            </div>
           </div>
         </div>
 
