@@ -524,7 +524,7 @@ const _mousemove = e => {
         intersection = {
           type: 'floor',
           start: localVector.clone(),
-          start: localVector.clone(),
+          end: localVector.clone(),
         };
         return true;
       } else {
