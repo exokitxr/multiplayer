@@ -1390,7 +1390,7 @@ function animate(timestamp, frame, referenceSpace) {
     }
   }
 
-  /* if (rig) {
+  if (rig) {
     const minX = Math.floor((rig.inputs.hmd.position.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
     const minZ = Math.floor((rig.inputs.hmd.position.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
     const maxX = minX + parcelSize;
@@ -1407,7 +1407,7 @@ function animate(timestamp, frame, referenceSpace) {
     floorMesh.material.uniforms.uHoverParcel.value.set(minX, minZ, maxX, maxZ);
   } else {
     floorMesh.material.uniforms.uHoverParcel.value.set(0, 0, 0, 0);
-  } */
+  }
 
   renderer.render(scene, camera);
 
