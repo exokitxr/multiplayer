@@ -38,6 +38,7 @@ const pixels = {};
 let intersection = null;
 let selection = null;
 let drag = null;
+let mouseMoved = false;
 /* let selectedXrSite = null;
 let draggedXrSite = null;
 let dragStartExtents = [];
@@ -254,33 +255,41 @@ const _updateExtentXrSite = drag => {
     xrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
   }
 };
+const _makeXrSiteSpec = () => {
+  const dom = parseHtml(codeInput.value);
+  dom.childNodes.push(parseHtml(`<xr-site pending=true></xr-site>`).childNodes[0]);
+  codeInput.value = serializeHtml(dom);
+  codeInput.dispatchEvent(new CustomEvent('change'));
+
+  const xrSites = document.querySelectorAll('xr-site');
+  const xrSite = xrSites[xrSites.length - 1];
+
+  return {
+    type: 'parcel',
+    start: intersection.start.clone(),
+    end: intersection.start.clone(),
+    element: xrSite,
+  };
+};
 const _mousedown = e => {
   if (orbitControls.draggable) {
-    if (intersection && (intersection.type === 'floor' || intersection.type === 'parcel') && canDrag(drag && drag.start, intersection.start)) {
-      if (!drag) {
-        const dom = parseHtml(codeInput.value);
-        dom.childNodes.push(parseHtml(`<xr-site pending=true></xr-site>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
+     mouseMoved = false;
 
-        const xrSites = document.querySelectorAll('xr-site');
-        const xrSite = xrSites[xrSites.length - 1];
+    if (e.shiftKey && intersection && (intersection.type === 'floor' || intersection.type === 'parcel') && canDrag(intersection.start, intersection.end)) {
+      const spec = _makeXrSiteSpec();
+      drag = spec;
+      intersection = spec;
+      selection = spec;
+      _updateExtentXrSite(spec);
 
-        drag = {
-          type: 'parcel',
-          start: intersection.start.clone(),
-          end: intersection.start.clone(),
-          element: xrSite,
-        };
-        intersection = drag;
-        selection = drag;
-        _updateExtentXrSite(drag);
+      orbitControls.enabled = false;
 
-        orbitControls.enabled = false;
-      } else {
-        drag.end.copy(intersection.start);
-        _updateExtentXrSite(drag);
-      }
+      this.dispatchEvent(new MessageEvent('hoverchange', {
+        data: intersection,
+      }));
+      this.dispatchEvent(new MessageEvent('selectchange', {
+        data: selection,
+      }));
     }
   }
   /* if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
@@ -383,7 +392,7 @@ const _mousedown = e => {
 domElement.addEventListener('mousedown', _mousedown);
 const _mouseup = e => {
   if (drag && drag.type === 'parcel') {
-    const {element: xrSite} = drag;
+    // const {element: xrSite} = drag;
     // xrSite.parentNode.removeChild(xrSite);
 
     intersection = drag;
@@ -421,11 +430,33 @@ const _mouseup = e => {
 };
 domElement.addEventListener('mouseup', _mouseup);
 const _click = () => {
-  if (orbitControls.draggable) {
+  if (orbitControls.draggable && !mouseMoved) {
+    // unset old selection
     const oldSelection = selection;
     if (oldSelection && oldSelection.type === 'element') {
       oldSelection.element.bindState.model.boundingBoxMesh.setSelect(false);
     }
+
+    // create pending parcel intersection
+    if (intersection && intersection.type === 'floor' && canDrag(intersection.start, intersection.end)) {
+      const spec = _makeXrSiteSpec();
+      intersection = spec;
+      _updateExtentXrSite(spec);
+
+      this.dispatchEvent(new MessageEvent('hoverchange', {
+        data: intersection,
+      }));
+    } else if (intersection && intersection.type === 'parcel' && intersection.element.getAttribute('pending') && canDrag(intersection.start, intersection.end)) {
+      _updateExtentXrSite(intersection);
+
+      selection = intersection;
+
+      this.dispatchEvent(new MessageEvent('selectchange', {
+        data: selection,
+      }));
+    }
+
+    // set new selection
     selection = intersection;
     if (selection && selection.type === 'element') {
       selection.element.bindState.model.boundingBoxMesh.setSelect(true);
@@ -436,6 +467,7 @@ const _click = () => {
       selectedObjectDetails.classList.remove('open');
     }
 
+    // emit new selection events
     if (
       (!!oldSelection !== !!selection) ||
       (selection && oldSelection && (selection.type !== oldSelection.type || selection.element !== oldSelection.element))
@@ -457,6 +489,8 @@ domElement.addEventListener('dblclick', _dblclick);
 
 const _mousemove = e => {
   if (orbitControls.draggable && !document.pointerLockElement) {
+    mouseMoved = true;
+
     const oldIntersection = intersection;
     intersection = null;
     // floorIntersectionPoint.set(NaN, NaN, NaN);
@@ -591,8 +625,6 @@ const _mousemove = e => {
     if (drag && drag.type === 'parcel' && intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
       drag.end.copy(intersection.start);
       _updateExtentXrSite(drag);
-
-      selection = drag;
 
       this.dispatchEvent(new MessageEvent('selectchange', {
         data: selection,
