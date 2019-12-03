@@ -277,13 +277,6 @@ const _mousedown = e => {
         _updateExtentXrSite(drag);
 
         orbitControls.enabled = false;
-
-        this.dispatchEvent(new MessageEvent('hoverchange', {
-          data: intersection,
-        }));
-        this.dispatchEvent(new MessageEvent('selectchange', {
-          data: selection,
-        }));
       } else {
         drag.end.copy(intersection.start);
         _updateExtentXrSite(drag);
@@ -598,6 +591,8 @@ const _mousemove = e => {
     if (drag && drag.type === 'parcel' && intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
       drag.end.copy(intersection.start);
       _updateExtentXrSite(drag);
+
+      selection = drag;
 
       this.dispatchEvent(new MessageEvent('selectchange', {
         data: selection,
