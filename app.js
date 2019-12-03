@@ -745,7 +745,7 @@ const _bindXrSite = xrSite => {
       } else if (attributeName === 'pending') {
         if (xrSite.guardianMesh) {
           const color = _getSelectedColor(xrSite);
-          xrSite.guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
+          xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
           floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
         }
       } else {
