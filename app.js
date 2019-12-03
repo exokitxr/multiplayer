@@ -530,11 +530,11 @@ const toolManager = new ToolManager({
   });
 }); */
 const _incr = (a, b) => a - b;
-const parcelCreateContent = topDocument.getElementById('parcel-create');
+const parcelCreate = topDocument.getElementById('parcel-create');
 const createParcelButton = topDocument.getElementById('create-parcel-button');
 createParcelButton.addEventListener('click', () => {
-  const {element} = selection;
-  element.removeAttribute('pending');
+  const xrSite = toolManager.getSelectedElement();
+  xrSite.removeAttribute('pending');
 });
 toolManager.addEventListener('selectchange', e => {
   const selection = e.data;
@@ -567,14 +567,14 @@ toolManager.addEventListener('selectchange', e => {
       const color = _getSelectedColor(selection.element);
       floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
 
-      parcelCreateContent.classList.add('open');
+      parcelCreate.classList.add('open');
     } else {
       floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
-      parcelCreateContent.classList.remove('open');
+      parcelCreate.classList.remove('open');
     }
   } else {
     floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
-    parcelCreateContent.classList.remove('open');
+    parcelCreate.classList.remove('open');
   }
 });
 toolManager.addEventListener('hoverchange', e => {
@@ -742,6 +742,12 @@ const _bindXrSite = xrSite => {
           xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
           container.add(xrSite.guardianMesh);
         }
+      } else if (attributeName === 'pending') {
+        if (xrSite.guardianMesh) {
+          const color = _getSelectedColor(xrSite);
+          xrSite.guardianMesh.material.uniforms.uColor.value.setHex(colors.select3);
+          floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
+        }
       } else {
         console.warn('unknown attribute name', attributeName);
       }
@@ -755,8 +761,9 @@ const _bindXrSite = xrSite => {
   observer.observe(xrSite, {
     attributes: true,
     attributeFilter: [
-      'extents',
       'bg',
+      'extents',
+      'pending',
     ],
   });
   xrSite.bindState = {
