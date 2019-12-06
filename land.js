@@ -1,4 +1,4 @@
-const topGeometry = new THREE.BoxBufferGeometry(0.01, 1, 0.01);
+/* const topGeometry = new THREE.BoxBufferGeometry(0.01, 1, 0.01);
 const leftGeometry = topGeometry.clone().applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
   new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-1, 0, 0))
 ));
@@ -8,34 +8,6 @@ const boxGeometry = THREE.BufferGeometryUtils.mergeBufferGeometries([
   leftGeometry.clone().applyMatrix(new THREE.Matrix4().makeTranslation(0, 0.5, -0.5)),
   leftGeometry.clone().applyMatrix(new THREE.Matrix4().makeTranslation(0, -0.5, -0.5)),
 ]);
-const wallGeometry = (() => {
-  const panelGeometries = [];
-  for (let x = -8; x <= 8; x++) {
-    panelGeometries.push(
-      new THREE.BoxBufferGeometry(0.01, 2, 0.01)
-        .applyMatrix(new THREE.Matrix4().makeTranslation(x, 1, -8))
-    );
-  }
-  for (let h = 0; h <= 2; h++) {
-    panelGeometries.push(
-      new THREE.BoxBufferGeometry(16, 0.01, 0.01)
-        .applyMatrix(new THREE.Matrix4().makeTranslation(0, h, -8))
-    );
-  }
-  return THREE.BufferGeometryUtils.mergeBufferGeometries(panelGeometries);
-})();
-const topWallGeometry = wallGeometry.clone()
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
-const leftWallGeometry = wallGeometry.clone()
-  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI/2))
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
-const rightWallGeometry = wallGeometry.clone()
-  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), -Math.PI/2))
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
-const bottomWallGeometry = wallGeometry.clone()
-  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI))
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
-
 THREE.Guardian = function Guardian(extents, distanceFactor, color) {
   const _makeGeometry = () => {
     const pixels = {};
@@ -140,8 +112,35 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
     mesh.material.uniforms.uColor.value.setHex(c);
   };
   return mesh;
-};
+}; */
 
+const wallGeometry = (() => {
+  const panelGeometries = [];
+  for (let x = -8; x <= 8; x++) {
+    panelGeometries.push(
+      new THREE.BoxBufferGeometry(0.01, 2, 0.01)
+        .applyMatrix(new THREE.Matrix4().makeTranslation(x, 1, -8))
+    );
+  }
+  for (let h = 0; h <= 2; h++) {
+    panelGeometries.push(
+      new THREE.BoxBufferGeometry(16, 0.01, 0.01)
+        .applyMatrix(new THREE.Matrix4().makeTranslation(0, h, -8))
+    );
+  }
+  return THREE.BufferGeometryUtils.mergeBufferGeometries(panelGeometries);
+})();
+const topWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+const leftWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI/2))
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+const rightWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), -Math.PI/2))
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+const bottomWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI))
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
 THREE.Parcel = function Guardian(extents, distanceFactor, color) {
   const geometry = (() => {
     const geometries = [];
@@ -216,7 +215,7 @@ THREE.Parcel = function Guardian(extents, distanceFactor, color) {
   return mesh;
 };
 
-const planeGeometry = new THREE.PlaneBufferGeometry(1, 1)
+/* const planeGeometry = new THREE.PlaneBufferGeometry(1, 1)
   .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2)))
   .applyMatrix(new THREE.Matrix4().makeTranslation(0.5, 0.01, 0.5));
 THREE.Land = function Land(extents, color) {
@@ -270,7 +269,8 @@ THREE.Land = function Land(extents, color) {
     mesh.material.uniforms.uColor.value.setHex(c);
   };
   return mesh;
-};
+}; */
+THREE.Land = {};
 THREE.Land.parseExtents = s => {
   const regex = /(?:\[(-?[0-9]+)\s+(-?[0-9]+)\s+(-?[0-9]+)\s+(-?[0-9]+)\]|(-?[0-9]+)\s+(-?[0-9]+))\s*/g;
   const result = [];
