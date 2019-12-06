@@ -172,24 +172,24 @@ THREE.Parcel = function Guardian(extents, distanceFactor, color) {
     return THREE.BufferGeometryUtils.mergeBufferGeometries(geometries);
   })();
   const gridVsh = `
-    varying vec3 vWorldPos;
+    // varying vec3 vWorldPos;
     // varying vec2 vUv;
     varying float vDepth;
     void main() {
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
       // vUv = uv;
-      vWorldPos = abs(position);
+      // vWorldPos = abs(position);
       vDepth = gl_Position.z / ${distanceFactor.toFixed(8)};
     }
   `;
   const gridFsh = `
     // uniform sampler2D uTex;
     uniform vec3 uColor;
-    uniform float uAnimation;
-    varying vec3 vWorldPos;
+    // uniform float uAnimation;
+    // varying vec3 vWorldPos;
     varying float vDepth;
     void main() {
-      gl_FragColor = vec4(uColor, (1.0-vDepth)*uAnimation);
+      gl_FragColor = vec4(uColor, (1.0-vDepth));
     }
   `;
   const material = new THREE.ShaderMaterial({
@@ -197,10 +197,6 @@ THREE.Parcel = function Guardian(extents, distanceFactor, color) {
       uColor: {
         type: 'c',
         value: new THREE.Color(color),
-      },
-      uAnimation: {
-        type: 'f',
-        value: 1,
       },
     },
     vertexShader: gridVsh,
