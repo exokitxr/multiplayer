@@ -8,6 +8,33 @@ const boxGeometry = THREE.BufferGeometryUtils.mergeBufferGeometries([
   leftGeometry.clone().applyMatrix(new THREE.Matrix4().makeTranslation(0, 0.5, -0.5)),
   leftGeometry.clone().applyMatrix(new THREE.Matrix4().makeTranslation(0, -0.5, -0.5)),
 ]);
+const wallGeometry = (() => {
+  const panelGeometries = [];
+  for (let x = -8; x <= 8; x++) {
+    panelGeometries.push(
+      new THREE.BoxBufferGeometry(0.01, 2, 0.01)
+        .applyMatrix(new THREE.Matrix4().makeTranslation(x, 1, -8))
+    );
+  }
+  for (let h = 0; h <= 2; h++) {
+    panelGeometries.push(
+      new THREE.BoxBufferGeometry(16, 0.01, 0.01)
+        .applyMatrix(new THREE.Matrix4().makeTranslation(0, h, -8))
+    );
+  }
+  return THREE.BufferGeometryUtils.mergeBufferGeometries(panelGeometries);
+})();
+const topWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+const leftWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI/2))
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+const rightWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), -Math.PI/2))
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+const bottomWallGeometry = wallGeometry.clone()
+  .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI))
+  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
 
 THREE.Guardian = function Guardian(extents, distanceFactor, color) {
   const _makeGeometry = () => {
@@ -71,6 +98,80 @@ THREE.Guardian = function Guardian(extents, distanceFactor, color) {
     return THREE.BufferGeometryUtils.mergeBufferGeometries(boxGeometries);
   };
   const geometry = _makeGeometry();
+  const gridVsh = `
+    varying vec3 vWorldPos;
+    // varying vec2 vUv;
+    varying float vDepth;
+    void main() {
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.);
+      // vUv = uv;
+      vWorldPos = abs(position);
+      vDepth = gl_Position.z / ${distanceFactor.toFixed(8)};
+    }
+  `;
+  const gridFsh = `
+    // uniform sampler2D uTex;
+    uniform vec3 uColor;
+    uniform float uAnimation;
+    varying vec3 vWorldPos;
+    varying float vDepth;
+    void main() {
+      gl_FragColor = vec4(uColor, (1.0-vDepth)*uAnimation);
+    }
+  `;
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: {
+        type: 'c',
+        value: new THREE.Color(color),
+      },
+      uAnimation: {
+        type: 'f',
+        value: 1,
+      },
+    },
+    vertexShader: gridVsh,
+    fragmentShader: gridFsh,
+    transparent: true,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  mesh.setColor = c => {
+    mesh.material.uniforms.uColor.value.setHex(c);
+  };
+  return mesh;
+};
+
+THREE.Parcel = function Guardian(extents, distanceFactor, color) {
+  const geometry = (() => {
+    const geometries = [];
+    const [[x1, y1, x2, y2]] = extents;
+    const ax1 = (x1 + 8)/16;
+    const ay1 = (y1 + 8)/16;
+    const ax2 = (x2 + 8)/16;
+    const ay2 = (y2 + 8)/16;
+    for (let x = ax1; x < ax2; x++) {
+      geometries.push(
+        topWallGeometry.clone()
+          .applyMatrix(new THREE.Matrix4().makeTranslation(x*16, 0, ay1*16))
+      );
+      geometries.push(
+        bottomWallGeometry.clone()
+          .applyMatrix(new THREE.Matrix4().makeTranslation(x*16, 0, (ay2-1)*16))
+      );
+    }
+    for (let y = ay1; y < ay2; y++) {
+      geometries.push(
+        leftWallGeometry.clone()
+          .applyMatrix(new THREE.Matrix4().makeTranslation(ax1*16, 0, y*16))
+      );
+      geometries.push(
+        rightWallGeometry.clone()
+          .applyMatrix(new THREE.Matrix4().makeTranslation((ax2-1)*16, 0, y*16))
+      );
+    }
+    return THREE.BufferGeometryUtils.mergeBufferGeometries(geometries);
+  })();
   const gridVsh = `
     varying vec3 vWorldPos;
     // varying vec2 vUv;
