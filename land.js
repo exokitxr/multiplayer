@@ -2,9 +2,6 @@ const topGeometry = new THREE.BoxBufferGeometry(0.01, 1, 0.01);
 const leftGeometry = topGeometry.clone().applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
   new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-1, 0, 0))
 ));
-const frontGeometry = topGeometry.clone().applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(
-  new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1))
-));
 const boxGeometry = THREE.BufferGeometryUtils.mergeBufferGeometries([
   topGeometry.clone().applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5)),
   topGeometry.clone().applyMatrix(new THREE.Matrix4().makeTranslation(0.5, 0, -0.5)),
