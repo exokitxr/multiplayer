@@ -739,7 +739,7 @@ const _bindXrSite = xrSite => {
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
         if (extents.length > 0) {
           const color = _getSelectedColor(xrSite);
-          xrSite.guardianMesh = new THREE.Guardian(extents, 10, color);
+          xrSite.guardianMesh = new THREE.Parcel(extents, 10, color);
           container.add(xrSite.guardianMesh);
         }
       } else if (attributeName === 'pending') {
