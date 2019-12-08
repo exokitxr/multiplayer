@@ -143,9 +143,10 @@ const _makeNametagMesh = textMesh => {
 function mod(a, n) {
   return ((a%n)+n)%n;
 }
+const numTiles = 64;
+const numTiles2P1 = 2*numTiles+1;
+const distanceFactor = numTiles;
 const floorMesh = (() => {
-  const numTiles = 64;
-  const numTiles2P1 = 2*numTiles+1;
   const planeBufferGeometry = new THREE.PlaneBufferGeometry(1, 1)
     .applyMatrix(localMatrix.makeScale(0.95, 0.95, 1))
     .applyMatrix(localMatrix.makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2)))
@@ -203,6 +204,7 @@ const floorMesh = (() => {
     varying float vTypex;
     varying float vTypez;
     varying float vDepth;
+    varying float vPulse;
 
     float range = 1.0;
 
@@ -221,24 +223,33 @@ const floorMesh = (() => {
         height = max((range - radiusDiff)/range, 0.0);
         height = sin(height*PI/2.0);
         height *= 0.2;
+
+        vPulse = 1.0 + (1.0 - mod(uAnimation * 2.0, 1.0)/2.0) * 0.5;
+      } else {
+        vPulse = 1.0;
       }
       vec3 p = vec3(position.x, position.y + height, position.z);
       gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
       vPosition = position + vec3(0.5, 0.0, 0.5);
       vTypex = typex;
       vTypez = typez;
-      vDepth = gl_Position.z / ${numTiles.toFixed(8)};
+      vDepth = gl_Position.z / ${distanceFactor.toFixed(8)};
     }
   `;
   const floorFsh = `
+    #define PI 3.1415926535897932384626433832795
+
     uniform vec4 uCurrentParcel;
     uniform vec4 uHoverParcel;
     uniform vec4 uSelectedParcel;
     uniform vec3 uSelectedColor;
+    uniform float uAnimation;
     varying vec3 vPosition;
     varying float vTypex;
     varying float vTypez;
     varying float vDepth;
+    varying float vPulse;
+
     void main() {
       vec3 c;
       float a;
@@ -290,7 +301,8 @@ const floorMesh = (() => {
         } */
       }
       c += add;
-      a = (1.0-vDepth)*0.5;
+      c *= vPulse;
+      a = (1.0-vDepth)*0.8;
       gl_FragColor = vec4(c, a);
     }
   `;
@@ -310,7 +322,7 @@ const floorMesh = (() => {
       },
       uSelectedColor: {
         type: 'c',
-        value: new THREE.Color().setHex(0x29b6f6),
+        value: new THREE.Color().setHex(colors.select4),
       },
       uAnimation: {
         type: 'f',
@@ -760,7 +772,7 @@ const _bindXrSite = xrSite => {
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
         if (extents.length > 0) {
           const color = _getSelectedColor(xrSite);
-          xrSite.guardianMesh = new THREE.Parcel(extents, 10, color);
+          xrSite.guardianMesh = new THREE.Parcel(extents, numTiles, color);
           container.add(xrSite.guardianMesh);
         }
       } else if (attributeName === 'pending') {
