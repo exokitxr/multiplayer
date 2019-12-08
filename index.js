@@ -12,6 +12,6 @@ https.createServer({
   key: fs.readFileSync('cert/privkey.pem'),
   cert: fs.readFileSync('cert/fullchain.pem'),
 }, app)
-  .listen(443)
+  .listen(443);
 
 console.log(`https://dev.exokit.org`);
