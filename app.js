@@ -331,6 +331,7 @@ const floorMesh = (() => {
     },
     vertexShader: floorVsh,
     fragmentShader: floorFsh,
+    side: THREE.DoubleSide,
     transparent: true,
   });
   const mesh = new THREE.Mesh(geometry, material);
