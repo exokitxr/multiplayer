@@ -564,6 +564,7 @@ const toolManager = new ToolManager({
   });
 }); */
 const _incr = (a, b) => a - b;
+const parcelCoords = topDocument.getElementById('parcel-coords');
 const parcelCreate = topDocument.getElementById('parcel-create');
 const createParcelButton = topDocument.getElementById('create-parcel-button');
 createParcelButton.addEventListener('click', () => {
@@ -602,6 +603,7 @@ toolManager.addEventListener('selectchange', e => {
       floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
 
       parcelCreate.classList.add('open');
+      parcelCoords.innerText = `[${xs[0]}, ${ys[0]}, ${xs[1]}, ${ys[1]}]`;
     } else {
       floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
       parcelCreate.classList.remove('open');
