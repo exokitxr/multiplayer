@@ -1,6 +1,7 @@
 const parcelSize = 16;
 const colors = {
   normal: 0x808080,
+  hover: 0x808080 + 0x333333,
   highlight: 0xAAAAAA,
   select: 0x42a5f5,
   select2: 0x039be5,

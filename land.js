@@ -141,7 +141,8 @@ const rightWallGeometry = wallGeometry.clone()
 const bottomWallGeometry = wallGeometry.clone()
   .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI))
   .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
-THREE.Parcel = function Guardian(extents, distanceFactor, color) {
+const distanceFactor = 64;
+THREE.Parcel = function Guardian(extents, color) {
   const geometry = (() => {
     const geometries = [];
     const [[x1, y1, x2, y2]] = extents;

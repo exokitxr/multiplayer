@@ -143,28 +143,26 @@ const _makeNametagMesh = textMesh => {
 function mod(a, n) {
   return ((a%n)+n)%n;
 }
-const numTiles = 64;
-const numTiles2P1 = 2*numTiles+1;
-const distanceFactor = numTiles;
-const floorMesh = (() => {
-  const planeBufferGeometry = new THREE.PlaneBufferGeometry(1, 1)
+const distanceFactor = 64;
+const parcelGeometry = (() => {
+  const tileGeometry = new THREE.PlaneBufferGeometry(1, 1)
     .applyMatrix(localMatrix.makeScale(0.95, 0.95, 1))
     .applyMatrix(localMatrix.makeRotationFromQuaternion(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2)))
     .toNonIndexed();
-  const numCoords = planeBufferGeometry.attributes.position.array.length;
+  const numCoords = tileGeometry.attributes.position.array.length;
   const numVerts = numCoords/3;
-  const positions = new Float32Array(numCoords*numTiles2P1*numTiles2P1);
-  const centers = new Float32Array(numCoords*numTiles2P1*numTiles2P1);
-  const typesx = new Float32Array(numVerts*numTiles2P1*numTiles2P1);
-  const typesz = new Float32Array(numVerts*numTiles2P1*numTiles2P1);
+  const positions = new Float32Array(numCoords*parcelSize*parcelSize);
+  const centers = new Float32Array(numCoords*parcelSize*parcelSize);
+  const typesx = new Float32Array(numVerts*parcelSize*parcelSize);
+  const typesz = new Float32Array(numVerts*parcelSize*parcelSize);
   let i = 0;
-  for (let x = -numTiles; x <= numTiles; x++) {
-    for (let z = -numTiles; z <= numTiles; z++) {
-      const newPlaneBufferGeometry = planeBufferGeometry.clone()
+  for (let x = -parcelSize/2; x < parcelSize/2; x++) {
+    for (let z = -parcelSize/2; z < parcelSize/2; z++) {
+      const newTileGeometry = tileGeometry.clone()
         .applyMatrix(localMatrix.makeTranslation(x, 0, z));
-      positions.set(newPlaneBufferGeometry.attributes.position.array, i * newPlaneBufferGeometry.attributes.position.array.length);
-      for (let j = 0; j < newPlaneBufferGeometry.attributes.position.array.length/3; j++) {
-        localVector.set(x, 0, z).toArray(centers, i*newPlaneBufferGeometry.attributes.position.array.length + j*3);
+      positions.set(newTileGeometry.attributes.position.array, i * newTileGeometry.attributes.position.array.length);
+      for (let j = 0; j < newTileGeometry.attributes.position.array.length/3; j++) {
+        localVector.set(x, 0, z).toArray(centers, i*newTileGeometry.attributes.position.array.length + j*3);
       }
       let typex = 0;
       if (mod((x + parcelSize/2), parcelSize) === 0) {
@@ -190,139 +188,111 @@ const floorMesh = (() => {
   geometry.setAttribute('center', new THREE.BufferAttribute(centers, 3));
   geometry.setAttribute('typex', new THREE.BufferAttribute(typesx, 1));
   geometry.setAttribute('typez', new THREE.BufferAttribute(typesz, 1));
-  /* const geometry = new THREE.PlaneBufferGeometry(300, 300, 300, 300)
-    .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)))); */
-  const floorVsh = `
-    #define PI 3.1415926535897932384626433832795
+  return geometry;
+})();
+const floorVsh = `
+  #define PI 3.1415926535897932384626433832795
 
-    uniform float uAnimation;
-    uniform vec4 uSelectedParcel;
-    attribute vec3 center;
-    attribute float typex;
-    attribute float typez;
-    varying vec3 vPosition;
-    varying float vTypex;
-    varying float vTypez;
-    varying float vDepth;
-    varying float vPulse;
+  uniform vec3 uPosition;
+  uniform float uAnimation;
+  uniform vec4 uSelectedParcel;
+  attribute vec3 center;
+  attribute float typex;
+  attribute float typez;
+  varying vec3 vPosition;
+  varying float vTypex;
+  varying float vTypez;
+  varying float vDepth;
+  varying float vPulse;
 
-    float range = 1.0;
+  float range = 1.0;
 
-    void main() {
-      float height;
-      float selectedWidth = uSelectedParcel.z - uSelectedParcel.x;
-      float selectedHeight = uSelectedParcel.w - uSelectedParcel.y;
-      if (center.x >= uSelectedParcel.x && center.x < uSelectedParcel.z && center.z >= uSelectedParcel.y && center.z < uSelectedParcel.w) {
-        vec2 selectedCenter = vec2((uSelectedParcel.x+uSelectedParcel.z) / 2.0, (uSelectedParcel.y+uSelectedParcel.w) / 2.0);
-        float selectedSize = max(selectedWidth, selectedHeight)/2.0;
-        float selectedRadius = sqrt(selectedSize*selectedSize+selectedSize*selectedSize);
+  void main() {
+    float height;
+    vec3 c = center + uPosition;
+    float selectedWidth = uSelectedParcel.z - uSelectedParcel.x;
+    float selectedHeight = uSelectedParcel.w - uSelectedParcel.y;
+    if (c.x >= uSelectedParcel.x && c.x < uSelectedParcel.z && c.z >= uSelectedParcel.y && c.z < uSelectedParcel.w) {
+      vec2 selectedCenter = vec2((uSelectedParcel.x+uSelectedParcel.z) / 2.0, (uSelectedParcel.y+uSelectedParcel.w) / 2.0);
+      float selectedSize = max(selectedWidth, selectedHeight)/2.0;
+      float selectedRadius = sqrt(selectedSize*selectedSize+selectedSize*selectedSize);
 
-        float animationRadius = uAnimation * selectedRadius;
-        float currentRadius = length(center.xz - selectedCenter);
-        float radiusDiff = abs(animationRadius - currentRadius);
-        height = max((range - radiusDiff)/range, 0.0);
-        height = sin(height*PI/2.0);
-        height *= 0.2;
+      float animationRadius = uAnimation * selectedRadius;
+      float currentRadius = length(c.xz - selectedCenter);
+      float radiusDiff = abs(animationRadius - currentRadius);
+      height = max((range - radiusDiff)/range, 0.0);
+      height = sin(height*PI/2.0);
+      height *= 0.2;
 
-        vPulse = 1.0 + (1.0 - mod(uAnimation * 2.0, 1.0)/2.0) * 0.5;
-      } else {
-        vPulse = 1.0;
-      }
-      vec3 p = vec3(position.x, position.y + height, position.z);
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
-      vPosition = position + vec3(0.5, 0.0, 0.5);
-      vTypex = typex;
-      vTypez = typez;
-      vDepth = gl_Position.z / ${distanceFactor.toFixed(8)};
+      vPulse = 1.0 + (1.0 - mod(uAnimation * 2.0, 1.0)/2.0) * 0.5;
+    } else {
+      vPulse = 1.0;
     }
-  `;
-  const floorFsh = `
-    #define PI 3.1415926535897932384626433832795
+    vec3 p = vec3(position.x, position.y + height, position.z);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
+    vPosition = position + vec3(0.5, 0.0, 0.5);
+    vTypex = typex;
+    vTypez = typez;
+    vDepth = gl_Position.z / ${distanceFactor.toFixed(8)};
+  }
+`;
+const floorFsh = `
+  #define PI 3.1415926535897932384626433832795
 
-    uniform vec4 uCurrentParcel;
-    uniform vec4 uHoverParcel;
-    uniform vec4 uSelectedParcel;
-    uniform vec3 uSelectedColor;
-    uniform float uAnimation;
-    varying vec3 vPosition;
-    varying float vTypex;
-    varying float vTypez;
-    varying float vDepth;
-    varying float vPulse;
+  uniform vec3 uColor;
+  uniform float uHover;
+  uniform float uAnimation;
+  varying vec3 vPosition;
+  varying float vTypex;
+  varying float vTypez;
+  varying float vDepth;
+  varying float vPulse;
 
-    void main() {
-      vec3 c;
-      float a;
-      if (
-        vPosition.x >= uSelectedParcel.x &&
-        vPosition.z >= uSelectedParcel.y &&
-        vPosition.x <= uSelectedParcel.z &&
-        vPosition.z <= uSelectedParcel.w
-      ) {
-        c = uSelectedColor;
-      } else {
-        c = vec3(0.5);
-      }
-      float add = 0.0;
-      if (
-        vPosition.x >= uHoverParcel.x &&
-        vPosition.z >= uHoverParcel.y &&
-        vPosition.x <= uHoverParcel.z &&
-        vPosition.z <= uHoverParcel.w
-      ) {
+  void main() {
+    float add = uHover * 0.2;
+    vec3 f = fract(vPosition);
+    if (vTypex >= 2.0/8.0) {
+      if (f.x >= 0.8) {
         add = 0.2;
-      } else {
-        vec3 f = fract(vPosition);
-        if (vTypex >= 2.0/8.0) {
-          if (f.x >= 0.8) {
-            add = 0.2;
-          }
-        } else if (vTypex >= 1.0/8.0) {
-          if (f.x <= 0.2) {
-            add = 0.2;
-          }
-        }
-        if (vTypez >= 2.0/8.0) {
-          if (f.z >= 0.8) {
-            add = 0.2;
-          }
-        } else if (vTypez >= 1.0/8.0) {
-          if (f.z <= 0.2) {
-            add = 0.2;
-          }
-        }
-        /* if (
-          vPosition.x >= uCurrentParcel.x &&
-          vPosition.z >= uCurrentParcel.y &&
-          vPosition.x <= uCurrentParcel.z &&
-          vPosition.z <= uCurrentParcel.w
-        ) {
-          add = 0.2;
-        } */
       }
-      c += add;
-      c *= vPulse;
-      a = (1.0-vDepth)*0.8;
-      gl_FragColor = vec4(c, a);
+    } else if (vTypex >= 1.0/8.0) {
+      if (f.x <= 0.2) {
+        add = 0.2;
+      }
     }
-  `;
+    if (vTypez >= 2.0/8.0) {
+      if (f.z >= 0.8) {
+        add = 0.2;
+      }
+    } else if (vTypez >= 1.0/8.0) {
+      if (f.z <= 0.2) {
+        add = 0.2;
+      }
+    }
+    vec3 c = (uColor + add) * vPulse;
+    float a = (1.0-vDepth)*0.8;
+    gl_FragColor = vec4(c, a);
+  }
+`;
+const _makeFloorMesh = () => {
+  const geometry = parcelGeometry;
   const material = new THREE.ShaderMaterial({
     uniforms: {
-      uCurrentParcel: {
-        type: 'v4',
-        value: new THREE.Vector4(),
+      uPosition: {
+        type: 'v3',
+        value: new THREE.Vector3(),
       },
-      uHoverParcel: {
-        type: 'v4',
-        value: new THREE.Vector4(),
+      uColor: {
+        type: 'c',
+        value: new THREE.Color().setHex(colors.normal),
+      },
+      uHover: {
+        type: 'f',
+        value: 0,
       },
       uSelectedParcel: {
         type: 'v4',
         value: new THREE.Vector4(),
-      },
-      uSelectedColor: {
-        type: 'c',
-        value: new THREE.Color().setHex(colors.select4),
       },
       uAnimation: {
         type: 'f',
@@ -337,14 +307,46 @@ const floorMesh = (() => {
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = false;
   return mesh;
-})();
-container.add(floorMesh);
+};
+const _containsFloorMesh = (x1, y1, x2, y2, floorMesh) =>
+  floorMesh.position.x >= x1 &&
+  floorMesh.position.x < x2 &&
+  floorMesh.position.z >= y1 &&
+  floorMesh.position.z < y2;
+/* const _floorMeshContains = (x, z, floorMesh) =>
+  x >= (floorMesh.position.x-parcelSize/2) &&
+  x < (floorMesh.position.x+parcelSize/2) &&
+  z <= (floorMesh.position.z-parcelSize/2) &&
+  z > (floorMesh.position.z+parcelSize/2);
+const _findFloorMesh = (x, z) => {
+  for (let i = 0; i < floorMeshes.length; i++) {
+    const floorMesh = floorMeshes[i];
+    if (_floorMeshContains(x, z, floorMesh)) {
+      return floorMesh;
+    }
+  }
+  return null;
+}; */
+const floorMeshes = [];
+for (let z = -3; z <= 3; z++) {
+  for (let x = -3; x <= 3; x++) {
+    const floorMesh = _makeFloorMesh();
+    floorMesh.position.set(x*parcelSize, 0, z*parcelSize);
+    floorMesh.material.uniforms.uPosition.value.copy(floorMesh.position);
+    container.add(floorMesh);
+    floorMeshes.push(floorMesh);
+  }
+}
 const gridMeshSwitchWrap = topDocument.getElementById('grid-mesh-switch-wrap');
 if (localStorage.getItem('gridHelper') !== 'false') {
-  floorMesh.visible = true;
+  for (let i = 0; i < floorMeshes.length; i++) {
+    floorMeshes[i].visible = true;
+  }
   gridMeshSwitchWrap.classList.add('on');
 } else {
-  floorMesh.visible = false;
+  for (let i = 0; i < floorMeshes.length; i++) {
+    floorMeshes[i].visible = false;
+  }
 }
 
 let renderingMirror = false;
@@ -583,6 +585,10 @@ toolManager.addEventListener('selectchange', e => {
       xrSite.parentNode.removeChild(xrSite);
     }
   });
+  for (let i = 0; i < floorMeshes.length; i++) {
+    floorMeshes[i].material.uniforms.uColor.value.setHex(colors.normal);
+    floorMeshes[i].material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
+  }
   if (selection) {
     if (selection.type === 'element') {
       selection.element.bindState.control.visible = true;
@@ -598,18 +604,20 @@ toolManager.addEventListener('selectchange', e => {
       ].sort(_incr);
       xs[1] += parcelSize;
       ys[1] += parcelSize;
-      floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
+      for (let i = 0; i < floorMeshes.length; i++) {
+        floorMeshes[i].material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
+      }
       const color = _getSelectedColor(selection.element);
-      floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
+      // floorMesh.material.uniforms.uColor.value.setHex(color);
 
       parcelCreate.classList.add('open');
       parcelCoords.innerText = `[${xs[0]}, ${ys[0]}, ${xs[1]}, ${ys[1]}]`;
     } else {
-      floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
+     // floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
       parcelCreate.classList.remove('open');
     }
   } else {
-    floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
+    // floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
     parcelCreate.classList.remove('open');
   }
 });
@@ -775,14 +783,14 @@ const _bindXrSite = xrSite => {
         const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
         if (extents.length > 0) {
           const color = _getSelectedColor(xrSite);
-          xrSite.guardianMesh = new THREE.Parcel(extents, numTiles, color);
+          xrSite.guardianMesh = new THREE.Parcel(extents, color);
           container.add(xrSite.guardianMesh);
         }
       } else if (attributeName === 'pending') {
         if (xrSite.guardianMesh) {
           const color = _getSelectedColor(xrSite);
           xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
-          floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
+          // floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
         }
       } else {
         console.warn('unknown attribute name', attributeName);
@@ -1227,7 +1235,9 @@ function animate(timestamp, frame, referenceSpace) {
     guardianMesh.material.uniforms.uColor.value.copy(c);
   }
 
-  floorMesh.material.uniforms.uAnimation.value = (now%2000)/2000;
+  for (let i = 0; i < floorMeshes.length; i++) {
+    floorMeshes[i].material.uniforms.uAnimation.value = (now%2000)/2000;
+  }
 
   if (rig) {
     if (possessRig) {
@@ -1460,29 +1470,28 @@ function animate(timestamp, frame, referenceSpace) {
   }
 
   if (landConnection) {
-    /* if (rig) {
-      const minX = Math.floor((rig.inputs.hmd.position.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-      const minZ = Math.floor((rig.inputs.hmd.position.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-      const maxX = minX + parcelSize;
-      const maxZ = minZ + parcelSize;
-      floorMesh.material.uniforms.uCurrentParcel.value.set(minX, minZ, maxX, maxZ);
-    } else {
-      floorMesh.material.uniforms.uCurrentParcel.value.set(0, 0, 0, 0);
-    } */
     const intersection = toolManager.getHover();
     if (intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
       const minX = Math.floor((intersection.end.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
       const minZ = Math.floor((intersection.end.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
       const maxX = minX + parcelSize;
       const maxZ = minZ + parcelSize;
-      floorMesh.material.uniforms.uHoverParcel.value.set(minX, minZ, maxX, maxZ);
+      for (let i = 0; i < floorMeshes.length; i++) {
+        const floorMesh = floorMeshes[i];
+        floorMesh.material.uniforms.uHover.value = +_containsFloorMesh(minX, minZ, maxX, maxZ, floorMesh);
+      }
     } else {
+      for (let i = 0; i < floorMeshes.length; i++) {
+        floorMeshes[i].material.uniforms.uHover.value = 0;
+      }
+    }
+  } /* else {
+    for (let i = 0; i < floorMeshes.length; i++) {
+      const floorMesh = floorMeshes[i];
+      floorMesh.material.uniforms.uCurrentParcel.value.set(0, 0, 0, 0);
       floorMesh.material.uniforms.uHoverParcel.value.set(0, 0, 0, 0);
     }
-  } else {
-    floorMesh.material.uniforms.uCurrentParcel.value.set(0, 0, 0, 0);
-    floorMesh.material.uniforms.uHoverParcel.value.set(0, 0, 0, 0);
-  }
+  } */
 
   renderer.render(scene, camera);
 
@@ -2117,7 +2126,9 @@ gridMeshSwitchWrap.addEventListener('click', () => {
   gridMeshSwitchWrap.classList.toggle('on');
 
   const enabled = gridMeshSwitchWrap.classList.contains('on');
-  floorMesh.visible = enabled;
+  for (let i = 0; i < floorMeshes.length; i++) {
+    floorMeshes[i].visible = enabled;
+  }
   if (enabled) {
     localStorage.removeItem('gridHelper');
   } else {
