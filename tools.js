@@ -275,7 +275,7 @@ const _mousedown = e => {
   if (orbitControls.draggable) {
      mouseMoved = false;
 
-    if (e.shiftKey && intersection && (intersection.type === 'floor' || intersection.type === 'parcel') && canDrag(intersection.start, intersection.end)) {
+    if (e.shiftKey && intersection && (intersection.type === 'floor' || (intersection.type === 'parcel' && intersection.element.getAttribute('pending'))) && canDrag(intersection.start, intersection.end)) {
       const spec = _makeXrSiteSpec();
       drag = spec;
       intersection = spec;
@@ -539,12 +539,22 @@ const _mousemove = e => {
           const xrSite = xrSites[i];
           const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
           if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < x2 && y >= y1 && y < y2)) {
-            intersection = {
-              type: 'parcel',
-              element: xrSite,
-              start: localVector.clone(),
-              end: localVector.clone(),
-            };
+            if (xrSite.getAttribute('pending')) {
+              intersection = {
+                type: 'parcel',
+                element: xrSite,
+                start: localVector.clone(),
+                end: localVector.clone(),
+              };
+            } else {
+              const [[x1, y1, x2, y2]] = extents;
+              intersection = {
+                type: 'parcel',
+                element: xrSite,
+                start: new THREE.Vector3(x1, 0, y1),
+                end: new THREE.Vector3(x2, 0, y2),
+              };
+            }
             return true;
           }
         }
@@ -623,7 +633,7 @@ const _mousemove = e => {
     } */
 
     if (drag && drag.type === 'parcel' && intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
-      drag.end.copy(intersection.start);
+      drag.end.copy(intersection.end);
       _updateExtentXrSite(drag);
 
       this.dispatchEvent(new MessageEvent('selectchange', {
