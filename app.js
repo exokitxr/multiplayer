@@ -153,6 +153,7 @@ const floorMesh = (() => {
   const numCoords = planeBufferGeometry.attributes.position.array.length;
   const numVerts = numCoords/3;
   const positions = new Float32Array(numCoords*numTiles2P1*numTiles2P1);
+  const centers = new Float32Array(numCoords*numTiles2P1*numTiles2P1);
   const typesx = new Float32Array(numVerts*numTiles2P1*numTiles2P1);
   const typesz = new Float32Array(numVerts*numTiles2P1*numTiles2P1);
   let i = 0;
@@ -161,6 +162,9 @@ const floorMesh = (() => {
       const newPlaneBufferGeometry = planeBufferGeometry.clone()
         .applyMatrix(localMatrix.makeTranslation(x, 0, z));
       positions.set(newPlaneBufferGeometry.attributes.position.array, i * newPlaneBufferGeometry.attributes.position.array.length);
+      for (let j = 0; j < newPlaneBufferGeometry.attributes.position.array.length/3; j++) {
+        localVector.set(x, 0, z).toArray(centers, i*newPlaneBufferGeometry.attributes.position.array.length + j*3);
+      }
       let typex = 0;
       if (mod((x + parcelSize/2), parcelSize) === 0) {
         typex = 1/8;
@@ -182,21 +186,43 @@ const floorMesh = (() => {
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('center', new THREE.BufferAttribute(centers, 3));
   geometry.setAttribute('typex', new THREE.BufferAttribute(typesx, 1));
   geometry.setAttribute('typez', new THREE.BufferAttribute(typesz, 1));
   /* const geometry = new THREE.PlaneBufferGeometry(300, 300, 300, 300)
     .applyMatrix(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 1)))); */
   const floorVsh = `
-    // uniform float uAnimation;
+    #define PI 3.1415926535897932384626433832795
+
+    uniform float uAnimation;
+    uniform vec4 uSelectedParcel;
+    attribute vec3 center;
     attribute float typex;
     attribute float typez;
     varying vec3 vPosition;
     varying float vTypex;
     varying float vTypez;
     varying float vDepth;
+
+    float range = 1.0;
+
     void main() {
-      // float radius = sqrt(position.x*position.x + position.z*position.z);
-      vec3 p = vec3(position.x, position.y /*- (1.0 - uAnimation) * radius*/, position.z);
+      float height;
+      float selectedWidth = uSelectedParcel.z - uSelectedParcel.x;
+      float selectedHeight = uSelectedParcel.w - uSelectedParcel.y;
+      if (center.x >= uSelectedParcel.x && center.x < uSelectedParcel.z && center.z >= uSelectedParcel.y && center.z < uSelectedParcel.w) {
+        vec2 selectedCenter = vec2((uSelectedParcel.x+uSelectedParcel.z) / 2.0, (uSelectedParcel.y+uSelectedParcel.w) / 2.0);
+        float selectedSize = max(selectedWidth, selectedHeight)/2.0;
+        float selectedRadius = sqrt(selectedSize*selectedSize+selectedSize*selectedSize);
+
+        float animationRadius = uAnimation * selectedRadius;
+        float currentRadius = length(center.xz - selectedCenter);
+        float radiusDiff = abs(animationRadius - currentRadius);
+        height = max((range - radiusDiff)/range, 0.0);
+        height = sin(height*PI/2.0);
+        height *= 0.2;
+      }
+      vec3 p = vec3(position.x, position.y + height, position.z);
       gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
       vPosition = position + vec3(0.5, 0.0, 0.5);
       vTypex = typex;
@@ -209,7 +235,6 @@ const floorMesh = (() => {
     uniform vec4 uHoverParcel;
     uniform vec4 uSelectedParcel;
     uniform vec3 uSelectedColor;
-    // uniform float uAnimation;
     varying vec3 vPosition;
     varying float vTypex;
     varying float vTypez;
@@ -271,10 +296,6 @@ const floorMesh = (() => {
   `;
   const material = new THREE.ShaderMaterial({
     uniforms: {
-      /* uTex: {
-        type: 't',
-        value: new THREE.Texture(),
-      }, */
       uCurrentParcel: {
         type: 'v4',
         value: new THREE.Vector4(),
@@ -1190,6 +1211,8 @@ function animate(timestamp, frame, referenceSpace) {
     // baseMesh.material.uniforms.uColor.value.copy(c);
     guardianMesh.material.uniforms.uColor.value.copy(c);
   }
+
+  floorMesh.material.uniforms.uAnimation.value = (now%2000)/2000;
 
   if (rig) {
     if (possessRig) {
