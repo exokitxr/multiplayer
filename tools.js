@@ -22,6 +22,7 @@ const createParcelButton = topDocument.getElementById('create-parcel-button');
 const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const editParcelButton = topDocument.getElementById('edit-parcel-button');
 const stopEditingButton = topDocument.getElementById('stop-editing-button');
+const removeParcelButton = topDocument.getElementById('remove-parcel-button');
 
 /* const toolNames = [
   'camera',
@@ -244,6 +245,9 @@ editParcelButton.addEventListener('click', () => {
 stopEditingButton.addEventListener('click', () => {
   _uneditXrSite();
   this.dispatchEvent(new MessageEvent('editchange'));
+});
+removeParcelButton.addEventListener('click', () => {
+  this.delete();
 });
 
 const _incr = (a, b) => a - b;
@@ -772,13 +776,13 @@ document.addEventListener('pointerlockchange', () => {
 
         element.parentNode.removeChild(element);
 
-        if (dirtyXrSite === element) {
+        /* if (dirtyXrSite === element) {
           dirtyXrSite = null;
         }
         if (editedXrSite === element) {
           _uneditXrSite();
           this.dispatchEvent(new MessageEvent('editchange'));
-        }
+        } */
 
         selection = null;
         this.dispatchEvent(new MessageEvent('selectchange', {
