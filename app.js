@@ -306,6 +306,11 @@ const _makeFloorMesh = () => {
   });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = false;
+  mesh.update = () => {
+    const xrSite = _getFloorMeshXrSite(mesh);
+    const color = _getSelectedColor(xrSite);
+    material.uniforms.uColor.value.setHex(color);
+  };
   return mesh;
 };
 const _containsPosition = (x1, y1, x2, y2, position) =>
@@ -606,12 +611,9 @@ toolManager.addEventListener('selectchange', e => {
       ys[1] += parcelSize;
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
-        const xrSite = _getFloorMeshXrSite(floorMesh);
-        const color = _getSelectedColor(xrSite);
-        floorMesh.material.uniforms.uColor.value.setHex(color);
         floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
+        floorMesh.update();
       }
-      // floorMesh.material.uniforms.uColor.value.setHex(color);
 
       parcelCreate.classList.add('open');
       parcelCoords.innerText = `[${xs[0]}, ${ys[0]}, ${xs[1]}, ${ys[1]}]`;
@@ -769,7 +771,7 @@ const _bindXrSite = xrSite => {
     for (let i = 0; i < mutationRecords.length; i++) {
       const mutationRecord = mutationRecords[i];
       const {target, attributeName} = mutationRecord;
-      if (attributeName === 'bg') {
+      if (attributeName === 'bg') { // XXX average this
         const c = target.getAttribute(attributeName) || '#000000';
 
         const xrEngine = topDocument.querySelector('xr-engine');
@@ -794,11 +796,19 @@ const _bindXrSite = xrSite => {
           xrSite.guardianMesh = new THREE.Parcel(extents, color);
           container.add(xrSite.guardianMesh);
         }
+
+        for (let i = 0; i < floorMeshes.length; i++) {
+          floorMeshes[i].update();
+        }
       } else if (attributeName === 'pending') {
         if (xrSite.guardianMesh) {
           const color = _getSelectedColor(xrSite);
           xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
           // floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
+
+          for (let i = 0; i < floorMeshes.length; i++) {
+            floorMeshes[i].update();
+          }
         }
       } else {
         console.warn('unknown attribute name', attributeName);
