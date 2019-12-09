@@ -72,7 +72,6 @@ const _uneditXrSite = () => {
   _updateParcelButtons();
 }; */
 const _updateParcelButtons = () => {
-  console.log('update parcel buttons', !!selection, selection && selection.type === 'parcel', selection && !selection.element.getAttribute('pending'))
   if (selection && selection.type === 'parcel') {
     if (selection.element.getAttribute('pending')) {
       parcelNameInput.value = '';
@@ -564,7 +563,7 @@ const _mousemove = e => {
         for (let i = 0; i < xrSites.length; i++) {
           const xrSite = xrSites[i];
           const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
-          if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < x2 && y >= y1 && y < y2)) {
+          if (extents.some(([x1, y1, x2, y2]) => x >= x1 && x < x2-1 && y >= y1 && y < y2-1)) {
             if (xrSite.getAttribute('pending')) {
               intersection = {
                 type: 'parcel',
@@ -767,7 +766,7 @@ document.addEventListener('pointerlockchange', () => {
           }
         } */
         if (intersection && intersection.element === element) {
-          intersection.element.bindState.model.boundingBoxMesh.setHover(false);
+          // intersection.element.bindState.model.boundingBoxMesh.setHover(false);
           intersection = null;
           this.dispatchEvent(new MessageEvent('hoverchange', {
             data: intersection,

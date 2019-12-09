@@ -594,16 +594,22 @@ toolManager.addEventListener('selectchange', e => {
       selection.element.bindState.control.visible = true;
       selection.element.bindState.control.enabled = true;
     } else if (selection.type === 'parcel') {
-      const xs = [
-        Math.floor((selection.start.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-        Math.floor((selection.end.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-      ].sort(_incr);
-      const ys = [
-        Math.floor((selection.start.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-        Math.floor((selection.end.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-      ].sort(_incr);
-      xs[1] += parcelSize;
-      ys[1] += parcelSize;
+      let xs, ys;
+      if (selection.element.getAttribute('pending')) {
+        xs = [
+          Math.floor((selection.start.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+          Math.floor((selection.end.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+        ].sort(_incr);
+        ys = [
+          Math.floor((selection.start.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+          Math.floor((selection.end.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
+        ].sort(_incr);
+        xs[1] += parcelSize;
+        ys[1] += parcelSize;
+      } else {
+        xs = [selection.start.x, selection.end.x];
+        ys = [selection.start.z, selection.end.z];
+      }
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
         floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
@@ -1485,13 +1491,25 @@ function animate(timestamp, frame, referenceSpace) {
   if (landConnection) {
     const intersection = toolManager.getHover();
     if (intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
-      const minX = Math.floor((intersection.end.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-      const minZ = Math.floor((intersection.end.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
-      const maxX = minX + parcelSize;
-      const maxZ = minZ + parcelSize;
+      let xs, ys;
+      if (!intersection.element || intersection.element.getAttribute('pending')) {
+        const minX = Math.floor((intersection.end.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+        xs = [
+          minX,
+          minX + parcelSize,
+        ];
+        const minZ = Math.floor((intersection.end.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+        ys = [
+          minZ,
+          minZ + parcelSize,
+        ];
+      } else {
+        xs = [intersection.start.x, intersection.end.x];
+        ys = [intersection.start.z, intersection.end.z];
+      }
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
-        floorMesh.material.uniforms.uHover.value = +_containsPosition(minX, minZ, maxX, maxZ, floorMesh.position);
+        floorMesh.material.uniforms.uHover.value = +_containsPosition(xs[0], ys[0], xs[1], ys[1], floorMesh.position);
       }
     } else {
       for (let i = 0; i < floorMeshes.length; i++) {
