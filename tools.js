@@ -49,7 +49,7 @@ let editedXrSite = null;
 let extentXrSite = null;
 let dirtyXrSite = null; */
 // let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
-let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
+// let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 
 /* const _getPixelKey = (x, z) => [x, z].join(':');
 const _editXrSite = xrSite => {
