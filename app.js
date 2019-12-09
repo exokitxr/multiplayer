@@ -156,8 +156,8 @@ const parcelGeometry = (() => {
   const typesx = new Float32Array(numVerts*parcelSize*parcelSize);
   const typesz = new Float32Array(numVerts*parcelSize*parcelSize);
   let i = 0;
-  for (let x = -parcelSize/2; x < parcelSize/2; x++) {
-    for (let z = -parcelSize/2; z < parcelSize/2; z++) {
+  for (let x = -parcelSize/2+0.5; x < parcelSize/2; x++) {
+    for (let z = -parcelSize/2+0.5; z < parcelSize/2; z++) {
       const newTileGeometry = tileGeometry.clone()
         .applyMatrix(localMatrix.makeTranslation(x, 0, z));
       positions.set(newTileGeometry.attributes.position.array, i * newTileGeometry.attributes.position.array.length);
@@ -165,15 +165,15 @@ const parcelGeometry = (() => {
         localVector.set(x, 0, z).toArray(centers, i*newTileGeometry.attributes.position.array.length + j*3);
       }
       let typex = 0;
-      if (mod((x + parcelSize/2), parcelSize) === 0) {
+      if (mod((x + parcelSize/2-0.5), parcelSize) === 0) {
         typex = 1/8;
-      } else if (mod((x + parcelSize/2), parcelSize) === parcelSize-1) {
+      } else if (mod((x + parcelSize/2-0.5), parcelSize) === parcelSize-1) {
         typex = 2/8;
       }
       let typez = 0;
-      if (mod((z + parcelSize/2), parcelSize) === 0) {
+      if (mod((z + parcelSize/2-0.5), parcelSize) === 0) {
         typez = 1/8;
-      } else if (mod((z + parcelSize/2), parcelSize) === parcelSize-1) {
+      } else if (mod((z + parcelSize/2-0.5), parcelSize) === parcelSize-1) {
         typez = 2/8;
       }
       for (let j = 0; j < numVerts; j++) {
@@ -230,7 +230,7 @@ const floorVsh = `
     }
     vec3 p = vec3(position.x, position.y + height, position.z);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
-    vPosition = position + vec3(0.5, 0.0, 0.5);
+    vPosition = position;
     vTypex = typex;
     vTypez = typez;
     vDepth = gl_Position.z / ${distanceFactor.toFixed(8)};
@@ -315,9 +315,9 @@ const _makeFloorMesh = () => {
 };
 const _containsPosition = (x1, y1, x2, y2, position) =>
   position.x >= x1 &&
-  position.x < x2 &&
+  position.x <= x2 &&
   position.z >= y1 &&
-  position.z < y2;
+  position.z <= y2;
 /* const _floorMeshContains = (x, z, floorMesh) =>
   x >= (floorMesh.position.x-parcelSize/2) &&
   x < (floorMesh.position.x+parcelSize/2) &&
@@ -547,7 +547,26 @@ container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
 const canDrag = (startPoint, endPoint) => {
-  return !!landConnection && (!startPoint || startPoint.distanceTo(endPoint) < 64);
+  // console.log('can drag', startPoint.toArray().join(','), endPoint.toArray().join(','));
+  if (
+    !!landConnection &&
+    (!startPoint || startPoint.distanceTo(endPoint) < 64)
+  ) {
+    /* const x = localVector.x/container.scale.x;
+    const y = localVector.z/container.scale.z;
+
+    let minX, minZ, maxX, maxZ;
+
+    if () {
+
+    } */
+    return !Array.from(document.querySelectorAll('xr-site')).some(xrSite => {
+      return !xrSite.getAttribute('pending') &&
+        THREE.Land.parseExtents(xrSite.getAttribute('extents')).some(([x1, y1, x2, y2]) => _containsPosition(x1, y1, x2, y2, endPoint));
+      });
+  } else {
+    return false;
+  }
 };
 const toolManager = new ToolManager({
   domElement: renderer.domElement,
@@ -595,7 +614,7 @@ toolManager.addEventListener('selectchange', e => {
       selection.element.bindState.control.enabled = true;
     } else if (selection.type === 'parcel') {
       let xs, ys;
-      if (selection.element.getAttribute('pending')) {
+      /* if (selection.element.getAttribute('pending')) {
         xs = [
           Math.floor((selection.start.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
           Math.floor((selection.end.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
@@ -606,10 +625,10 @@ toolManager.addEventListener('selectchange', e => {
         ].sort(_incr);
         xs[1] += parcelSize;
         ys[1] += parcelSize;
-      } else {
+      } else { */
         xs = [selection.start.x, selection.end.x];
         ys = [selection.start.z, selection.end.z];
-      }
+      // }
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
         floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
@@ -1492,21 +1511,21 @@ function animate(timestamp, frame, referenceSpace) {
     const intersection = toolManager.getHover();
     if (intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
       let xs, ys;
-      if (!intersection.element || intersection.element.getAttribute('pending')) {
-        const minX = Math.floor((intersection.end.x/container.scale.x + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+      /* if (!intersection.element || intersection.element.getAttribute('pending')) {
+        const minX = Math.floor((intersection.end.x/container.scale.x + parcelSize/2) / parcelSize) * parcelSize - parcelSize/2;
         xs = [
           minX,
           minX + parcelSize,
         ];
-        const minZ = Math.floor((intersection.end.z/container.scale.z + (parcelSize+1)/2) / parcelSize) * parcelSize - parcelSize/2;
+        const minZ = Math.floor((intersection.end.z/container.scale.z + parcelSize/2) / parcelSize) * parcelSize - parcelSize/2;
         ys = [
           minZ,
           minZ + parcelSize,
         ];
-      } else {
+      } else { */
         xs = [intersection.start.x, intersection.end.x];
         ys = [intersection.start.z, intersection.end.z];
-      }
+      // }
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
         floorMesh.material.uniforms.uHover.value = +_containsPosition(xs[0], ys[0], xs[1], ys[1], floorMesh.position);
