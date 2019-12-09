@@ -761,10 +761,10 @@ const _bindXrIframe = xrIframe => {
   });
 
   control.addEventListener('change', e => {
-    const editedEl = toolManager.getEditedElement();
+    /* const editedEl = toolManager.getEditedElement();
     if (editedEl) {
       toolManager.clampPositionToElementExtent(control.object.position, editedEl);
-    }
+    } */
 
     xrIframe.position = control.object.position.toArray();
     xrIframe.orientation = control.object.quaternion.toArray();
@@ -788,20 +788,20 @@ const _getSelectedColor = xrSite => {
     if (xrSite.getAttribute('pending')) {
       return colors.select3;
     } else {
-      const editedEl = toolManager.getEditedElement();
+      /* const editedEl = toolManager.getEditedElement();
       if (editedEl) {
         if (editedEl === xrSite) {
           return colors.select4;
         } else {
           return colors.normal;
         }
-      } else {
+      } else { */
         if (toolManager.getSelectedElement() === xrSite) {
-          return colors.select2;
+          return colors.select4;
         } else {
           return colors.select5;
         }
-      }
+      // }
     }
   } else {
     return colors.normal;
@@ -1149,10 +1149,10 @@ class XRModel extends HTMLElement {
     this.attributeChangedCallback('scale', null, this.getAttribute('scale'));
 
     control.addEventListener('change', e => {
-      const editedEl = toolManager.getEditedElement();
+      /* const editedEl = toolManager.getEditedElement();
       if (editedEl) {
         toolManager.clampPositionToElementExtent(control.object.position, editedEl);
-      }
+      } */
 
       this.position = control.object.position.toArray();
       this.orientation = control.object.quaternion.toArray();
@@ -1995,7 +1995,7 @@ const _connectLand = () => {
     if (!running) {
       running = true;
 
-      if (!toolManager.getEditedElement()) {
+      // if (!toolManager.getEditedElement()) {
         const coord = _getCurrentParcelCoords();
         const k = coord.join(':');
         if (k !== lastParcelKey) {
@@ -2056,7 +2056,7 @@ const _connectLand = () => {
           }));
           lastParcelKey = k;
         }
-      }
+      // }
 
       running = false;
     }
@@ -3100,8 +3100,7 @@ window.document.addEventListener('drop', async e => {
         const _loadElement = (tagName, src) => {
           const dom = parseHtml(codeInput.value);
           const xrSite = _findNodeWithTagName(dom, 'xr-site');
-          const editedEl = toolManager.getEditedElement();
-          if (xrSite && (!landConnection || editedEl)) {
+          if (xrSite && !landConnection) {
             const position = new THREE.Vector3();
             const rect = renderer.domElement.getBoundingClientRect();
             const xFactor = (e.clientX - rect.left) / rect.width;
@@ -3123,9 +3122,9 @@ window.document.addEventListener('drop', async e => {
                   .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
               }
 
-              if (editedEl) {
+              /* if (editedEl) {
                 toolManager.clampPositionToElementExtent(position, editedEl);
-              }
+              } */
 
               xrSite.childNodes.push(parseHtml(`<${tagName} src="${encodeURI(src)}" position="${position.toArray().join(' ')}"></${tagName}>`).childNodes[0]);
               codeInput.value = serializeHtml(dom);

@@ -20,8 +20,7 @@ const parcelEdit = topDocument.getElementById('parcel-edit');
 const parcelNameInput = topDocument.getElementById('parcel-name-input');
 const createParcelButton = topDocument.getElementById('create-parcel-button');
 const saveParcelButton = topDocument.getElementById('save-parcel-button');
-const editParcelButton = topDocument.getElementById('edit-parcel-button');
-const stopEditingButton = topDocument.getElementById('stop-editing-button');
+const deployParcelButton = topDocument.getElementById('deploy-parcel-button');
 const removeParcelButton = topDocument.getElementById('remove-parcel-button');
 
 /* const toolNames = [
@@ -42,7 +41,6 @@ const localRaycaster = new THREE.Raycaster();
 let intersection = null;
 let selection = null;
 let drag = null;
-let edit = null;
 let mouseMoved = false;
 /* let selectedXrSite = null;
 let draggedXrSite = null;
@@ -87,17 +85,10 @@ const _updateParcelButtons = () => {
     parcelCreate.classList.remove('open');
     parcelEdit.classList.remove('open');
   }
-  /* if (editedXrSite) {
-    editParcelButton.style.display = null;
-    stopEditingButton.style.display = 'none';
-  } else {
-    editParcelButton.style.display = 'none';
-    stopEditingButton.style.display = null;
-  } */
 }
 
 class ToolManager extends EventTarget {
-  constructor({domElement, camera, container, orbitControls, canDrag}) {
+  constructor({domElement, camera, container, orbitControls, canSelect, canDrag}) {
     super();
 
 /* for (let i = 0; i < tools.length; i++) {
@@ -187,7 +178,7 @@ createParcelButton.addEventListener('click', () => {
   _updateParcelButtons();
 });
 saveParcelButton.addEventListener('click', async () => {
-  const xrSite = Array.from(document.querySelectorAll('xr-site')).find(xrSite => xrSite.getAttribute('edit') === 'true');
+  const {element: xrSite} = selection;
   if (xrSite) {
     const [[x1, y1, x2, y2]] = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     const x = (x1 - parcelSize/2)/parcelSize;
@@ -244,19 +235,8 @@ saveParcelButton.addEventListener('click', async () => {
     console.warn('no parcel to save');
   }
 });
-editParcelButton.addEventListener('click', () => {
-  // _editXrSite(selectedXrSite);
-  edit = selection;
-  this.dispatchEvent(new MessageEvent('editchange', {
-    data: edit,
-  }));
-});
-stopEditingButton.addEventListener('click', () => {
-  // _uneditXrSite();
-  edit = null;
-  this.dispatchEvent(new MessageEvent('editchange', {
-    data: edit,
-  }));
+deployParcelButton.addEventListener('click', () => {
+  deployParcelButton.classList.toggle('open');
 });
 removeParcelButton.addEventListener('click', () => {
   this.delete();
@@ -313,102 +293,6 @@ const _mousedown = e => {
       }));
     }
   }
-  /* if (!isNaN(floorIntersectionPoint.x) && (e.buttons & 1)) {
-    dragStartPoint.copy(floorIntersectionPoint);
-
-    if (toolIndex === 3) {
-      if (!dirtyXrSite) {
-        const dom = parseHtml(codeInput.value);
-        dom.childNodes.push(parseHtml(`<xr-site></xr-site>`).childNodes[0]);
-        codeInput.value = serializeHtml(dom);
-        codeInput.dispatchEvent(new CustomEvent('change'));
-
-        const xrSites = document.querySelectorAll('xr-site');
-        dirtyXrSite = xrSites[xrSites.length - 1];
-
-        _updateParcelButtons();
-      } else {
-        const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
-        for (let i = 0; i < extents.length; i++) {
-          const extent = extents[i];
-          const [x1, y1, x2, y2] = extent;
-          for (let x = x1; x < x2; x++) {
-            for (let y = y1; y < y2; y++) {
-              pixels[_getPixelKey(x, y)] = false;
-            }
-          }
-        }
-        dirtyXrSite.removeAttribute('extents');
-      }
-
-      extentXrSite = dirtyXrSite;
-
-      if (selectedXrSite) {
-        selectedXrSite.baseMesh.material.uniforms.uColor.value.setHex(colors.select);
-        selectedXrSite.guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
-
-        if (intersection && intersection.target !== selectedXrSite) {
-          intersection = null;
-        }
-        if (editedXrSite !== selectedXrSite) {
-          _uneditXrSite();
-        }
-      }
-
-      selectedXrSite = extentXrSite;
-      parcelNameInput.value = selectedXrSite.getAttribute('name');
-
-      _updateExtentXrSite();
-    } else if (toolIndex === 1) {
-      dragStartPoint.copy(floorIntersectionPoint);
-
-      const xrSites = Array.from(document.querySelectorAll('xr-site'));
-      for (let i = 0; i < xrSites.length; i++) {
-        const {baseMesh, guardianMesh} = xrSites[i];
-        if (baseMesh) {
-          baseMesh.material.uniforms.uColor.value.setHex(colors.select);
-        }
-        if (guardianMesh) {
-          guardianMesh.material.uniforms.uColor.value.setHex(colors.select);
-        }
-      }
-      if (hoveredXrSite) {
-        const {baseMesh, guardianMesh} = hoveredXrSite;
-        const color = hoveredXrSite === dirtyXrSite ? colors.select4 : colors.select3;
-        if (baseMesh) {
-          baseMesh.material.uniforms.uColor.value.setHex(color);
-        }
-        if (guardianMesh) {
-          guardianMesh.material.uniforms.uColor.value.setHex(color);
-        }
-      }
-
-      if (dirtyXrSite && dirtyXrSite !== hoveredXrSite) {
-        const extents = THREE.Land.parseExtents(dirtyXrSite.getAttribute('extents'));
-        for (let i = 0; i < extents.length; i++) {
-          const extent = extents[i];
-          const [x1, y1, x2, y2] = extent;
-          for (let x = x1; x < x2; x++) {
-            for (let y = y1; y < y2; y++) {
-              pixels[_getPixelKey(x, y)] = false;
-            }
-          }
-        }
-        dirtyXrSite.parentNode.removeChild(dirtyXrSite);
-        dirtyXrSite = null;
-        _updateParcelButtons();
-      }
-
-      selectedXrSite = hoveredXrSite;
-      parcelNameInput.value  = selectedXrSite ? selectedXrSite.getAttribute('name') : '';
-      draggedXrSite = hoveredXrSite;
-      dragStartExtents = hoveredXrSite ? THREE.Land.parseExtents(hoveredXrSite.getAttribute('extents')) : [];
-
-      if (editedXrSite !== selectedXrSite) {
-        _uneditXrSite();
-      }
-    }
-  } */
 };
 domElement.addEventListener('mousedown', _mousedown);
 const _mouseup = e => {
@@ -419,7 +303,6 @@ const _mouseup = e => {
     intersection = drag;
     selection = drag;
     drag = null;
-    edit = null;
 
     this.dispatchEvent(new MessageEvent('hoverchange', {
       data: intersection,
@@ -427,31 +310,9 @@ const _mouseup = e => {
     this.dispatchEvent(new MessageEvent('selectchange', {
       data: selection,
     }));
-    this.dispatchEvent(new MessageEvent('editchange', {
-      data: edit,
-    }));
 
     orbitControls.enabled = true;
   }
-  /* dragStartPoint.set(NaN, NaN, NaN);
-
-  if (!(e.buttons & 1)) {
-    if (extentXrSite) {
-      const extents = THREE.Land.parseExtents(extentXrSite.getAttribute('extents'));
-      for (let i = 0; i < extents.length; i++) {
-        const extent = extents[i];
-        const [x1, y1, x2, y2] = extent;
-        for (let x = x1; x < x2; x++) {
-          for (let y = y1; y < y2; y++) {
-            pixels[_getPixelKey(x, y)] = true;
-          }
-        }
-      }
-
-      extentXrSite = null;
-    }
-    draggedXrSite = null;
-  } */
 };
 domElement.addEventListener('mouseup', _mouseup);
 const _click = () => {
@@ -501,12 +362,6 @@ const _click = () => {
         data: selection,
       }));
     }
-    if (edit && edit.element !== selection.element) {
-      edit = null;
-      this.dispatchEvent(new MessageEvent('editchange', {
-        data: edit,
-      }));
-    }
 
     _updateParcelButtons();
   }
@@ -514,7 +369,7 @@ const _click = () => {
 domElement.addEventListener('click', _click);
 const _dblclick = e => {
   if (selection && selection.type === 'parcel' && !selection.element.getAttribute('pending')) {
-    editParcelButton.click();
+    deployParcelButton.click();
   }
 };
 domElement.addEventListener('dblclick', _dblclick);
@@ -721,12 +576,6 @@ document.addEventListener('pointerlockchange', () => {
         data: selection,
       }));
     }
-    if (edit) {
-      edit = null;
-      this.dispatchEvent(new MessageEvent('editchange', {
-        data: edit,
-      }));
-    }
   }
 });
 
@@ -745,9 +594,6 @@ document.addEventListener('pointerlockchange', () => {
   }
   getSelectedElement() {
     return selection && selection.element;
-  }
-  getEditedElement() {
-    return edit && edit.element;
   }
   clampPositionToElementExtent(position, xrSite) {
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
@@ -774,13 +620,6 @@ document.addEventListener('pointerlockchange', () => {
             }));
           }
           element.bindState.model.boundingBoxMesh.setSelect(false);
-
-          if (edit && edit.element === element) {
-            edit = null;
-            this.dispatchEvent(new MessageEvent('editchange', {
-              data: edit,
-            }));
-          }
 
           element.parentNode.removeChild(element);
           selection = null;
@@ -810,12 +649,6 @@ document.addEventListener('pointerlockchange', () => {
             data: intersection,
           }));
         }
-        if (edit && edit.element === element) {
-          edit = null;
-          this.dispatchEvent(new MessageEvent('editchange', {
-            data: edit,
-          }));
-        }
 
         element.parentNode.removeChild(element);
 
@@ -840,16 +673,12 @@ document.addEventListener('pointerlockchange', () => {
     intersection = null;
     selection = null;
     drag = null;
-    edit = null;
 
     this.dispatchEvent(new MessageEvent('hoverchange', {
       data: intersection,
     }));
     this.dispatchEvent(new MessageEvent('selectchange', {
       data: selection,
-    }));
-    this.dispatchEvent(new MessageEvent('editchange', {
-      data: edit,
     }));
   }
 }
