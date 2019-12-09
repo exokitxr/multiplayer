@@ -545,8 +545,6 @@ const _mousemove = e => {
             const {element} = model;
             intersection = {
               type: 'element',
-              /* boundingBoxMesh,
-              model, */
               element,
             };
             return true;

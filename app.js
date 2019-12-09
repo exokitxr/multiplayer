@@ -464,10 +464,10 @@ renderer.domElement.addEventListener('mousedown', e => {
 });
 
 const outlineEffect = new THREE.OutlineEffect(renderer, {
-   defaultThickness: 0.01,
-   defaultColor: [0, 0, 1],
-   defaultAlpha: 0.5,
-   defaultKeepAlive: false,//true,
+  defaultThickness: 0.01,
+  defaultColor: [0, 0, 1],
+  defaultAlpha: 0.5,
+  defaultKeepAlive: false,//true,
 });
 const outlineScene = new THREE.Scene();
 let renderingOutline = false;
@@ -1522,22 +1522,8 @@ function animate(timestamp, frame, referenceSpace) {
   if (landConnection) {
     const intersection = toolManager.getHover();
     if (intersection && (intersection.type === 'floor' || intersection.type === 'parcel')) {
-      let xs, ys;
-      /* if (!intersection.element || intersection.element.getAttribute('pending')) {
-        const minX = Math.floor((intersection.end.x/container.scale.x + parcelSize/2) / parcelSize) * parcelSize - parcelSize/2;
-        xs = [
-          minX,
-          minX + parcelSize,
-        ];
-        const minZ = Math.floor((intersection.end.z/container.scale.z + parcelSize/2) / parcelSize) * parcelSize - parcelSize/2;
-        ys = [
-          minZ,
-          minZ + parcelSize,
-        ];
-      } else { */
-        xs = [intersection.start.x, intersection.end.x];
-        ys = [intersection.start.z, intersection.end.z];
-      // }
+      const xs = [intersection.start.x, intersection.end.x];
+      const ys = [intersection.start.z, intersection.end.z];
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
         floorMesh.material.uniforms.uHover.value = +_containsPosition(xs[0], ys[0], xs[1], ys[1], floorMesh.position);
