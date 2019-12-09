@@ -678,7 +678,6 @@ const _mousemove = e => {
       const startPosition = localVector.set(xs[0], 0, ys[0]);
       const endPosition = localVector2.set(xs[1], 0, ys[1]);
       const cd = canDrag(startPosition, endPosition);
-      // console.log('can drag', cd, intersection.start.toArray(), intersection.end.toArray());
       if (cd) {
         drag.cursor.copy(intersection.cursor);
         drag.start.copy(startPosition);
