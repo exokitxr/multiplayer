@@ -219,9 +219,9 @@ saveParcelButton.addEventListener('click', async () => {
       await res.blob();
 
       xrSite.setAttribute('name', name);
-      const color = xrSite === selectedXrSite ? colors.select3 : colors.select;
+      // const color = xrSite === selectedXrSite ? colors.select3 : colors.select;
       // xrSite.baseMesh && xrSite.baseMesh.material.uniforms.uColor.value.setHex(color);
-      xrSite.guardianMesh && xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
+      // xrSite.guardianMesh && xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
 
       if (selectedXrSite === xrSite) {
         parcelNameInput.value = name;
@@ -651,25 +651,24 @@ const _mousemove = e => {
     } */
 
     if (drag && drag.type === 'parcel' && intersection && (intersection.type === 'floor' || intersection.type === 'parcel' )) {
-      const cd = canDrag(intersection.start, intersection.end);
+      const xs = [
+        _snapParcel(drag.origin.x),
+        _snapParcel(intersection.cursor.x),
+      ].sort(_incr);
+      const ys = [
+        _snapParcel(drag.origin.z),
+        _snapParcel(intersection.cursor.z),
+      ].sort(_incr);
+      xs[1] += parcelSize;
+      ys[1] += parcelSize;
+      const startPosition = localVector.set(xs[0], 0, ys[0]);
+      const endPosition = localVector2.set(xs[1], 0, ys[1]);
+      const cd = canDrag(startPosition, endPosition);
       // console.log('can drag', cd, intersection.start.toArray(), intersection.end.toArray());
       if (cd) {
         drag.cursor.copy(intersection.cursor);
-        const xs = [
-          _snapParcel(drag.origin.x),
-          _snapParcel(drag.cursor.x),
-        ].sort(_incr);
-        const ys = [
-          _snapParcel(drag.origin.z),
-          _snapParcel(drag.cursor.z),
-        ].sort(_incr);
-        // console.log('got drag', drag, xs, ys);
-        xs[1] += parcelSize;
-        ys[1] += parcelSize;
-        drag.start.x = xs[0];
-        drag.start.z = ys[0];
-        drag.end.x = xs[1];
-        drag.end.z = ys[1];
+        drag.start.copy(startPosition);
+        drag.end.copy(endPosition);
         _updateExtentXrSite(drag);
 
         this.dispatchEvent(new MessageEvent('selectchange', {

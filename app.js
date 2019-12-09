@@ -547,22 +547,21 @@ container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
 const canDrag = (startPoint, endPoint) => {
-  // console.log('can drag', startPoint.toArray().join(','), endPoint.toArray().join(','));
   if (
     !!landConnection &&
-    (!startPoint || startPoint.distanceTo(endPoint) < 64)
+    (!startPoint || startPoint.distanceTo(endPoint) < 100)
   ) {
-    /* const x = localVector.x/container.scale.x;
-    const y = localVector.z/container.scale.z;
-
-    let minX, minZ, maxX, maxZ;
-
-    if () {
-
-    } */
+    const coveredPoints = [];
+    for (let y = startPoint.z; y < endPoint.z; y += parcelSize) {
+      for (let x = startPoint.x; x < endPoint.x; x += parcelSize) {
+        coveredPoints.push(new THREE.Vector3(x + parcelSize/2, 0, y + parcelSize/2));
+      }
+    }
     return !Array.from(document.querySelectorAll('xr-site')).some(xrSite => {
       return !xrSite.getAttribute('pending') &&
-        THREE.Land.parseExtents(xrSite.getAttribute('extents')).some(([x1, y1, x2, y2]) => _containsPosition(x1, y1, x2, y2, endPoint));
+        THREE.Land.parseExtents(xrSite.getAttribute('extents')).some(([x1, y1, x2, y2]) =>
+          coveredPoints.some(coveredPoint => _containsPosition(x1, y1, x2, y2, coveredPoint))
+        );
       });
   } else {
     return false;
@@ -605,9 +604,13 @@ toolManager.addEventListener('selectchange', e => {
     }
   });
   for (let i = 0; i < floorMeshes.length; i++) {
-    floorMeshes[i].material.uniforms.uColor.value.setHex(colors.normal);
-    floorMeshes[i].material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
+    const floorMesh = floorMeshes[i];
+    floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
+    floorMesh.update();
   }
+  parcelCreate.classList.remove('open');
+  parcelCoords.innerText = '';
+
   if (selection) {
     if (selection.type === 'element') {
       selection.element.bindState.control.visible = true;
@@ -632,18 +635,11 @@ toolManager.addEventListener('selectchange', e => {
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
         floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
-        floorMesh.update();
       }
 
       parcelCreate.classList.add('open');
       parcelCoords.innerText = `[${xs[0]}, ${ys[0]}, ${xs[1]}, ${ys[1]}]`;
-    } else {
-     // floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
-      parcelCreate.classList.remove('open');
     }
-  } else {
-    // floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
-    parcelCreate.classList.remove('open');
   }
 });
 toolManager.addEventListener('hoverchange', e => {
@@ -773,14 +769,14 @@ const _getFloorMeshXrSite = floorMesh => Array.from(document.querySelectorAll('x
 });
 const _getSelectedColor = xrSite => {
   if (xrSite) {
-    if (toolManager.getSelectedElement() === xrSite) {
-      if (xrSite.getAttribute('pending')) {
-        return colors.select4;
-      } else {
-        return colors.select3;
-      }
+    if (xrSite.getAttribute('pending')) {
+      return colors.select3;
     } else {
-      return colors.select;
+      if (toolManager.getSelectedElement() === xrSite) {
+        return colors.select2;
+      } else {
+        return colors.select5;
+      }
     }
   } else {
     return colors.normal;
