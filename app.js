@@ -546,6 +546,9 @@ const teleportMeshes = [
 container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
+const canSelect = intersection => {
+  return true;
+};
 const canDrag = (startPoint, endPoint) => {
   if (
     !!landConnection &&
@@ -572,6 +575,7 @@ const toolManager = new ToolManager({
   camera,
   container,
   orbitControls,
+  canSelect,
   canDrag,
 });
 /* toolManager.addEventListener('toolchange', e => {
