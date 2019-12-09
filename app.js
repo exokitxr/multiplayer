@@ -477,8 +477,8 @@ scene.onAfterRender = () => {
 
   const selectedEl = toolManager.getSelectedElement();
   const hoveredEl = toolManager.getHoveredElement();
-  const outlineEl = selectedEl || hoveredEl;
-  const outlineModel = (outlineEl && (outlineEl.tagName === 'XR-IFRAME' || outlineEl.tagName === 'XR-MODEL')) ? outlineEl.bindState.model : null;
+  const outlineEl = [selectedEl, hoveredEl].find(el => el && (el.tagName === 'XR-IFRAME' || el.tagName === 'XR-MODEL')) || null;
+  const outlineModel = outlineEl && outlineEl.bindState.model;
   let oldParent = null;
   if (outlineModel) {
     oldParent = outlineModel.parent;
