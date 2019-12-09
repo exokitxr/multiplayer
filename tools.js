@@ -187,9 +187,12 @@ createParcelButton.addEventListener('click', () => {
   _updateParcelButtons();
 });
 saveParcelButton.addEventListener('click', async () => {
-  const xrSite = dirtyXrSite || selectedXrSite;
+  const xrSite = Array.from(document.querySelectorAll('xr-site')).find(xrSite => xrSite.getAttribute('edit') === 'true');
   if (xrSite) {
-    const coords = [];
+    const [[x1, y1, x2, y2]] = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+    const x = (x1 - parcelSize/2)/parcelSize;
+    const y = (y1 - parcelSize/2)/parcelSize;
+    /* const coords = [];
     const parcelKeyIndex = {};
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     for (let i = 0; i < extents.length; i++) {
@@ -204,11 +207,14 @@ saveParcelButton.addEventListener('click', async () => {
           }
         }
       }
-    }
+    } */
 
     const name = parcelNameInput.value;
     const html = xrSite.innerHTML;
-    const res = await fetch(`https://grid.exokit.org/parcels${xrSite !== dirtyXrSite ? `/${coords[0][0]}/${coords[0][1]}` : ''}`, {
+    console.log('set parcel', name, x, y); // XXX
+    xrSite.setAttribute('name', name);
+    return;
+    const res = await fetch(`https://grid.exokit.org/parcels${xrSite !== dirtyXrSite ? `/${x}/${y}` : ''}`, {
       method: 'POST',
       body: JSON.stringify({
         name,
@@ -743,10 +749,6 @@ document.addEventListener('pointerlockchange', () => {
   getEditedElement() {
     return edit && edit.element;
   }
-  /* getDirtyElement() {
-    return null;
-    // return dirtyXrSite;
-  } */
   clampPositionToElementExtent(position, xrSite) {
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     for (let i = 0; i < extents.length; i++) {
@@ -816,14 +818,6 @@ document.addEventListener('pointerlockchange', () => {
         }
 
         element.parentNode.removeChild(element);
-
-        /* if (dirtyXrSite === element) {
-          dirtyXrSite = null;
-        }
-        if (editedXrSite === element) {
-          _uneditXrSite();
-          this.dispatchEvent(new MessageEvent('editchange'));
-        } */
 
         selection = null;
         this.dispatchEvent(new MessageEvent('selectchange', {
