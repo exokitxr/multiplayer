@@ -308,11 +308,11 @@ const _makeFloorMesh = () => {
   mesh.frustumCulled = false;
   return mesh;
 };
-const _containsFloorMesh = (x1, y1, x2, y2, floorMesh) =>
-  floorMesh.position.x >= x1 &&
-  floorMesh.position.x < x2 &&
-  floorMesh.position.z >= y1 &&
-  floorMesh.position.z < y2;
+const _containsPosition = (x1, y1, x2, y2, position) =>
+  position.x >= x1 &&
+  position.x < x2 &&
+  position.z >= y1 &&
+  position.z < y2;
 /* const _floorMeshContains = (x, z, floorMesh) =>
   x >= (floorMesh.position.x-parcelSize/2) &&
   x < (floorMesh.position.x+parcelSize/2) &&
@@ -605,9 +605,12 @@ toolManager.addEventListener('selectchange', e => {
       xs[1] += parcelSize;
       ys[1] += parcelSize;
       for (let i = 0; i < floorMeshes.length; i++) {
-        floorMeshes[i].material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
+        const floorMesh = floorMeshes[i];
+        const xrSite = _getFloorMeshXrSite(floorMesh);
+        const color = _getSelectedColor(xrSite);
+        floorMesh.material.uniforms.uColor.value.setHex(color);
+        floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
       }
-      const color = _getSelectedColor(selection.element);
       // floorMesh.material.uniforms.uColor.value.setHex(color);
 
       parcelCreate.classList.add('open');
@@ -743,18 +746,23 @@ const _unbindXrIframe = xrIframe => {
 
   xrIframe.bindState = null;
 };
+const _getFloorMeshXrSite = floorMesh => Array.from(document.querySelectorAll('xr-site')).find(xrSite => {
+  return THREE.Land.parseExtents(xrSite.getAttribute('extents')).some(([x1, y1, x2, y2]) => _containsPosition(x1, y1, x2, y2, floorMesh.position));
+});
 const _getSelectedColor = xrSite => {
-  let color;
-  if (toolManager.getSelectedElement() === xrSite) {
-    if (xrSite.getAttribute('pending')) {
-      color = colors.select4;
+  if (xrSite) {
+    if (toolManager.getSelectedElement() === xrSite) {
+      if (xrSite.getAttribute('pending')) {
+        return colors.select4;
+      } else {
+        return colors.select3;
+      }
     } else {
-      color = colors.select3;
+      return colors.select;
     }
   } else {
-    color = colors.select;
+    return colors.normal;
   }
-  return color;
 }
 const _bindXrSite = xrSite => {
   const _update = mutationRecords => {
@@ -1478,7 +1486,7 @@ function animate(timestamp, frame, referenceSpace) {
       const maxZ = minZ + parcelSize;
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
-        floorMesh.material.uniforms.uHover.value = +_containsFloorMesh(minX, minZ, maxX, maxZ, floorMesh);
+        floorMesh.material.uniforms.uHover.value = +_containsPosition(minX, minZ, maxX, maxZ, floorMesh.position);
       }
     } else {
       for (let i = 0; i < floorMeshes.length; i++) {
