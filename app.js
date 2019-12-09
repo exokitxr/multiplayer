@@ -784,12 +784,19 @@ const _getSelectedColor = xrSite => {
     if (xrSite.getAttribute('pending')) {
       return colors.select3;
     } else {
-      if (toolManager.getEditedElement() === xrSite) {
-        return colors.select4;
-      } else if (toolManager.getSelectedElement() === xrSite) {
-        return colors.select2;
+      const editedEl = toolManager.getEditedElement();
+      if (editedEl) {
+        if (editedEl === xrSite) {
+          return colors.select4;
+        } else {
+          return colors.normal;
+        }
       } else {
-        return colors.select5;
+        if (toolManager.getSelectedElement() === xrSite) {
+          return colors.select2;
+        } else {
+          return colors.select5;
+        }
       }
     }
   } else {
@@ -831,22 +838,24 @@ const _bindXrSite = xrSite => {
           floorMeshes[i].update();
         }
       } else if (attributeName === 'pending') {
-        if (xrSite.guardianMesh) {
-          const color = _getSelectedColor(xrSite);
-          xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
-          // floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
-
-          for (let i = 0; i < floorMeshes.length; i++) {
-            floorMeshes[i].update();
+        Array.from(document.querySelectorAll('xr-site')).some(xrSite => {
+          if (xrSite.guardianMesh) {
+            const color = _getSelectedColor(xrSite);
+            xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
+            xrSite.guardianMesh.visible = color !== colors.normal;
           }
+        });
+        for (let i = 0; i < floorMeshes.length; i++) {
+          floorMeshes[i].update();
         }
       } else if (attributeName === 'edit') {
-        if (xrSite.guardianMesh) {
-          const color = _getSelectedColor(xrSite);
-          xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
-          // floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
-        }
-
+        Array.from(document.querySelectorAll('xr-site')).some(xrSite => {
+          if (xrSite.guardianMesh) {
+            const color = _getSelectedColor(xrSite);
+            xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
+            xrSite.guardianMesh.visible = color !== colors.normal;
+          }
+        });
         for (let i = 0; i < floorMeshes.length; i++) {
           floorMeshes[i].update();
         }
