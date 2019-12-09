@@ -131,16 +131,16 @@ const wallGeometry = (() => {
   return THREE.BufferGeometryUtils.mergeBufferGeometries(panelGeometries);
 })();
 const topWallGeometry = wallGeometry.clone()
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+  // .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
 const leftWallGeometry = wallGeometry.clone()
   .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI/2))
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+  // .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
 const rightWallGeometry = wallGeometry.clone()
   .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), -Math.PI/2))
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+  // .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
 const bottomWallGeometry = wallGeometry.clone()
   .applyMatrix(new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), Math.PI))
-  .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
+  // .applyMatrix(new THREE.Matrix4().makeTranslation(-0.5, 0, -0.5));
 const distanceFactor = 64;
 THREE.Parcel = function Guardian(extents, color) {
   const geometry = (() => {
