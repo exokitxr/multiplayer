@@ -43,6 +43,8 @@ header {
   z-index: 1;
 }
 .main-selector {
+  height: 50px;
+  margin-right: 5px;
   outline: none;
 }
 .main-selector:hover .target,
@@ -69,11 +71,17 @@ header {
   height: 50px;
   margin: 0 20px;
 }
+.main-selector .target span {
+  margin-right: 10px;
+}
+.main-selector .target span + .icon {
+  margin-top: 4px;
+}
 .main-selector .options {
   display: flex;
   position: absolute;
   top: 50px;
-  left: 0;
+  /* left: 0; */
   width: 300px;
   background-color: #FFF;
   color: #000;
@@ -92,7 +100,7 @@ header nav {
   letter-spacing: 0.9px;
   align-items: center;
 }
-header nav span {
+/* header nav span {
   display: flex;
   height: 30px;
   padding: 10px;
@@ -105,11 +113,11 @@ header nav.selected span {
   color: #FFF;
   cursor: default;
 }
-header nav:not(.selected):not([disabled]):hover {
-  cursor: pointer;
-}
 header nav:not(.selected):hover span {
   background-color: #EEE;
+} */
+header nav:not(.selected):not([disabled]):hover {
+  cursor: pointer;
 }
 header:not(.main-2) .channel-select,
 header:not(.main-3) .parcel-display
@@ -165,6 +173,7 @@ header:not(.main-3) .parcel-display
 .parcel-edit
 {
   display: flex;
+  align-items: center;
 }
 .parcel-create:not(.open),
 .parcel-edit:not(.open)
@@ -175,7 +184,7 @@ header:not(.main-3) .parcel-display
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 10px;
+  margin-right: 10px;
 }
 .details-content h1,
 .details-content h2,
@@ -766,8 +775,18 @@ header > .login-form.phase-3 > .phaseless-content
             <div class=multibutton>
               <nav class="button first last" id=save-parcel-button>Save</nav>
             </div>
-            <div class=multibutton>
-              <nav class="button first last" id=deploy-parcel-button>Deploy</nav>
+            <div class=main-selector tabindex=-1 id=deploy-parcel-selector>
+              <nav class=target>
+                <span>Deploy</span>
+                <i class="fas fa-chevron-down"></i>
+              </nav>
+              <div class=options>
+                <nav class="option open">from Home</nav>
+                <nav class=option>from Room</nav>
+                <nav class=option>from Saved File</nav>
+                <nav class=option>from clipboard</nav>
+                <nav class=option>local HTML file...</nav>
+              </div>
             </div>
             <div class=multibutton>
               <nav class="button first last warn" id=remove-parcel-button>Dissolve</nav>

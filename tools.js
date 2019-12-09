@@ -20,7 +20,7 @@ const parcelEdit = topDocument.getElementById('parcel-edit');
 const parcelNameInput = topDocument.getElementById('parcel-name-input');
 const createParcelButton = topDocument.getElementById('create-parcel-button');
 const saveParcelButton = topDocument.getElementById('save-parcel-button');
-const deployParcelButton = topDocument.getElementById('deploy-parcel-button');
+const deployParcelSelector = topDocument.getElementById('deploy-parcel-selector');
 const removeParcelButton = topDocument.getElementById('remove-parcel-button');
 
 /* const toolNames = [
@@ -235,8 +235,11 @@ saveParcelButton.addEventListener('click', async () => {
     console.warn('no parcel to save');
   }
 });
-deployParcelButton.addEventListener('click', () => {
-  deployParcelButton.classList.toggle('open');
+deployParcelSelector.addEventListener('focus', () => {
+  deployParcelSelector.classList.add('open');
+});
+deployParcelSelector.addEventListener('blur', () => {
+  deployParcelSelector.classList.remove('open');
 });
 removeParcelButton.addEventListener('click', () => {
   this.delete();
@@ -370,7 +373,7 @@ const _click = () => {
 domElement.addEventListener('click', _click);
 const _dblclick = e => {
   if (selection && selection.type === 'parcel' && !selection.element.getAttribute('pending')) {
-    deployParcelButton.click();
+    deployParcelSelector.focus();
   }
 };
 domElement.addEventListener('dblclick', _dblclick);
