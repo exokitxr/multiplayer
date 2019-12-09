@@ -656,7 +656,7 @@ toolManager.addEventListener('editchange', e => {
     xrSites[i].removeAttribute('edit');
   }
   if (edit) {
-    edit.element.setAttribute('edit', true + '');
+    edit.element.setAttribute('edit', 'true');
   }
 
   lastParcelKey = '';
