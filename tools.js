@@ -253,30 +253,11 @@ const _incr = (a, b) => a - b;
 const _snapParcel = n => Math.floor((n - parcelSize/2) / parcelSize) * parcelSize + parcelSize/2;
 const _updateExtentXrSite = drag => {
   const {element: xrSite} = drag;
-  const xs = [
-    drag.start.x,
-    drag.end.x,
-  ]//.sort(_incr);
-  const ys = [
-    drag.start.z,
-    drag.end.z,
-  ]// .sort(_incr);
-  // console.log('got drag', drag, xs, ys);
-  // xs[1] += parcelSize;
-  // ys[1] += parcelSize;
-  /* const pixelKeys = [];
-  for (let x = xs[0]; x < xs[1]; x++) {
-    for (let y = ys[0]; y < ys[1]; y++) {
-      pixelKeys.push(_getPixelKey(x, y));
-    }
-  }
-  if (pixelKeys.every(k => !pixels[k])) { */
-    const extents = [[
-      xs[0], ys[0],
-      xs[1], ys[1],
-    ]];
-    xrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
-  // }
+  const extents = [[
+    drag.start.x, drag.start.z,
+    drag.end.x, drag.end.z,
+  ]];
+  xrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
 };
 const _makeXrSiteSpec = () => {
   const dom = parseHtml(codeInput.value);
@@ -291,6 +272,8 @@ const _makeXrSiteSpec = () => {
     type: 'parcel',
     start: intersection.start.clone(),
     end: intersection.end.clone(),
+    origin: intersection.origin.clone(),
+    cursor: intersection.cursor.clone(),
     element: xrSite,
   };
 };
@@ -574,6 +557,8 @@ const _mousemove = e => {
                 element: xrSite,
                 start: new THREE.Vector3(px, 0, py),
                 end: new THREE.Vector3(px + parcelSize, 0, py + parcelSize),
+                origin: new THREE.Vector3(x, 0, y),
+                cursor: new THREE.Vector3(x, 0, y),
               };
             } else {
               const [[x1, y1, x2, y2]] = extents;
@@ -582,6 +567,8 @@ const _mousemove = e => {
                 element: xrSite,
                 start: new THREE.Vector3(x1, 0, y1),
                 end: new THREE.Vector3(x2, 0, y2),
+                origin: new THREE.Vector3(x, 0, y),
+                cursor: new THREE.Vector3(x, 0, y),
               };
             }
             return true;
@@ -591,6 +578,8 @@ const _mousemove = e => {
           type: 'floor',
           start: new THREE.Vector3(px, 0, py),
           end: new THREE.Vector3(px + parcelSize, 0, py + parcelSize),
+          origin: new THREE.Vector3(x, 0, y),
+          cursor: new THREE.Vector3(x, 0, y),
         };
         return true;
       } else {
@@ -661,13 +650,32 @@ const _mousemove = e => {
       _updateExtentXrSite();
     } */
 
-    if (drag && drag.type === 'parcel' && intersection && (intersection.type === 'floor' || intersection.type === 'parcel' )&& canDrag(intersection.start, intersection.end)) {
-      drag.end.copy(intersection.end);
-      _updateExtentXrSite(drag);
+    if (drag && drag.type === 'parcel' && intersection && (intersection.type === 'floor' || intersection.type === 'parcel' )) {
+      const cd = canDrag(intersection.start, intersection.end);
+      // console.log('can drag', cd, intersection.start.toArray(), intersection.end.toArray());
+      if (cd) {
+        drag.cursor.copy(intersection.cursor);
+        const xs = [
+          _snapParcel(drag.origin.x),
+          _snapParcel(drag.cursor.x),
+        ].sort(_incr);
+        const ys = [
+          _snapParcel(drag.origin.z),
+          _snapParcel(drag.cursor.z),
+        ].sort(_incr);
+        // console.log('got drag', drag, xs, ys);
+        xs[1] += parcelSize;
+        ys[1] += parcelSize;
+        drag.start.x = xs[0];
+        drag.start.z = ys[0];
+        drag.end.x = xs[1];
+        drag.end.z = ys[1];
+        _updateExtentXrSite(drag);
 
-      this.dispatchEvent(new MessageEvent('selectchange', {
-        data: selection,
-      }));
+        this.dispatchEvent(new MessageEvent('selectchange', {
+          data: selection,
+        }));
+      }
     }
 
     if (
