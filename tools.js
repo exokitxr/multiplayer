@@ -276,14 +276,33 @@ const _mousedown = e => {
 
     if (e.shiftKey && intersection && (intersection.type === 'floor' || (intersection.type === 'parcel' && intersection.element.getAttribute('pending'))) && canDrag(intersection.start, intersection.end)) {
       const spec = _makeXrSiteSpec();
-      drag = spec;
-      intersection = spec;
-      selection = spec;
-      _updateExtentXrSite(spec);
+      if (canSelect(spec)) {
+        drag = spec;
+        intersection = spec;
+        selection = spec;
+        _updateExtentXrSite(spec);
 
-      orbitControls.enabled = false;
+        orbitControls.enabled = false;
 
-      _updateParcelButtons();
+        _updateParcelButtons();
+
+        this.dispatchEvent(new MessageEvent('hoverchange', {
+          data: intersection,
+        }));
+        this.dispatchEvent(new MessageEvent('selectchange', {
+          data: selection,
+        }));
+      }
+    }
+  }
+};
+domElement.addEventListener('mousedown', _mousedown);
+const _mouseup = e => {
+  if (drag && drag.type === 'parcel') {
+    if (canSelect(intersection)) {
+      intersection = drag;
+      selection = drag;
+      drag = null;
 
       this.dispatchEvent(new MessageEvent('hoverchange', {
         data: intersection,
@@ -292,24 +311,6 @@ const _mousedown = e => {
         data: selection,
       }));
     }
-  }
-};
-domElement.addEventListener('mousedown', _mousedown);
-const _mouseup = e => {
-  if (drag && drag.type === 'parcel') {
-    // const {element: xrSite} = drag;
-    // xrSite.parentNode.removeChild(xrSite);
-
-    intersection = drag;
-    selection = drag;
-    drag = null;
-
-    this.dispatchEvent(new MessageEvent('hoverchange', {
-      data: intersection,
-    }));
-    this.dispatchEvent(new MessageEvent('selectchange', {
-      data: selection,
-    }));
 
     orbitControls.enabled = true;
   }
@@ -332,7 +333,7 @@ const _click = () => {
       this.dispatchEvent(new MessageEvent('hoverchange', {
         data: intersection,
       }));
-    } else if (intersection && intersection.type === 'parcel' && intersection.element.getAttribute('pending') && canDrag(intersection.start, intersection.end)) {
+    } else if (intersection && intersection.type === 'parcel' && intersection.element.getAttribute('pending') && canDrag(intersection.start, intersection.end) && canSelect(intersection)) {
       _updateExtentXrSite(intersection);
 
       selection = intersection;

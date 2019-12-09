@@ -547,7 +547,7 @@ container.add(teleportMeshes[0]);
 container.add(teleportMeshes[1]);
 
 const canSelect = intersection => {
-  return true;
+  return !landConnection || intersection.type === 'floor' || intersection.type === 'parcel';
 };
 const canDrag = (startPoint, endPoint) => {
   if (
