@@ -2382,9 +2382,8 @@ Promise.resolve().then(() => {
     const src = siteUrlsSearch.value;
     if (src) {
       const dom = parseHtml(codeInput.value);
-      const xrSite = _findNodeWithTagName(dom, 'xr-site');
-      const editedEl = toolManager.getEditedElement();
-      if (xrSite && (!landConnection || editedEl)) {
+      const xrSite = landConnection ? _findNodeWithTagNameAttributes(dom, 'xr-site', [{name: 'edit', value: 'true'}]) : _findNodeWithTagName(dom, 'xr-site');
+      if (xrSite) {
         const position = localVector.copy(camera.position)
           .divide(container.scale)
           .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
@@ -2433,9 +2432,8 @@ Promise.resolve().then(() => {
       const addButton = aSite.querySelector('.add-button');
       addButton.addEventListener('click', () => {
         const dom = parseHtml(codeInput.value);
-        const xrSite = _findNodeWithTagName(dom, 'xr-site');
-        const editedEl = toolManager.getEditedElement();
-        if (xrSite && (!landConnection || editedEl)) {
+        const xrSite = landConnection ? _findNodeWithTagNameAttributes(dom, 'xr-site', [{name: 'edit', value: 'true'}]) : _findNodeWithTagName(dom, 'xr-site');
+        if (xrSite) {
           const position = localVector.copy(camera.position)
             .divide(container.scale)
             .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
@@ -2515,9 +2513,8 @@ Promise.resolve().then(() => {
       const addButton = aAvatar.querySelector('.add-button');
       addButton.addEventListener('click', () => {
         const dom = parseHtml(codeInput.value);
-        const xrSite = _findNodeWithTagName(dom, 'xr-model');
-        const editedEl = toolManager.getEditedElement();
-        if (xrSite && (!landConnection || editedEl)) {
+        const xrSite = landConnection ? _findNodeWithTagNameAttributes(dom, 'xr-site', [{name: 'edit', value: 'true'}]) : _findNodeWithTagName(dom, 'xr-site');
+        if (xrSite) {
           const position = camera.position.clone()
             .divide(container.scale)
             .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
@@ -2606,9 +2603,8 @@ Promise.resolve().then(() => {
       const addButton = aPrefab.querySelector('.add-button');
       addButton.addEventListener('click', () => {
         const dom = parseHtml(codeInput.value);
-        const xrSite = _findNodeWithTagName(dom, 'xr-site');
-        const editedEl = toolManager.getEditedElement();
-        if (xrSite && (!landConnection || editedEl)) {
+        const xrSite = landConnection ? _findNodeWithTagNameAttributes(dom, 'xr-site', [{name: 'edit', value: 'true'}]) : _findNodeWithTagName(dom, 'xr-site');
+        if (xrSite) {
           const position = localVector.copy(camera.position)
             .divide(container.scale)
             .add(new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion));
@@ -2990,7 +2986,25 @@ _resetCodeInput();
 
 const _findNodeWithTagName = (node, tagName) => {
   const _recurse = node => {
-    if (node.tagName === 'xr-site') {
+    if (node.tagName === tagName) {
+      return node;
+    } else {
+      if (node.childNodes) {
+        for (let i = 0; i < node.childNodes.length; i++) {
+          const result = _recurse(node.childNodes[i]);
+          if (result !== null) {
+            return result;
+          }
+        }
+      }
+      return null;
+    }
+  };
+  return _recurse(node);
+};
+const _findNodeWithTagNameAttributes = (node, tagName, attributes) => {
+  const _recurse = node => {
+    if (node.tagName === tagName && attributes.every(({name, value}) => node.attrs[name] === value)) {
       return node;
     } else {
       if (node.childNodes) {
