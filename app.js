@@ -643,10 +643,22 @@ toolManager.addEventListener('selectchange', e => {
   }
 });
 toolManager.addEventListener('hoverchange', e => {
-  const hoveredEl = e.data;
-  orbitControls.clickEnabled = !(hoveredEl && hoveredEl.type === 'element');
+  const intersection = e.data;
+  orbitControls.clickEnabled = !(intersection && intersection.type === 'element');
 });
 toolManager.addEventListener('editchange', e => {
+  const edit = e.data;
+
+  // console.log('got edit', edit);
+
+  const xrSites = Array.from(document.querySelectorAll('xr-site'));
+  for (let i = 0; i < xrSites.length; i++) {
+    xrSites[i].removeAttribute('edit');
+  }
+  if (edit) {
+    edit.element.setAttribute('edit', true + '');
+  }
+
   lastParcelKey = '';
 });
 
@@ -772,7 +784,9 @@ const _getSelectedColor = xrSite => {
     if (xrSite.getAttribute('pending')) {
       return colors.select3;
     } else {
-      if (toolManager.getSelectedElement() === xrSite) {
+      if (toolManager.getEditedElement() === xrSite) {
+        return colors.select4;
+      } else if (toolManager.getSelectedElement() === xrSite) {
         return colors.select2;
       } else {
         return colors.select5;
@@ -826,6 +840,16 @@ const _bindXrSite = xrSite => {
             floorMeshes[i].update();
           }
         }
+      } else if (attributeName === 'edit') {
+        if (xrSite.guardianMesh) {
+          const color = _getSelectedColor(xrSite);
+          xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
+          // floorMesh.material.uniforms.uSelectedColor.value.setHex(color);
+        }
+
+        for (let i = 0; i < floorMeshes.length; i++) {
+          floorMeshes[i].update();
+        }
       } else {
         console.warn('unknown attribute name', attributeName);
       }
@@ -842,6 +866,7 @@ const _bindXrSite = xrSite => {
       'bg',
       'extents',
       'pending',
+      'edit',
     ],
   });
   xrSite.bindState = {
@@ -1259,15 +1284,6 @@ let lastTimestamp = Date.now();
 function animate(timestamp, frame, referenceSpace) {
   const now = Date.now();
   const timeDiff = now - lastTimestamp;
-
-  const editedEl = toolManager.getEditedElement();
-  if (editedEl && editedEl.tagName === 'XR-SITE') {
-    const {/*baseMesh, */guardianMesh} = editedEl;
-    const f = 1 + Math.pow(1 - (now % 1000) / 1000, 2);
-    const c = localColor.setHex(colors.select3).multiplyScalar(f);
-    // baseMesh.material.uniforms.uColor.value.copy(c);
-    guardianMesh.material.uniforms.uColor.value.copy(c);
-  }
 
   for (let i = 0; i < floorMeshes.length; i++) {
     floorMeshes[i].material.uniforms.uAnimation.value = (now%2000)/2000;
@@ -1976,6 +1992,7 @@ const _getParcelXrSite = (dom, coord) => {
 const _connectLand = () => {
   let running = false;
   const _updateGrid = async () => {
+    return; // XXX
     if (!running) {
       running = true;
 

@@ -38,10 +38,11 @@ const localVector2D = new THREE.Vector2();
 const localRaycaster = new THREE.Raycaster();
 
 // let toolIndex = 0;
-const pixels = {};
+// const pixels = {};
 let intersection = null;
 let selection = null;
 let drag = null;
+let edit = null;
 let mouseMoved = false;
 /* let selectedXrSite = null;
 let draggedXrSite = null;
@@ -238,12 +239,18 @@ saveParcelButton.addEventListener('click', async () => {
   }
 });
 editParcelButton.addEventListener('click', () => {
-  _editXrSite(selectedXrSite);
-  this.dispatchEvent(new MessageEvent('editchange'));
+  // _editXrSite(selectedXrSite);
+  edit = selection;
+  this.dispatchEvent(new MessageEvent('editchange', {
+    data: edit,
+  }));
 });
 stopEditingButton.addEventListener('click', () => {
-  _uneditXrSite();
-  this.dispatchEvent(new MessageEvent('editchange'));
+  // _uneditXrSite();
+  edit = null;
+  this.dispatchEvent(new MessageEvent('editchange', {
+    data: edit,
+  }));
 });
 removeParcelButton.addEventListener('click', () => {
   this.delete();
@@ -406,12 +413,16 @@ const _mouseup = e => {
     intersection = drag;
     selection = drag;
     drag = null;
+    edit = null;
 
     this.dispatchEvent(new MessageEvent('hoverchange', {
       data: intersection,
     }));
     this.dispatchEvent(new MessageEvent('selectchange', {
       data: selection,
+    }));
+    this.dispatchEvent(new MessageEvent('editchange', {
+      data: edit,
     }));
 
     orbitControls.enabled = true;
@@ -475,7 +486,7 @@ const _click = () => {
       selectedObjectDetails.classList.remove('open');
     }
 
-    // emit new selection events
+    // emit events
     if (
       (!!oldSelection !== !!selection) ||
       (selection && oldSelection && (selection.type !== oldSelection.type || selection.element !== oldSelection.element))
@@ -484,15 +495,20 @@ const _click = () => {
         data: selection,
       }));
     }
+    if (edit && edit.element !== selection.element) {
+      edit = null;
+      this.dispatchEvent(new MessageEvent('editchange', {
+        data: edit,
+      }));
+    }
 
     _updateParcelButtons();
   }
 };
 domElement.addEventListener('click', _click);
 const _dblclick = e => {
-  if (selection && selection.type === 'element' && selection.element.tagName === 'XR-SITE') {
-    _editXrSite(selection.element);
-    this.dispatchEvent(new MessageEvent('editchange'));
+  if (selection && selection.type === 'parcel' && !selection.element.getAttribute('pending')) {
+    editParcelButton.click();
   }
 };
 domElement.addEventListener('dblclick', _dblclick);
@@ -702,6 +718,12 @@ document.addEventListener('pointerlockchange', () => {
         data: selection,
       }));
     }
+    if (edit) {
+      edit = null;
+      this.dispatchEvent(new MessageEvent('editchange', {
+        data: edit,
+      }));
+    }
   }
 });
 
@@ -722,8 +744,7 @@ document.addEventListener('pointerlockchange', () => {
     return selection && selection.element;
   }
   getEditedElement() {
-    return null;
-    // return editedXrSite;
+    return edit && edit.element;
   }
   /* getDirtyElement() {
     return null;
@@ -755,6 +776,13 @@ document.addEventListener('pointerlockchange', () => {
           }
           element.bindState.model.boundingBoxMesh.setSelect(false);
 
+          if (edit && edit.element === element) {
+            edit = null;
+            this.dispatchEvent(new MessageEvent('editchange', {
+              data: edit,
+            }));
+          }
+
           element.parentNode.removeChild(element);
           selection = null;
           this.dispatchEvent(new MessageEvent('selectchange', {
@@ -781,6 +809,12 @@ document.addEventListener('pointerlockchange', () => {
           intersection = null;
           this.dispatchEvent(new MessageEvent('hoverchange', {
             data: intersection,
+          }));
+        }
+        if (edit && edit.element === element) {
+          edit = null;
+          this.dispatchEvent(new MessageEvent('editchange', {
+            data: edit,
           }));
         }
 
@@ -815,12 +849,16 @@ document.addEventListener('pointerlockchange', () => {
     intersection = null;
     selection = null;
     drag = null;
+    edit = null;
 
     this.dispatchEvent(new MessageEvent('hoverchange', {
       data: intersection,
     }));
     this.dispatchEvent(new MessageEvent('selectchange', {
       data: selection,
+    }));
+    this.dispatchEvent(new MessageEvent('editchange', {
+      data: edit,
     }));
   }
 }
