@@ -15,7 +15,10 @@ const settingAvatarButton = topDocument.getElementById('setting-avatar-button');
 const screenshotButton = topDocument.getElementById('screenshot-button');
 const screenshotImage = topDocument.getElementById('screenshot-image');
 // const parcelDetails = topDocument.getElementById('parcel-details');
+const parcelCreate = topDocument.getElementById('parcel-create');
+const parcelEdit = topDocument.getElementById('parcel-edit');
 const parcelNameInput = topDocument.getElementById('parcel-name-input');
+const createParcelButton = topDocument.getElementById('create-parcel-button');
 const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const editParcelButton = topDocument.getElementById('edit-parcel-button');
 const stopEditingButton = topDocument.getElementById('stop-editing-button');
@@ -48,7 +51,7 @@ let dirtyXrSite = null; */
 // let floorIntersectionPoint = new THREE.Vector3(NaN, NaN, NaN);
 let dragStartPoint = new THREE.Vector3(NaN, NaN, NaN);
 
-const _getPixelKey = (x, z) => [x, z].join(':');
+/* const _getPixelKey = (x, z) => [x, z].join(':');
 const _editXrSite = xrSite => {
   editedXrSite = xrSite;
 
@@ -66,20 +69,30 @@ const _uneditXrSite = () => {
   editedXrSite = null;
 
   _updateParcelButtons();
-};
+}; */
 const _updateParcelButtons = () => {
-  if (editedXrSite || dirtyXrSite) {
-    saveParcelButton.style.display = null;
+  console.log('update parcel buttons', !!selection, selection && selection.type === 'parcel', selection && !selection.element.getAttribute('pending'))
+  if (selection && selection.type === 'parcel') {
+    if (selection.element.getAttribute('pending')) {
+      parcelNameInput.value = '';
+      parcelCreate.classList.add('open');
+      parcelEdit.classList.remove('open');
+    } else {
+      parcelNameInput.value = selection.element.getAttribute('name') || '';
+      parcelCreate.classList.remove('open');
+      parcelEdit.classList.add('open');
+    }
   } else {
-    saveParcelButton.style.display = null;
+    parcelCreate.classList.remove('open');
+    parcelEdit.classList.remove('open');
   }
-  if (editedXrSite) {
+  /* if (editedXrSite) {
     editParcelButton.style.display = null;
     stopEditingButton.style.display = 'none';
   } else {
     editParcelButton.style.display = 'none';
     stopEditingButton.style.display = null;
-  }
+  } */
 }
 
 class ToolManager extends EventTarget {
@@ -167,6 +180,11 @@ screenshotButton.addEventListener('click', async () => {
   }
 });
 
+createParcelButton.addEventListener('click', () => {
+  selection.element.removeAttribute('pending');
+
+  _updateParcelButtons();
+});
 saveParcelButton.addEventListener('click', async () => {
   const xrSite = dirtyXrSite || selectedXrSite;
   if (xrSite) {
@@ -241,19 +259,19 @@ const _updateExtentXrSite = drag => {
   ].sort(_incr);
   xs[1] += parcelSize;
   ys[1] += parcelSize;
-  const pixelKeys = [];
+  /* const pixelKeys = [];
   for (let x = xs[0]; x < xs[1]; x++) {
     for (let y = ys[0]; y < ys[1]; y++) {
       pixelKeys.push(_getPixelKey(x, y));
     }
   }
-  if (pixelKeys.every(k => !pixels[k])) {
+  if (pixelKeys.every(k => !pixels[k])) { */
     const extents = [[
       xs[0], ys[0],
       xs[1], ys[1],
     ]];
     xrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
-  }
+  // }
 };
 const _makeXrSiteSpec = () => {
   const dom = parseHtml(codeInput.value);
@@ -283,6 +301,8 @@ const _mousedown = e => {
       _updateExtentXrSite(spec);
 
       orbitControls.enabled = false;
+
+      _updateParcelButtons();
 
       this.dispatchEvent(new MessageEvent('hoverchange', {
         data: intersection,
@@ -476,6 +496,8 @@ const _click = () => {
         data: selection,
       }));
     }
+
+    _updateParcelButtons();
   }
 };
 domElement.addEventListener('click', _click);
@@ -705,29 +727,33 @@ document.addEventListener('pointerlockchange', () => {
     // XXX finish this
   }
   delete() {
-    if (selection && selection.type === 'element') {
-      const {element} = selection;
+    if (selection) {
+      if (selection.type === 'element') {
+        const {element} = selection;
 
-      if (element.tagName === 'XR-IFRAME' || element.tagName === 'XR-MODEL') {
-        if (intersection && intersection.element === element) {
-          intersection.element.bindState.model.boundingBoxMesh.setHover(false);
-          intersection = null;
-          this.dispatchEvent(new MessageEvent('hoverchange', {
-            data: intersection,
+        if (element.tagName === 'XR-IFRAME' || element.tagName === 'XR-MODEL') {
+          if (intersection && intersection.element === element) {
+            intersection.element.bindState.model.boundingBoxMesh.setHover(false);
+            intersection = null;
+            this.dispatchEvent(new MessageEvent('hoverchange', {
+              data: intersection,
+            }));
+          }
+          element.bindState.model.boundingBoxMesh.setSelect(false);
+
+          element.parentNode.removeChild(element);
+          selection = null;
+          this.dispatchEvent(new MessageEvent('selectchange', {
+            data: selection,
           }));
+
+          selectedObjectDetails.classList.remove('open');
         }
-        element.bindState.model.boundingBoxMesh.setSelect(false);
+      } else if (selection.type === 'parcel') {
+        const {element} = selection;
 
-        element.parentNode.removeChild(element);
-        selection = null;
-        this.dispatchEvent(new MessageEvent('selectchange', {
-          data: selection,
-        }));
-
-        selectedObjectDetails.classList.remove('open');
-      } else if (element.tagName === 'XR-SITE') {
         const extents = THREE.Land.parseExtents(element.getAttribute('extents'));
-        for (let i = 0; i < extents.length; i++) {
+        /* for (let i = 0; i < extents.length; i++) {
           const extent = extents[i];
           const [x1, y1, x2, y2] = extent;
           for (let x = x1; x < x2; x++) {
@@ -735,7 +761,7 @@ document.addEventListener('pointerlockchange', () => {
               pixels[_getPixelKey(x, y)] = false;
             }
           }
-        }
+        } */
         if (intersection && intersection.element === element) {
           intersection.element.bindState.model.boundingBoxMesh.setHover(false);
           intersection = null;
@@ -759,7 +785,6 @@ document.addEventListener('pointerlockchange', () => {
           data: selection,
         }));
 
-        parcelNameInput.value = '';
         _updateParcelButtons();
 
         // XXX add land parcel delete support

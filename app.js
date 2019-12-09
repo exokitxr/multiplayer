@@ -573,11 +573,6 @@ const toolManager = new ToolManager({
 const _incr = (a, b) => a - b;
 const parcelCoords = topDocument.getElementById('parcel-coords');
 const parcelCreate = topDocument.getElementById('parcel-create');
-const createParcelButton = topDocument.getElementById('create-parcel-button');
-createParcelButton.addEventListener('click', () => {
-  const xrSite = toolManager.getSelectedElement();
-  xrSite.removeAttribute('pending');
-});
 toolManager.addEventListener('selectchange', e => {
   const selection = e.data;
 
