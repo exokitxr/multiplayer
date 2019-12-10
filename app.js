@@ -2762,7 +2762,7 @@ connectButton.addEventListener('click', () => {
             peerConnection.update(hmd, gamepads);
           }
         }, peerPoseUpdateRate);
-      });
+      }, {once: true});
       peerConnection.addEventListener('close', () => {
         console.log('remove peer connection', peerConnection);
 
@@ -2776,7 +2776,7 @@ connectButton.addEventListener('click', () => {
         if (peerConnection.rig) {
           peerConnection.rig.destroy();
         }
-      });
+      }, {once: true});
       peerConnection.addEventListener('pose', e => {
         const {rig} = peerConnection;
         if (rig) {
