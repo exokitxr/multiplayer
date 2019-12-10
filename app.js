@@ -1680,6 +1680,7 @@ document.addEventListener('pointerlockchange', () => {
   }
 });
 
+const inventoryContentTab = topDocument.getElementById('inventory-content-tab');
 const chat = topDocument.getElementById('chat');
 const chatMessages = topDocument.getElementById('chat-messages');
 const chatInput = topDocument.getElementById('chat-input');
@@ -1739,6 +1740,14 @@ const _keydown = e => {
           e.preventDefault();
           saveDialog.classList.add('open');
           saveNameInput.focus();
+        }
+        break;
+      }
+      case 79: { // o
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          console.log('click');
+          inventoryContentTab.click();
         }
         break;
       }
@@ -3155,13 +3164,23 @@ const _loadInventory = async () => {
       return `<nav class=a-file draggable=true src="${encodeURI(filename)}">
         <div class=overlay>
           <div class=multibutton>
-            <nav class="button first last add-button">Add</nav>
+            <nav class="button first last load-button">Load</nav>
           </div>
         </div>
         <i class="fas fa-file"></i>
         <div class=name>${escape(filename)}</name>
       </nav>`;
     }).join('\n');
+    Array.from(inventoryContent.querySelectorAll('.a-file')).forEach(aFile => {
+      const src = aFile.getAttribute('src');
+      const loadButton = aFile.querySelector('.load-button');
+      loadButton.addEventListener('click', async () => {
+        const res = await fetch(`https://upload.exokit.org/${src}`);
+        const html = await res.text();
+        codeInput.value = html;
+        codeInput.dispatchEvent(new CustomEvent('change'));
+      });
+    });
   } else {
     throw new Error(`invalid status code: ${res.status}`);
   }
