@@ -7,7 +7,7 @@ import './Reflector.js';
 import './land.js';
 import './bmfont.js';
 
-import {XRChannelConnection} from 'https://multiplayer.exokit.org/multiplayer.js';
+import {XRChannelConnection} from './multiplayer.js';
 import HTMLClient from 'https://sync.exokit.org/sync-client.js';
 import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import Avatar from 'https://avatars.exokit.org/avatars.js';
