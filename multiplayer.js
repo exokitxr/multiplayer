@@ -267,8 +267,10 @@ class XRChannelConnection extends EventTarget {
       const oldTracks = oldMicrophoneMediaStream.getAudioTracks();
       for (let i = 0; i < this.peerConnections.length; i++) {
         const peerConnection = this.peerConnections[i];
-        for (let j = 0; j < oldTracks.length; j++) {
-          peerConnection.peerConnection.removeTrack(oldTracks[j]);
+        const senders = peerConnection.peerConnection.getSenders();
+        const oldTrackSenders = oldTracks.map(track => senders.find(sender => sender.track === track));
+        for (let j = 0; j < oldTrackSenders.length; j++) {
+          peerConnection.peerConnection.removeTrack(oldTrackSenders[j]);
         }
       }
     }
