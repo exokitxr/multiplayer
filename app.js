@@ -1285,6 +1285,7 @@ const _setLocalModel = newModel => {
 const lastPresseds = [false, false];
 const lastBs = [false, false];
 const lastPads = [false, false];
+const lastPadXs = [0, 0];
 const lastPositions = [new THREE.Vector3(), new THREE.Vector3()];
 const startGripPositions = [new THREE.Vector3(), new THREE.Vector3()];
 const startSceneMatrix = new THREE.Matrix4();
@@ -1310,11 +1311,13 @@ function animate(timestamp, frame, referenceSpace) {
       vrCamera.matrixWorld.decompose(vrCamera.position, vrCamera.quaternion, vrCamera.scale);
       vrCamera2.matrixWorld.decompose(vrCamera2.position, vrCamera2.quaternion, vrCamera2.scale);
       vrCamera.position.add(vrCamera2.position).divideScalar(2);
-      const {inputSources} = session;
+      const inputSources = Array.from(session.inputSources);
       const gamepads = navigator.getGamepads();
 
-      rig.inputs.hmd.position.copy(vrCamera.position).sub(container.position).multiplyScalar(heightFactor);
-      rig.inputs.hmd.quaternion.copy(vrCamera.quaternion);
+      rig.inputs.hmd.position.copy(vrCamera.position)
+        .sub(localVector.copy(container.position).applyQuaternion(localQuaternion.copy(container.quaternion).inverse()))
+        .multiplyScalar(heightFactor);
+      rig.inputs.hmd.quaternion.copy(vrCamera.quaternion).premultiply(localQuaternion.copy(container.quaternion).inverse());
 
       const _getGamepad = i => {
         const handedness = i === 0 ? 'left' : 'right';
@@ -1332,7 +1335,9 @@ function animate(timestamp, frame, referenceSpace) {
             const pointer = gamepad.buttons[0].value;
             const grip = gamepad.buttons[1].value;
             const pad = gamepad.axes[1] <= -0.5 || gamepad.axes[3] <= -0.5;
+            const lastPad = lastPads[i];
             const padX = gamepad.axes[0] !== 0 ? gamepad.axes[0] : gamepad.axes[2];
+            const lastPadX = lastPadXs[i];
             const padY = gamepad.axes[1] !== 0 ? gamepad.axes[1] : gamepad.axes[3];
             const stick = !!gamepad.buttons[3] && gamepad.buttons[3].pressed;
             const a = !!gamepad.buttons[4] && gamepad.buttons[4].pressed;
@@ -1347,7 +1352,9 @@ function animate(timestamp, frame, referenceSpace) {
               pointer,
               grip,
               pad,
+              lastPad,
               padX,
+              lastPadX,
               padY,
               stick,
               a,
@@ -1361,7 +1368,7 @@ function animate(timestamp, frame, referenceSpace) {
           return null;
         }
       };
-      const _updateTeleportMesh = (i, pad, lastPad, position, quaternion, padX, padY, stick) => {
+      const _updateTeleportMesh = (i, pad, lastPad, position, quaternion, padX, lastPadX) => {
         const teleportMesh = teleportMeshes[i];
         teleportMesh.visible = false;
 
@@ -1388,6 +1395,19 @@ function animate(timestamp, frame, referenceSpace) {
           container.position.sub(localVector);
         }
 
+        if (padX >= 0.9 && lastPadX < 0.9) {
+          container.quaternion.multiply(localQuaternion.setFromAxisAngle(localVector.set(0, 1, 0), Math.PI*0.25));
+          container.position.applyQuaternion(localQuaternion);
+        }
+        if (padX <= -0.9 && lastPadX >= -0.9) {
+          container.quaternion.multiply(localQuaternion.setFromAxisAngle(localVector.set(0, 1, 0), -Math.PI*0.25));
+          container.position.applyQuaternion(localQuaternion);
+        }
+      };
+      const _updateWalkMesh = (i, position, quaternion, padX, padY, stick) => {
+        const teleportMesh = teleportMeshes[i];
+        teleportMesh.visible = false;
+
         if (padX !== 0 || padY !== 0) {
           localVector.set(padX, 0, padY);
           const moveLength = localVector.length();
@@ -1407,18 +1427,19 @@ function animate(timestamp, frame, referenceSpace) {
 
       const lg = _getGamepad(1);
       if (lg) {
-        const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, b} = lg;
+        const {rawPosition, position, quaternion, pressed, lastPressed, pointer, grip, pad, lastPad, padX, lastPadX, padY, b} = lg;
         rig.inputs.leftGamepad.quaternion.copy(quaternion);
         rig.inputs.leftGamepad.position.copy(position);
         rig.inputs.leftGamepad.pointer = pointer;
         rig.inputs.leftGamepad.grip = grip;
 
-        _updateTeleportMesh(0, pad, lastPads[0], position, quaternion, 0, 0, false);
+        _updateTeleportMesh(1, pad, lastPad, position, quaternion, padX, lastPadX);
 
-        lastPresseds[0] = pressed;
-        lastPads[0] = pad;
-        lastBs[0] = b;
-        lastPositions[0].copy(rawPosition);
+        lastPresseds[1] = pressed;
+        lastPads[1] = pad;
+        lastPadXs[1] = padX;
+        lastBs[1] = b;
+        lastPositions[1].copy(rawPosition);
       }
       const rg = _getGamepad(0);
       if (rg) {
@@ -1428,12 +1449,13 @@ function animate(timestamp, frame, referenceSpace) {
         rig.inputs.rightGamepad.pointer = pointer;
         rig.inputs.rightGamepad.grip = grip;
 
-        _updateTeleportMesh(1, false, false, position, quaternion, padX, padY, stick);
+        _updateWalkMesh(0, position, quaternion, padX, padY, stick);
 
-        lastPresseds[1] = pressed;
-        lastPads[1] = pad;
-        lastBs[1] = b;
-        lastPositions[1].copy(rawPosition);
+        lastPresseds[0] = pressed;
+        lastPads[0] = pad;
+        lastPadXs[0] = padX;
+        lastBs[0] = b;
+        lastPositions[0].copy(rawPosition);
       }
 
       const _startScale = () => {
