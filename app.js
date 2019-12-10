@@ -35,6 +35,7 @@ const localVector2D = new THREE.Vector2();
 const localQuaternion = new THREE.Quaternion();
 const localQuaternion2 = new THREE.Quaternion();
 const localMatrix = new THREE.Matrix4();
+const localMatrix2 = new THREE.Matrix4();
 const localEuler = new THREE.Euler();
 const localRay = new THREE.Ray();
 const localRaycaster = new THREE.Raycaster();
@@ -1314,10 +1315,12 @@ function animate(timestamp, frame, referenceSpace) {
       const inputSources = Array.from(session.inputSources);
       const gamepads = navigator.getGamepads();
 
-      rig.inputs.hmd.position.copy(vrCamera.position)
-        .sub(localVector.copy(container.position).applyQuaternion(localQuaternion.copy(container.quaternion).inverse()))
-        .multiplyScalar(heightFactor);
-      rig.inputs.hmd.quaternion.copy(vrCamera.quaternion).premultiply(localQuaternion.copy(container.quaternion).inverse());
+      const containerMatrixInverse = localMatrix.getInverse(localMatrix.compose(container.position, container.quaternion, localVector.set(1, 1, 1)));
+      localMatrix2
+        .compose(vrCamera.position, vrCamera.quaternion, localVector.set(1, 1, 1))
+        .premultiply(containerMatrixInverse)
+        .decompose(rig.inputs.hmd.position, rig.inputs.hmd.quaternion, localVector);
+      rig.inputs.hmd.position.multiplyScalar(heightFactor);
 
       const _getGamepad = i => {
         const handedness = i === 0 ? 'left' : 'right';
@@ -1328,8 +1331,13 @@ function animate(timestamp, frame, referenceSpace) {
           const {position, orientation, matrix} = transform;
           if (position) {
             const rawP = localVector.copy(position);
-            const p = localVector2.copy(rawP).sub(container.position).multiplyScalar(heightFactor);
-            const q = localQuaternion.copy(orientation);
+            const p = localVector2;
+            const q = localQuaternion;
+            localMatrix2
+              .compose(p.copy(rawP), q.copy(orientation), localVector3.set(1, 1, 1))
+              .premultiply(containerMatrixInverse)
+              .decompose(p, q, localVector3);
+            p.multiplyScalar(heightFactor);
             const pressed = gamepad.buttons[0].pressed;
             const lastPressed = lastPresseds[i];
             const pointer = gamepad.buttons[0].value;
@@ -1373,7 +1381,7 @@ function animate(timestamp, frame, referenceSpace) {
         teleportMesh.visible = false;
 
         if (pad) {
-          localVector.copy(vrCamera.position).applyMatrix4(localMatrix.getInverse(container.matrix));
+          localVector.copy(position);
           localEuler.setFromQuaternion(quaternion, 'YXZ');
 
           for (let i = 0; i < 20; i++, localVector.add(localVector2), localEuler.x = Math.max(localEuler.x - Math.PI*0.07, -Math.PI/2)) {
@@ -1417,7 +1425,11 @@ function animate(timestamp, frame, referenceSpace) {
           const hmdEuler = localEuler.setFromQuaternion(rig.inputs.hmd.quaternion, 'YXZ');
           localEuler.x = 0;
           localEuler.z = 0;
-          container.position.sub(localVector.multiplyScalar(walkSpeed * timeDiff * (stick ? 3 : 1) * rig.height).applyEuler(hmdEuler));
+          container.position.sub(
+            localVector.multiplyScalar(walkSpeed * timeDiff * (stick ? 3 : 1) * rig.height)
+              .applyEuler(hmdEuler)
+              .applyQuaternion(container.quaternion)
+          );
 
           _updateXrIframeMatrices();
         }
