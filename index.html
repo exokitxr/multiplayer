@@ -48,7 +48,8 @@ header {
   outline: none;
 }
 .main-selector:hover .target,
-.main-selector .options .option:hover
+.main-selector .options .option:hover,
+.main-selector .suboptions .suboption:hover
 {
   background-color: #42a5f5;
   color: #FFF;
@@ -56,7 +57,8 @@ header {
 .main-selector:active .target,
 .main-selector.open .target,
 .main-selector .options .option:active,
-.main-selector .options .option.open
+.main-selector .options .option.open,
+.main-selector .suboptions .suboption:active
 {
   background-color: #1e88e5;
   color: #FFF;
@@ -77,21 +79,36 @@ header {
 .main-selector .target span + .icon {
   margin-top: 4px;
 }
-.main-selector .options {
+.main-selector .options,
+.main-selector .suboptions
+{
   display: flex;
   position: absolute;
-  top: 50px;
-  /* left: 0; */
   width: 300px;
   background-color: #FFF;
   color: #000;
   flex-direction: column;
 }
-.main-selector .options .option {
+.main-selector .options {
+  top: 50px;
+}
+.main-selector .suboptions {
+  top: 0;
+  left: 300px;
+}
+.main-selector .options .option,
+.main-selector .suboptions .suboption
+{
+  position: relative;
   padding: 15px;
 }
-.main-selector:not(.open) .options {
+.main-selector:not(.open) .options,
+.main-selector .options .option:not(:hover) .suboptions
+{
   display: none;
+}
+.main-selector .options .option span {
+  margin-right: auto;
 }
 header nav {
   display: flex;
@@ -781,11 +798,22 @@ header > .login-form.phase-3 > .phaseless-content
                 <i class="fas fa-chevron-down"></i>
               </nav>
               <div class=options>
-                <nav class="option open">from Home</nav>
-                <nav class=option>from Room</nav>
-                <nav class=option>from Saved File</nav>
-                <nav class=option>from clipboard</nav>
-                <nav class=option>local HTML file...</nav>
+                <nav class=option>
+                  <span>Saved Scene</span>
+                  <i class="fas fa-chevron-right"></i>
+                  <div class=suboptions id=deploy-parcel-scenes>
+                    <nav class=suboption>avaer/lol</nav>
+                  </div>
+                </nav>
+                <nav class=option>
+                  <span>Room</span>
+                  <i class="fas fa-chevron-right"></i>
+                  <div class=suboptions id=deploy-parcel-rooms>
+                    <nav class=suboption>avaer/yatis</nav>
+                  </div>
+                </nav>
+                <nav class=option>Clipboard contents</nav>
+                <nav class=option>Local HTML file...</nav>
               </div>
             </div>
             <div class=multibutton>
