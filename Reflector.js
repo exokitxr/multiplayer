@@ -2,6 +2,8 @@
  * @author Slayvin / http://slayvin.net
  */
 
+const localColor = new THREE.Color();
+
 THREE.Reflector = function ( geometry, options ) {
 
 	THREE.Mesh.call( this, geometry );
@@ -14,6 +16,7 @@ THREE.Reflector = function ( geometry, options ) {
 
 	var color = ( options.color !== undefined ) ? new THREE.Color( options.color ) : new THREE.Color( 0x7F7F7F );
 	var backgroundColor = ( options.backgroundColor !== undefined ) ? new THREE.Color( options.backgroundColor ) : new THREE.Color( 0x000000 );
+	var backgroundAlpha = ( options.backgroundAlpha !== undefined ) ? options.backgroundAlpha : 1;
 	var textureWidth = options.textureWidth || 512;
 	var textureHeight = options.textureHeight || 512;
 	var clipBias = options.clipBias || 0;
@@ -163,9 +166,12 @@ THREE.Reflector = function ( geometry, options ) {
 		renderer.shadowMap.autoUpdate = false; // Avoid re-computing shadows
 
 		renderer.setRenderTarget( renderTarget );
-		renderer.setClearColor(backgroundColor, 1);
+		const oldBackgroundColor = localColor.copy(renderer.getClearColor());
+		const oldBackgroundAlpha = renderer.getClearAlpha();
+		renderer.setClearColor(backgroundColor, backgroundAlpha);
 		renderer.clear();
 		renderer.render( scene, virtualCamera );
+		renderer.setClearColor(oldBackgroundColor, oldBackgroundAlpha);
 
 		renderer.vr.enabled = currentVrEnabled;
 		renderer.shadowMap.autoUpdate = currentShadowAutoUpdate;
@@ -197,8 +203,9 @@ THREE.Reflector = function ( geometry, options ) {
 	this.setColor = newColor => {
     color = new THREE.Color( newColor );
 	};
-	this.setBackgroundColor = newBackgroundColor => {
+	this.setBackgroundColor = (newBackgroundColor, newBackgroundAlpha) => {
     backgroundColor = new THREE.Color( newBackgroundColor );
+    backgroundAlpha = newBackgroundAlpha;
 	};
 
 };
