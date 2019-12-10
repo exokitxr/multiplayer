@@ -432,6 +432,24 @@ blackScreenButton.addEventListener('click', e => {
   backgroundColorInput.value = '#000000';
   backgroundColorInput.dispatchEvent(new CustomEvent('change'));
 });
+const solidScreenButton = topDocument.getElementById('solid-screen-button');
+solidScreenButton.addEventListener('click', e => {
+  const xrSite = document.querySelector('xr-site');
+  if (xrSite) {
+    xrSite.setAttribute('bga', 1);
+  } else {
+    console.warn('no xr-site to set background alpha on');
+  }
+});
+const transparentScreenButton = topDocument.getElementById('transparent-screen-button');
+transparentScreenButton.addEventListener('click', e => {
+  const xrSite = document.querySelector('xr-site');
+  if (xrSite) {
+    xrSite.setAttribute('bga', 0);
+  } else {
+    console.warn('no xr-site to set background alpha on');
+  }
+});
 
 const clearAvatarButton = topDocument.getElementById('clear-avatar-button');
 clearAvatarButton.addEventListener('click', () => {
@@ -813,15 +831,20 @@ const _bindXrSite = xrSite => {
     for (let i = 0; i < mutationRecords.length; i++) {
       const mutationRecord = mutationRecords[i];
       const {target, attributeName} = mutationRecord;
-      if (attributeName === 'bg') { // XXX average this
-        const c = target.getAttribute(attributeName) || '#000000';
+      if (attributeName === 'bg' || attributeName === 'bga') { // XXX average this
+        const c = target.getAttribute('bg') || '#000000';
+        let a = parseInt(target.getAttribute('bga'), 10);
+        if (isNaN(a)) {
+          a = 1;
+        }
+        const color = new THREE.Color().setStyle(c);
 
         const xrEngine = topDocument.querySelector('xr-engine');
-        scene.background = new THREE.Color().setStyle(c);
+        renderer.setClearColor(color, a);
         if (xrEngine) {
-          xrEngine.setClearColor(scene.background.r, scene.background.g, scene.background.b, 1);
+          xrEngine.setClearColor(color.r, color.g, color.b, a);
         }
-        mirrorMesh.setBackgroundColor(c);
+        mirrorMesh.setBackgroundColor(color, a);
 
         if (backgroundColorInput.value !== c) {
           backgroundColorInput.value = c;
@@ -878,6 +901,7 @@ const _bindXrSite = xrSite => {
     attributes: true,
     attributeFilter: [
       'bg',
+      'bga',
       'extents',
       'pending',
       'edit',
