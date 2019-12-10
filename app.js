@@ -2839,7 +2839,7 @@ connectButton.addEventListener('click', () => {
           }
 
           const model = url ? await _loadModelUrl(url) : null;
-          peerConnection.rig = new Avatar(model, {
+          peerConnection.rig = _makeAvatar(model, {
             fingers: true,
             hair: true,
             visemes: true,
