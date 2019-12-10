@@ -17,9 +17,9 @@ const screenshotImage = topDocument.getElementById('screenshot-image');
 // const parcelDetails = topDocument.getElementById('parcel-details');
 const parcelCreate = topDocument.getElementById('parcel-create');
 const parcelEdit = topDocument.getElementById('parcel-edit');
-const parcelNameInput = topDocument.getElementById('parcel-name-input');
+// const parcelNameInput = topDocument.getElementById('parcel-name-input');
 const createParcelButton = topDocument.getElementById('create-parcel-button');
-const saveParcelButton = topDocument.getElementById('save-parcel-button');
+// const saveParcelButton = topDocument.getElementById('save-parcel-button');
 const deployParcelSelector = topDocument.getElementById('deploy-parcel-selector');
 const removeParcelButton = topDocument.getElementById('remove-parcel-button');
 
@@ -73,11 +73,11 @@ const _uneditXrSite = () => {
 const _updateParcelButtons = () => {
   if (selection && selection.type === 'parcel') {
     if (selection.element.getAttribute('pending')) {
-      parcelNameInput.value = '';
+      // parcelNameInput.value = '';
       parcelCreate.classList.add('open');
       parcelEdit.classList.remove('open');
     } else {
-      parcelNameInput.value = selection.element.getAttribute('name') || '';
+      // parcelNameInput.value = selection.element.getAttribute('name') || '';
       parcelCreate.classList.remove('open');
       parcelEdit.classList.add('open');
     }
@@ -177,32 +177,14 @@ createParcelButton.addEventListener('click', () => {
 
   _updateParcelButtons();
 });
-saveParcelButton.addEventListener('click', async () => {
+/* saveParcelButton.addEventListener('click', async () => {
   const {element: xrSite} = selection;
   if (xrSite) {
     const [[x1, y1, x2, y2]] = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     const x = (x1 - parcelSize/2)/parcelSize;
     const y = (y1 - parcelSize/2)/parcelSize;
-    /* const coords = [];
-    const parcelKeyIndex = {};
-    const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
-    for (let i = 0; i < extents.length; i++) {
-      const extent = extents[i];
-      const [x1, y1, x2, y2] = extent;
-      for (let x = x1; x < x2; x += parcelSize) {
-        for (let y = y1; y < y2; y += parcelSize) {
-          const k =_getPixelKey(x, y);
-          if (!parcelKeyIndex[k]) {
-            parcelKeyIndex[k] = true;
-            coords.push([x/parcelSize, y/parcelSize]);
-          }
-        }
-      }
-    } */
 
-    const name = parcelNameInput.value;
     const html = xrSite.innerHTML;
-    console.log('set parcel', name, x, y); // XXX
     xrSite.setAttribute('name', name);
     return;
     const res = await fetch(`https://grid.exokit.org/parcels${xrSite !== dirtyXrSite ? `/${x}/${y}` : ''}`, {
@@ -217,24 +199,13 @@ saveParcelButton.addEventListener('click', async () => {
       await res.blob();
 
       xrSite.setAttribute('name', name);
-      // const color = xrSite === selectedXrSite ? colors.select3 : colors.select;
-      // xrSite.baseMesh && xrSite.baseMesh.material.uniforms.uColor.value.setHex(color);
-      // xrSite.guardianMesh && xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
-
-      if (selectedXrSite === xrSite) {
-        parcelNameInput.value = name;
-      }
-      if (dirtyXrSite === xrSite) {
-        dirtyXrSite = null;
-        _updateParcelButtons();
-      }
     } else {
       console.warn(`invalid status code: ${res.status}`);
     }
   } else {
     console.warn('no parcel to save');
   }
-});
+}); */
 deployParcelSelector.addEventListener('focus', () => {
   deployParcelSelector.classList.add('open');
 });
