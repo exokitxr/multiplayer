@@ -2116,18 +2116,19 @@ const _connectLand = () => {
                   }
                 }
                 const extents = [[minX*parcelSize-parcelSize/2, minZ*parcelSize-parcelSize/2, (maxX+1)*parcelSize-parcelSize/2, (maxZ+1)*parcelSize-parcelSize/2]];
-                const node = _htmlToDomNode(parcel.html);
-                if (node.tagName === 'XR-SITE') {
-                  node.setAttribute('extents', THREE.Land.serializeExtents(extents));
-                  landElement.appendChild(node);
-
-                  for (let i = 0; i < parcel.coords.length; i++) {
-                    const coord = parcel.coords[i];
-                    const k = coord.join(':');
-                    seenCoords[k] = true;
-                  }
-                } else {
+                let node = _htmlToDomNode(parcel.html);
+                if (!(node && node.tagName === 'XR-SITE')) {
                   console.warn('failed to load non-site parcel:', parcel.html);
+                  node = document.createElement('xr-site');
+                }
+
+                node.setAttribute('extents', THREE.Land.serializeExtents(extents));
+                landElement.appendChild(node);
+
+                for (let i = 0; i < parcel.coords.length; i++) {
+                  const coord = parcel.coords[i];
+                  const k = coord.join(':');
+                  seenCoords[k] = true;
                 }
               }
             } else {
@@ -3204,11 +3205,14 @@ _bindUploadFileButton(topDocument.getElementById('deploy-parcel-upload-file-butt
   });
   const j = await res.json();
 
-  const newXrSite = _htmlToDomNode(html);
+  let newXrSite = _htmlToDomNode(html);
+  if (!newXrSite) {
+    newXrSite = document.createElement('xr-site');
+  }
   newXrSite.setAttribute('extents', xrSite.getAttribute('extents'));
   xrSite.replaceWith(newXrSite);
 
-  console.log('deployed', j, html);
+  console.log('deployed', j, JSON.stringify(html));
 });
 window.document.addEventListener('drop', async e => {
   e.preventDefault();
@@ -3340,11 +3344,15 @@ const _loadInventory = async () => {
         });
         const j = await res2.json();
 
-        const newXrSite = _htmlToDomNode(html);
+        console.log('loading', html);
+        let newXrSite = _htmlToDomNode(html);
+        if (!newXrSite) {
+          newXrSite = document.createElement('xr-site');
+        }
         newXrSite.setAttribute('extents', xrSite.getAttribute('extents'));
         xrSite.replaceWith(newXrSite);
 
-        console.log('deployed', j, html);
+        console.log('deployed', j, JSON.stringify(html));
       });
     });
   } else {
