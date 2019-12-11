@@ -3125,25 +3125,62 @@ const _uploadFile = file => {
     console.warn('not uploading file while disconnected', file);
   }
 };
-const _bindUploadFileButton = inputFileEl => {
+const _bindUploadFileButton = (inputFileEl, handleUpload) => {
   inputFileEl.addEventListener('change', async e => {
     const {files} = e.target;
     if (files.length === 1) {
       const [file] = files;
-      _uploadFile(file);
+      handleUpload(file);
     }
 
     const {parentNode} = inputFileEl;
     parentNode.removeChild(inputFileEl);
     const newInputFileEl = topDocument.createElement('input');
     newInputFileEl.type = 'file';
-    newInputFileEl.id = 'upload-file-button';
+    // newInputFileEl.id = 'upload-file-button';
     newInputFileEl.style.display = 'none';
     parentNode.appendChild(newInputFileEl);
     _bindUploadFileButton(newInputFileEl);
   });
 };
-_bindUploadFileButton(topDocument.getElementById('upload-file-button'));
+_bindUploadFileButton(topDocument.getElementById('upload-file-button'), _uploadFile);
+_bindUploadFileButton(topDocument.getElementById('deploy-parcel-upload-file-button'), async file => {
+  const xrSite = toolManager.getSelectedElement();
+  const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+  const coords = [];
+  for (let i = 0; i < extents.length; i++) {
+    const [x1, y1, x2, y2] = extents[i];
+    for (let y = y1; y < y2; y += parcelSize) {
+      for (let x = x1; x < x2; x += parcelSize) {
+        coords.push([
+          (x + parcelSize/2)/parcelSize,
+          (y + parcelSize/2)/parcelSize,
+        ]);
+      }
+    }
+  }
+  const coord = coords[0];
+
+  const html = await new Promise((accept, reject) => {
+    const r = new FileReader();
+    r.onload = e => {
+      const html = e.target.result;
+      console.log('deploy', html); // XXX
+    };
+    r.readAsText(file);
+  });
+
+  const res = await fetch(`https://grid.exokit.org/parcels/${coord[0]}/${coord[1]}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      coords,
+      html,
+    }),
+  });
+  const j = await res.json();
+
+  console.log('deployed', j, html);
+});
 window.document.addEventListener('drop', async e => {
   e.preventDefault();
 
@@ -3213,6 +3250,7 @@ window.document.addEventListener('drop', async e => {
 });
 
 const inventoryContent = topDocument.getElementById('inventory-content');
+const deployParcelScenes = topDocument.getElementById('deploy-parcel-scenes');
 const _loadInventory = async () => {
   const res = await fetch(`https://upload.exokit.org/${loginToken.name}`);
   if (res.ok) {
@@ -3232,10 +3270,48 @@ const _loadInventory = async () => {
       const src = aFile.getAttribute('src');
       const loadButton = aFile.querySelector('.load-button');
       loadButton.addEventListener('click', async () => {
-        const res = await fetch(`https://upload.exokit.org/${src}`);
+        const res = await fetch(`https://content.exokit.org/${src}`);
         const html = await res.text();
         codeInput.value = html;
         codeInput.dispatchEvent(new CustomEvent('change'));
+      });
+    });
+
+    deployParcelScenes.innerHTML = files.map(filename => {
+      return `<nav class=suboption src="${encodeURI(filename)}">${filename}</nav>`;
+    }).join('\n');
+    Array.from(deployParcelScenes.querySelectorAll('.suboption')).forEach(aSuboption => {
+      const src = aSuboption.getAttribute('src');
+      aSuboption.addEventListener('click', async () => {
+        const xrSite = toolManager.getSelectedElement();
+        const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+        const coords = [];
+        for (let i = 0; i < extents.length; i++) {
+          const [x1, y1, x2, y2] = extents[i];
+          for (let y = y1; y < y2; y += parcelSize) {
+            for (let x = x1; x < x2; x += parcelSize) {
+              coords.push([
+                (x + parcelSize/2)/parcelSize,
+                (y + parcelSize/2)/parcelSize,
+              ]);
+            }
+          }
+        }
+        const coord = coords[0];
+
+        const res = await fetch(`https://content.exokit.org/${src}`);
+        const html = await res.text();
+
+        const res2 = await fetch(`https://grid.exokit.org/parcels/${coord[0]}/${coord[1]}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            coords,
+            html,
+          }),
+        });
+        const j = await res2.json();
+
+        console.log('deployed', j, html);
       });
     });
   } else {
