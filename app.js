@@ -1892,6 +1892,8 @@ for (let i = 0; i < mainOptions.length; i++) {
       } else {
         toolManager.reset();
       }
+      landElement.innerHTML = '';
+      lastParcelKey = '';
 
       switch (i) {
         case 0: {
