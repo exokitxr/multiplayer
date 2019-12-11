@@ -2029,8 +2029,8 @@ const _getParcelXrSite = (landElement, coord) => {
     const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
     for (let j = 0; j < extents.length; j++) {
       const [x1, y1, x2, y2] = extents[j];
-      for (let x = x1 - parcelSize/2; x < x2; x += parcelSize) {
-        for (let y = y1 - parcelSize/2; y < y2; y += parcelSize) {
+      for (let x = x1 + parcelSize/2; x < x2; x += parcelSize) {
+        for (let y = y1 + parcelSize/2; y < y2; y += parcelSize) {
           if (ax === x && ay === y) {
             return xrSite;
           }
