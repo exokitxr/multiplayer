@@ -634,11 +634,11 @@ document.addEventListener('pointerlockchange', () => {
         const coords = [];
         for (let i = 0; i < extents.length; i++) {
           const [x1, y1, x2, y2] = extents[i];
-          for (let y = y1; y < y2; y += parcelSize) {
-            for (let x = x1; x < x2; x += parcelSize) {
+          for (let y = y1 + parcelSize/2; y < y2; y += parcelSize) {
+            for (let x = x1 + parcelSize/2; x < x2; x += parcelSize) {
               coords.push([
-                (x + parcelSize/2)/parcelSize,
-                (y + parcelSize/2)/parcelSize,
+                x/parcelSize,
+                y/parcelSize,
               ]);
             }
           }
