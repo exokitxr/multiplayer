@@ -2060,6 +2060,7 @@ const _htmlToDomNode = html => {
   return div.childNodes[0];
 };
 const landElement = document.createElement('div');
+landElement.classList.add('land');
 document.body.appendChild(landElement);
 const _connectLand = () => {
   let running = false;
