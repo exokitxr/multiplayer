@@ -3204,6 +3204,10 @@ _bindUploadFileButton(topDocument.getElementById('deploy-parcel-upload-file-butt
   });
   const j = await res.json();
 
+  const newXrSite = _htmlToDomNode(html);
+  newXrSite.setAttribute('extents', xrSite.getAttribute('extents'));
+  xrSite.replaceWith(newXrSite);
+
   console.log('deployed', j, html);
 });
 window.document.addEventListener('drop', async e => {
@@ -3335,6 +3339,10 @@ const _loadInventory = async () => {
           }),
         });
         const j = await res2.json();
+
+        const newXrSite = _htmlToDomNode(html);
+        newXrSite.setAttribute('extents', xrSite.getAttribute('extents'));
+        xrSite.replaceWith(newXrSite);
 
         console.log('deployed', j, html);
       });
