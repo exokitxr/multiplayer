@@ -1,5 +1,4 @@
 import {parcelSize, colors} from './constants.js';
-import {parseHtml, serializeHtml} from 'https://sync.exokit.org/html-utils.js';
 import screenshot from 'https://screenshots.exokit.org/screenshot.js';
 
 const {document: topDocument} = window.top;
@@ -88,7 +87,7 @@ const _updateParcelButtons = () => {
 }
 
 class ToolManager extends EventTarget {
-  constructor({domElement, camera, container, orbitControls, canSelect, canDrag}) {
+  constructor({domElement, camera, container, orbitControls, landElement, canSelect, canDrag}) {
     super();
 
 /* for (let i = 0; i < tools.length; i++) {
@@ -251,13 +250,9 @@ const _updateExtentXrSite = drag => {
   xrSite.setAttribute('extents', THREE.Land.serializeExtents(extents));
 };
 const _makeXrSiteSpec = () => {
-  const dom = parseHtml(codeInput.value);
-  dom.childNodes.push(parseHtml(`<xr-site pending=true></xr-site>`).childNodes[0]);
-  codeInput.value = serializeHtml(dom);
-  codeInput.dispatchEvent(new CustomEvent('change'));
-
-  const xrSites = document.querySelectorAll('xr-site');
-  const xrSite = xrSites[xrSites.length - 1];
+  const xrSite = document.createElement('xr-site');
+  xrSite.setAttribute('pending', 'true');
+  landElement.appendChild(xrSite);
 
   return {
     type: 'parcel',

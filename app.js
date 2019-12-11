@@ -590,11 +590,15 @@ const canDrag = (startPoint, endPoint) => {
     return false;
   }
 };
+const landElement = document.createElement('div');
+landElement.classList.add('land');
+document.body.appendChild(landElement);
 const toolManager = new ToolManager({
   domElement: renderer.domElement,
   camera,
   container,
   orbitControls,
+  landElement,
   canSelect,
   canDrag,
 });
@@ -2049,9 +2053,6 @@ const _htmlToDomNode = html => {
   div.innerHTML = html;
   return div.childNodes[0];
 };
-const landElement = document.createElement('div');
-landElement.classList.add('land');
-document.body.appendChild(landElement);
 const _connectLand = () => {
   let running = false;
   const _updateGrid = async () => {
