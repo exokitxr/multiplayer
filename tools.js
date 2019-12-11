@@ -644,7 +644,7 @@ document.addEventListener('pointerlockchange', () => {
           }
         }
         const coord = coords[0];
-        const res = await fetch(`https://grid.exokit.org/parcels/${coord[0]}/${coord[0]}`, {
+        const res = await fetch(`https://grid.exokit.org/parcels/${coord[0]}/${coord[1]}`, {
           method: 'DELETE',
         });
         const j = await res.json();
