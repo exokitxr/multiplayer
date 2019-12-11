@@ -2142,6 +2142,12 @@ const _connectLand = () => {
             }
           }));
           lastParcelKey = k;
+
+          for (let i = 0; i < floorMeshes.length; i++) {
+            const floorMesh = floorMeshes[i];
+            // floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
+            floorMesh.update();
+          }
         }
       // }
 
