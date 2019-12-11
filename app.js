@@ -2020,8 +2020,8 @@ const _removeParcelDomNode = (dom, removeNode) => {
   };
   _recurse(dom);
 };
-const _getParcelXrSite = (landElememnt, coord) => {
-  const xrSites = _getAllParcelXrSites(landElememnt);
+const _getParcelXrSite = (landElement, coord) => {
+  const xrSites = _getAllParcelXrSites(landElement);
   const ax = coord[0]*parcelSize;
   const ay = coord[1]*parcelSize;
   for (let i = 0; i < xrSites.length; i++) {
