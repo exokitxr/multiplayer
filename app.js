@@ -2133,10 +2133,15 @@ const _connectLand = () => {
           }));
           lastParcelKey = k;
 
+          Array.from(document.querySelectorAll('xr-site')).some(xrSite => {
+            if (xrSite.guardianMesh) {
+              const color = _getSelectedColor(xrSite);
+              xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
+              xrSite.guardianMesh.visible = color !== colors.normal;
+            }
+          });
           for (let i = 0; i < floorMeshes.length; i++) {
-            const floorMesh = floorMeshes[i];
-            // floorMesh.material.uniforms.uSelectedParcel.value.set(0, 0, 0, 0);
-            floorMesh.update();
+            floorMeshes[i].update();
           }
         }
       // }
