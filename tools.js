@@ -172,7 +172,31 @@ screenshotButton.addEventListener('click', async () => {
   }
 });
 
-createParcelButton.addEventListener('click', () => {
+createParcelButton.addEventListener('click', async () => {
+  const xrSite = selection.element;
+  const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+  const coords = [];
+  for (let i = 0; i < extents.length; i++) {
+    const [x1, y1, x2, y2] = extents[i];
+    for (let y = y1; y < y2; y += parcelSize) {
+      for (let x = x1; x < x2; x += parcelSize) {
+        coords.push([
+          (x + parcelSize/2)/parcelSize,
+          (y + parcelSize/2)/parcelSize,
+        ]);
+      }
+    }
+  }
+  const res = await fetch(`https://grid.exokit.org/parcels`, {
+    method: 'POST',
+    body: JSON.stringify({
+      coords,
+      html: '<xr-site></xr-site>',
+    }),
+  });
+  const j = await res.json();
+  console.log('create parcel', j);
+
   selection.element.removeAttribute('pending');
 
   _updateParcelButtons();
@@ -212,7 +236,7 @@ deployParcelSelector.addEventListener('focus', () => {
 deployParcelSelector.addEventListener('blur', () => {
   deployParcelSelector.classList.remove('open');
 });
-removeParcelButton.addEventListener('click', () => {
+removeParcelButton.addEventListener('click', async () => {
   this.delete();
 });
 
@@ -581,7 +605,7 @@ document.addEventListener('pointerlockchange', () => {
   deselect() {
     // XXX finish this
   }
-  delete() {
+  async delete() {
     if (selection) {
       if (selection.type === 'element') {
         const {element} = selection;
@@ -606,17 +630,26 @@ document.addEventListener('pointerlockchange', () => {
         }
       } else if (selection.type === 'parcel') {
         const {element} = selection;
-
         const extents = THREE.Land.parseExtents(element.getAttribute('extents'));
-        /* for (let i = 0; i < extents.length; i++) {
-          const extent = extents[i];
-          const [x1, y1, x2, y2] = extent;
-          for (let x = x1; x < x2; x++) {
-            for (let y = y1; y < y2; y++) {
-              pixels[_getPixelKey(x, y)] = false;
+        const coords = [];
+        for (let i = 0; i < extents.length; i++) {
+          const [x1, y1, x2, y2] = extents[i];
+          for (let y = y1; y < y2; y += parcelSize) {
+            for (let x = x1; x < x2; x += parcelSize) {
+              coords.push([
+                (x + parcelSize/2)/parcelSize,
+                (y + parcelSize/2)/parcelSize,
+              ]);
             }
           }
-        } */
+        }
+        const coord = coords[0];
+        const res = await fetch(`https://grid.exokit.org/parcels/${coord[0]}/${coord[0]}`, {
+          method: 'DELETE',
+        });
+        const j = await res.json();
+        console.log('remove parcel', j);
+
         if (intersection && intersection.element === element) {
           // intersection.element.bindState.model.boundingBoxMesh.setHover(false);
           intersection = null;

@@ -1975,7 +1975,7 @@ const _getCameraPosition = () => {
 };
 const _getCurrentParcelCoords = () => {
   const [x, z] = _getCameraPosition();
-  return [Math.floor(x/parcelSize), Math.floor(z/parcelSize)];
+  return [Math.floor((x - parcelSize/2)/parcelSize), Math.floor((z -parcelSize/2)/parcelSize)];
 };
 const _getRequiredParcelCoords = (x, z) => [
   [x-1, z-1],
@@ -2058,7 +2058,6 @@ const _getParcelXrSite = (dom, coord) => {
 const _connectLand = () => {
   let running = false;
   const _updateGrid = async () => {
-    return; // XXX
     if (!running) {
       running = true;
 
@@ -2106,8 +2105,8 @@ const _connectLand = () => {
                     maxZ = Math.max(pz, maxZ);
                   }
                 }
-                const extents = [[minX*parcelSize, minZ*parcelSize, (maxX+1)*parcelSize, (maxZ+1)*parcelSize]];
-                dom.childNodes.push(parseHtml(`<xr-site name="${encodeURIComponent(parcel.name)}" extents="${THREE.Land.serializeExtents(extents)}">${parcel.html}</xr-site>`).childNodes[0]);
+                const extents = [[minX*parcelSize-parcelSize/2, minZ*parcelSize-parcelSize/2, (maxX+1)*parcelSize-parcelSize/2, (maxZ+1)*parcelSize-parcelSize/2]];
+                dom.childNodes.push(parseHtml(`<xr-site extents="${THREE.Land.serializeExtents(extents)}">${parcel.html}</xr-site>`).childNodes[0]);
                 codeInput.value = serializeHtml(dom);
                 codeInput.dispatchEvent(new CustomEvent('change'));
 
