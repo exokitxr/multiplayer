@@ -644,22 +644,8 @@ toolManager.addEventListener('selectchange', e => {
       selection.element.bindState.control.visible = true;
       selection.element.bindState.control.enabled = true;
     } else if (selection.type === 'parcel') {
-      let xs, ys;
-      /* if (selection.element.getAttribute('pending')) {
-        xs = [
-          Math.floor((selection.start.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-          Math.floor((selection.end.x/container.scale.x - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-        ].sort(_incr);
-        ys = [
-          Math.floor((selection.start.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-          Math.floor((selection.end.z/container.scale.z - (parcelSize-1)/2) / parcelSize) * parcelSize + parcelSize/2,
-        ].sort(_incr);
-        xs[1] += parcelSize;
-        ys[1] += parcelSize;
-      } else { */
-        xs = [selection.start.x, selection.end.x];
-        ys = [selection.start.z, selection.end.z];
-      // }
+      const xs = [selection.start.x, selection.end.x];
+      const ys = [selection.start.z, selection.end.z];
       for (let i = 0; i < floorMeshes.length; i++) {
         const floorMesh = floorMeshes[i];
         floorMesh.material.uniforms.uSelectedParcel.value.set(xs[0], ys[0], xs[1], ys[1]);
