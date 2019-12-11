@@ -625,6 +625,10 @@ toolManager.addEventListener('selectchange', e => {
   Array.from(document.querySelectorAll('xr-site')).forEach(xrSite => {
     if (xrSite !== (selection && selection.element) && xrSite.getAttribute('pending')) {
       xrSite.parentNode.removeChild(xrSite);
+    } else if (xrSite.guardianMesh) {
+      const color = _getSelectedColor(xrSite);
+      xrSite.guardianMesh.material.uniforms.uColor.value.setHex(color);
+      xrSite.guardianMesh.visible = color !== colors.normal;
     }
   });
   for (let i = 0; i < floorMeshes.length; i++) {
