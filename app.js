@@ -2364,35 +2364,45 @@ const _setSession = async newSession => {
   await new Promise((accept, reject) => {
     renderer.vr.setSession(session);
 
-    session.requestAnimationFrame((timestamp, frame) => {
-      renderer.vr.enabled = true;
-      renderer.setAnimationLoop(null);
-      renderer.vr.setAnimationLoop(animate);
-
+    let interations = 0;
+    const _raf = (timestamp, frame) => {
       const pose = frame.getViewerPose(referenceSpace);
-      const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
-      // const width = viewport.width;
-      const height = viewport.height;
-      const fullWidth = (() => {
-        let result = 0;
-        for (let i = 0; i < pose.views.length; i++) {
-          result += session.renderState.baseLayer.getViewport(pose.views[i]).width;
+      if (pose) {
+        const viewport = session.renderState.baseLayer.getViewport(pose.views[0]);
+        // const width = viewport.width;
+        const height = viewport.height;
+        const fullWidth = (() => {
+          let result = 0;
+          for (let i = 0; i < pose.views.length; i++) {
+            result += session.renderState.baseLayer.getViewport(pose.views[i]).width;
+          }
+          return result;
+        })();
+        renderer.vr.enabled = true;
+        renderer.setAnimationLoop(null);
+        renderer.vr.setAnimationLoop(animate);
+        renderer.vr.setSession(null);
+        renderer.setSize(fullWidth, height);
+        renderer.setPixelRatio(1);
+        renderer.vr.setSession(session);
+
+        if (typeof FakeXRDisplay !== 'undefined') {
+          fakeXrDisplay = new FakeXRDisplay();
+          camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
         }
-        return result;
-      })();
-      renderer.vr.setSession(null);
-      renderer.setSize(fullWidth, height);
-      renderer.setPixelRatio(1);
-      renderer.vr.setSession(session);
 
-      if (typeof FakeXRDisplay !== 'undefined') {
-        fakeXrDisplay = new FakeXRDisplay();
-        camera.projectionMatrix.toArray(fakeXrDisplay.projectionMatrix);
+        accept();
+      } else {
+        interations++;
+        if (iterations > 100) {
+          console.warn('did not receive pose after many frames');
+        }
+        session.requestAnimationFrame(_raf);
       }
-
-      accept();
-    });
+    };
+    session.requestAnimationFrame(_raf);
   });
+  console.log('loaded XR');
 };
 enterXrButton.addEventListener('click', async () => {
   if (!session) {
