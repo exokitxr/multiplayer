@@ -276,7 +276,7 @@ const floorFsh = `
     gl_FragColor = vec4(c, a);
   }
 `;
-const _makeFloorMesh = () => {
+const _makeFloorMesh = (x, z) => {
   const geometry = parcelGeometry;
   const material = new THREE.ShaderMaterial({
     uniforms: {
@@ -307,6 +307,8 @@ const _makeFloorMesh = () => {
     transparent: true,
   });
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.set(x*parcelSize, 0, z*parcelSize);
+  mesh.material.uniforms.uPosition.value.copy(mesh.position);
   mesh.frustumCulled = false;
   mesh.update = () => {
     const xrSite = _getFloorMeshXrSite(mesh);
@@ -337,9 +339,7 @@ const _findFloorMesh = (x, z) => {
 const floorMeshes = [];
 for (let z = -3; z <= 3; z++) {
   for (let x = -3; x <= 3; x++) {
-    const floorMesh = _makeFloorMesh();
-    floorMesh.position.set(x*parcelSize, 0, z*parcelSize);
-    floorMesh.material.uniforms.uPosition.value.copy(floorMesh.position);
+    const floorMesh = _makeFloorMesh(x, z);
     container.add(floorMesh);
     floorMeshes.push(floorMesh);
   }
