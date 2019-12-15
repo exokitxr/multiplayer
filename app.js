@@ -3310,10 +3310,14 @@ window.document.addEventListener('drop', async e => {
 
 const inventoryContent = topDocument.getElementById('inventory-content');
 const deployParcelScenes = topDocument.getElementById('deploy-parcel-scenes');
+const deployParcelRooms = topDocument.getElementById('deploy-parcel-rooms');
 const _loadInventory = async () => {
-  const res = await fetch(`https://upload.exokit.org/${loginToken.name}`);
-  if (res.ok) {
-    const files = await res.json();
+  const ress = await Promise.all([
+    fetch(`https://upload.exokit.org/${loginToken.name}`),
+    fetch(`https://presence.exokit.org/channels`),
+  ])
+  if (ress.every(res => res.ok)) {
+    const [files, channels] = await Promise.all(ress.map(res => res.json()));
     inventoryContent.innerHTML = files.map(filename => {
       return `<nav class=a-file draggable=true src="${encodeURI(filename)}">
         <div class=overlay>
@@ -3336,49 +3340,62 @@ const _loadInventory = async () => {
       });
     });
 
+    const _deployUrl = async u => {
+      const xrSite = toolManager.getSelectedElement();
+      const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
+      const coords = [];
+      for (let i = 0; i < extents.length; i++) {
+        const [x1, y1, x2, y2] = extents[i];
+        for (let y = y1; y < y2; y += parcelSize) {
+          for (let x = x1; x < x2; x += parcelSize) {
+            coords.push([
+              (x + parcelSize/2)/parcelSize,
+              (y + parcelSize/2)/parcelSize,
+            ]);
+          }
+        }
+      }
+      const coord = coords[0];
+
+      const res = await fetch(u);
+      const html = await res.text();
+
+      const res2 = await fetch(`https://grid.exokit.org/parcels/${coord[0]}/${coord[1]}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          coords,
+          html,
+        }),
+      });
+      const j = await res2.json();
+
+      console.log('loading', html);
+      let newXrSite = _htmlToDomNode(html);
+      if (!newXrSite) {
+        newXrSite = document.createElement('xr-site');
+      }
+      newXrSite.setAttribute('extents', xrSite.getAttribute('extents'));
+      xrSite.replaceWith(newXrSite);
+
+      console.log('deployed', j, JSON.stringify(html));
+    };
     deployParcelScenes.innerHTML = files.map(filename => {
       return `<nav class=suboption src="${encodeURI(filename)}">${filename}</nav>`;
     }).join('\n');
     Array.from(deployParcelScenes.querySelectorAll('.suboption')).forEach(aSuboption => {
       const src = aSuboption.getAttribute('src');
-      aSuboption.addEventListener('click', async () => {
-        const xrSite = toolManager.getSelectedElement();
-        const extents = THREE.Land.parseExtents(xrSite.getAttribute('extents'));
-        const coords = [];
-        for (let i = 0; i < extents.length; i++) {
-          const [x1, y1, x2, y2] = extents[i];
-          for (let y = y1; y < y2; y += parcelSize) {
-            for (let x = x1; x < x2; x += parcelSize) {
-              coords.push([
-                (x + parcelSize/2)/parcelSize,
-                (y + parcelSize/2)/parcelSize,
-              ]);
-            }
-          }
-        }
-        const coord = coords[0];
+      aSuboption.addEventListener('click', () => {
+        _deployUrl(`https://content.exokit.org/${src}`);
+      });
+    });
 
-        const res = await fetch(`https://content.exokit.org/${src}`);
-        const html = await res.text();
-
-        const res2 = await fetch(`https://grid.exokit.org/parcels/${coord[0]}/${coord[1]}`, {
-          method: 'POST',
-          body: JSON.stringify({
-            coords,
-            html,
-          }),
-        });
-        const j = await res2.json();
-
-        console.log('loading', html);
-        let newXrSite = _htmlToDomNode(html);
-        if (!newXrSite) {
-          newXrSite = document.createElement('xr-site');
-        }
-        newXrSite.setAttribute('extents', xrSite.getAttribute('extents'));
-        xrSite.replaceWith(newXrSite);
-
-        console.log('deployed', j, JSON.stringify(html));
+    deployParcelRooms.innerHTML = channels.map(channelName => {
+      return `<nav class=suboption src="${encodeURI(channelName)}">${channelName}</nav>`;
+    }).join('\n');
+    Array.from(deployParcelRooms.querySelectorAll('.suboption')).forEach(aSuboption => {
+      const src = aSuboption.getAttribute('src');
+      aSuboption.addEventListener('click', () => {
+        _deployUrl(`https://presence.exokit.org/channels/${src}`);
       });
     });
   } else {
