@@ -2076,7 +2076,7 @@ const _connectLand = () => {
             });
           const missingParcelCoords = requiredParcelCoords.filter(coord => !_getParcelXrSite(landElement, coord));
           const outrangedParcelCoords = outrangedParcels.map(xrSite => _getParcelCoords(xrSite));
-          if (outrangedParcelCoords.some(coord2 => {
+          /* if (outrangedParcelCoords.some(coord2 => {
             localVector2D.fromArray(coord2);
             return missingParcelCoords.some(coord3 => {
               return localVector2D2.fromArray(coord3).equals(localVector2D);
@@ -2084,11 +2084,9 @@ const _connectLand = () => {
           })) {
             console.log(missingParcelCoords, outrangedParcelCoords);
             debugger;
-          }
-          if (outrangedParcels.length > 0) {
-            for (let i = 0; i < outrangedParcels.length; i++) {
-              landElement.removeChild(outrangedParcels[i]);
-            }
+          } */
+          for (let i = 0; i < outrangedParcels.length; i++) {
+            landElement.removeChild(outrangedParcels[i]);
           }
           const seenCoords = {};
           await Promise.all(missingParcelCoords.map(async coord => {
