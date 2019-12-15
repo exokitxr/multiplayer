@@ -2036,7 +2036,7 @@ const _getParcelXrSite = (landElement, coord) => {
   }
   return null;
 };
-const _setParcelAttribute = (node, attributeName, attributeValue) => {
+/* const _setParcelAttribute = (node, attributeName, attributeValue) => {
   let attr = null;
   for (const name in node.attrs) {
     if (name === attributeName) {
@@ -2049,7 +2049,7 @@ const _setParcelAttribute = (node, attributeName, attributeValue) => {
   }
   attr.name = attributeName;
   attr.value = attributeValue;
-};
+}; */
 const _htmlToDomNode = html => {
   const div = document.createElement('div');
   div.innerHTML = html;
