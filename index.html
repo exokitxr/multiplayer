@@ -815,7 +815,7 @@ header > .login-form.phase-3 > .phaseless-content
                   <i class="fas fa-chevron-right"></i>
                 </nav>
                 <label id=deploy-parcel-upload-file-label>
-                  <nav class=option>Local HTML file...</nav>
+                  <nav class=option>Upload HTML...</nav>
                   <input type="file" id=deploy-parcel-upload-file-button style="display: none">
                 </label>
               </div>
@@ -887,11 +887,15 @@ header > .login-form.phase-3 > .phaseless-content
             <i class="fas fa-hood-cloak"></i>
           </nav>
           <nav class=content-tab>
-            <div class=sub>Prefabs</div>
+            <div class=sub>Models</div>
             <i class="fas fa-sword"></i>
           </nav>
           <nav class=content-tab id=inventory-content-tab>
-            <div class=sub>Saved Files</div>
+            <div class=sub>My Prefabs</div>
+            <i class="fas fa-backpack"></i>
+          </nav>
+          <nav class=content-tab id=files-content-tab>
+            <div class=sub>My Assets</div>
             <i class="fas fa-backpack"></i>
           </nav>
           <nav class=content-tab>
@@ -925,6 +929,7 @@ header > .login-form.phase-3 > .phaseless-content
           <div class=end></div>
         </div>
         <div class="content inventory-content" id=inventory-content></div>
+        <div class="content files-content" id=files-content></div>
         <div class="content code-content">
           <textarea class=code id=code spellcheck=false></textarea>
           <div class=code-buttons>
