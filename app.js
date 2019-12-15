@@ -2067,6 +2067,12 @@ const _connectLand = () => {
         if (k !== lastParcelKey) {
           const [x, z] = coord;
           const requiredParcelCoords = _getRequiredParcelCoords(x, z);
+          const outrangedFloors = floorMeshes.filter(floorMesh => !requiredParcelCoords.some(coord2 =>
+            floorMesh.position.x/parcelSize === coord2[0] && floorMesh.position.z/parcelSize === coord2[1]
+          ));
+          const missingFloorCoords = requiredParcelCoords.filter(coord2 => !floorMeshes.some(floorMesh =>
+            floorMesh.position.x/parcelSize === coord2[0] && floorMesh.position.z/parcelSize === coord2[1]
+          ));
           const outrangedParcels = Array.from(landElement.childNodes)
             .filter(xrSite => { // non-pending parcels where every coord is at least 2 away
               return !xrSite.getAttribute('pending') && !_getParcelCoords(xrSite).some(coord2 => {
@@ -2142,6 +2148,18 @@ const _connectLand = () => {
               xrSite.guardianMesh.visible = color !== colors.normal;
             }
           });
+
+          for (let i = 0; i < outrangedFloors.length; i++) {
+            const floorMesh = outrangedFloors[i];
+            container.remove(floorMesh);
+            floorMeshes.splice(floorMeshes.indexOf(floorMesh), 1);
+          }
+          for (let i = 0; i < missingFloorCoords.length; i++) {
+            const [x, z] = missingFloorCoords[i];
+            const floorMesh = _makeFloorMesh(x, z);
+            container.add(floorMesh);
+            floorMeshes.push(floorMesh);
+          }
           for (let i = 0; i < floorMeshes.length; i++) {
             floorMeshes[i].update();
           }
