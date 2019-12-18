@@ -3460,9 +3460,6 @@ const storage = {
   },
 };
 
-// const loginButton = topDocument.getElementById('login-button');
-// const loginButton2 = topDocument.getElementById('login-button-2');
-// const loginPopdown = topDocument.getElementById('login-popdown');
 const loginForm = topDocument.getElementById('login-form');
 const loginEmail = topDocument.getElementById('login-email');
 const loginNameStatic = topDocument.getElementById('login-name-static');
@@ -3508,7 +3505,6 @@ loginForm.onsubmit = async e => {
     window.top.location.reload();
   }
 };
-
 (async () => {
   const localLoginToken = await storage.get('loginToken');
   if (localLoginToken) {
