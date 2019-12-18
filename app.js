@@ -1796,7 +1796,7 @@ const _keydown = e => {
         }
         break;
       }
-      case 79: { // o
+      case 79: { // O
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
           console.log('click');
