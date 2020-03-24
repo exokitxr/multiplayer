@@ -3,8 +3,15 @@ const defaultIceServers = [
   {'urls': 'stun:stun.l.google.com:19302'},
 ];
 
-function _randomString() {
-  return Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+const roomAlphabetStartIndex = 'A'.charCodeAt(0);
+const roomAlphabetEndIndex = 'Z'.charCodeAt(0)+1;
+const roomIdLength = 4;
+function makeId() {
+  let result = '';
+  for (let i = 0; i < roomIdLength; i++) {
+    result += String.fromCharCode(roomAlphabetStartIndex + Math.floor(Math.random() * (roomAlphabetEndIndex - roomAlphabetStartIndex)));
+  }
+  return result;
 }
 
 class XRChannelConnection extends EventTarget {
@@ -12,7 +19,7 @@ class XRChannelConnection extends EventTarget {
     super();
 
     this.rtcWs = new WebSocket(url);
-    this.connectionId = _randomString();
+    this.connectionId = makeId();
     this.peerConnections = [];
     this.microphoneMediaStream = options.microphoneMediaStream;
     this.videoMediaStream = options.videoMediaStream;
@@ -460,6 +467,7 @@ class XRPeerConnection extends EventTarget {
 }
 
 export {
+  makeId,
   XRChannelConnection,
   XRPeerConnection,
 };
