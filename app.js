@@ -2798,6 +2798,52 @@ const _sendAllPeerConnections = s => {
     peerConnections[i].send(s);
   }
 };
+
+const chatChannels = [];
+class XRChat extends HTMLElement {
+  constructor() {
+
+  }
+  connectedCallback() {
+
+  }
+  attributeChangedCallback(name, oldValue, newValue) {
+
+  }
+  static get observedAttributes() {
+    return [
+      'provider',
+      'token',
+      'channel',
+    ];
+  }
+}
+customElements.define('xr-chat', XRChat);
+
+const discordToken = '';
+const _discordSendMessage = text => {
+  channelConnection.send(JSON.stringify({
+    method: 'message',
+    provider: 'discord',
+    token: discordToken,
+    channel: 'development',
+    text,
+  }));
+};
+const _discordSendAttachment = (data, filename) => {
+  channelConnection.send(JSON.stringify({
+    method: 'message',
+    provider: 'discord',
+    token: discordToken,
+    channel: 'development',
+    attachment: filename,
+  }));
+  channelConnection.send(data);
+};
+window._discordSendMessage = _discordSendMessage;
+window._discordSendAttachment = _discordSendAttachment;
+// src = 'https://dev.exokit.org/exobot.png'; fetch(src).then(res => res.blob()).then(b => { _discordSendAttachment(b, src); });
+
 const connectButton = topDocument.getElementById('connect-button');
 connectButton.addEventListener('click', () => {
   const channelName = channelInput.value;
